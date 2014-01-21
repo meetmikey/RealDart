@@ -11,5 +11,12 @@ passport.use(new FacebookStrategy({
     console.log accessToken
     console.log refreshToken
     console.log profile
-    done()
+    done(null, profile)
 ))
+
+
+passport.serializeUser (user, done) ->
+  done(null, user.id)
+
+passport.deserializeUser (id, done) ->
+  done(null, 'TODO: lookup user from storage')
