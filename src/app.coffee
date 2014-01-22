@@ -2,12 +2,12 @@ express = require('express')
 conf = require ('./conf')
 https = require ('https')
 fs = require 'fs'
-fb_connect = require './lib/fb_connect'
+fbConnect = require './lib/fbConnect'
 passport = require 'passport'
-app_init_utils = require './lib/app_init_utils'
+appInitUtils = require './lib/appInitUtils'
 
 initActions = [
-  app_init_utils.CONNECT_MONGO
+  appInitUtils.CONNECT_MONGO
 ]
 
 
@@ -38,4 +38,4 @@ postInit = () =>
 
 #initApp() will not callback an error.
 #If something fails, it will just exit the process.
-app_init_utils.initApp 'RealDart', initActions, postInit
+appInitUtils.initApp 'RealDart', initActions, postInit

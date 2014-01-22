@@ -5,7 +5,7 @@ FB_User_Model = require('../schema/fb_user').FB_User_Model
 
 conf = require '../conf'
 
-fb_connect = this
+fbConnect = this
 
 passport.use new FacebookStrategy {
     clientID: conf.fb.app_id
@@ -50,7 +50,7 @@ passport.use new FacebookStrategy {
     console.log refreshToken
     console.log profile
 
-    fb_connect.fetchAndSaveUserData accessToken, refreshToken, profile, () =>
+    fbConnect.fetchAndSaveUserData accessToken, refreshToken, profile, () =>
         done null, profile
 
     done(null, profile)
@@ -74,7 +74,7 @@ exports.fetchAndSaveUserData = (accessToken, refreshToken, profile, callback) =>
     if mongoError
       callback mongoError.toString()
     else
-      fb_connect.fetchAndSaveFriendData fbUser, callback
+      fbConnect.fetchAndSaveFriendData fbUser, callback
 
 exports.fetchAndSaveFriendData = (fbUser, callback) =>
 
