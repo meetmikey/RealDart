@@ -6,7 +6,7 @@ FBLocation =
   name: {type: String}
 
 FBUser = new Schema
-  id: {type: String, required: true}
+  id: {type: String, required: true, unique: true}
   name: {type: String}
   first_name: {type: String}
   last_name: {type: String}
@@ -21,6 +21,8 @@ FBUser = new Schema
   verified: {type : Boolean}
   updated_time: {type: String}
   username: {type: String}
+
+
 
 mongoose.model 'FBUser', FBUser
 exports.FBUserModel = mongoose.model 'FBUser'
