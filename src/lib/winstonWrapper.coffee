@@ -1,5 +1,6 @@
 winston = require 'winston'
 conf = require '../conf'
+constants = require '../constants'
 
 environment = process.env.NODE_ENV;
 

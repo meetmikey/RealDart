@@ -1,6 +1,8 @@
-mongoose = require('mongoose')
-utils = require('./utils')
-conf = require('../conf')
+mongoose = require 'mongoose'
+
+utils = require './utils'
+winston = require('./winstonWrapper').winston
+conf = require '../conf'
 
 environment = process.env.NODE_ENV
 
@@ -20,9 +22,11 @@ exports.init = ( callback ) =>
   connectionInfo = mongooseConnect.getConnectionInfoFromConf mongoConf
 
   if not connectionInfo or not connectionInfo.mongoPath
-    callback 'no mongo path'
+    callback winston.makeError 'no mongo path'
   else
-    console.log 'mongooseConnect: mongoPath', {path: connectionInfo.logSafeMongoPath, useSSL: connectionInfo.useSSL}
+    winston.doInfo 'mongooseConnect: mongoPath',
+      path: connectionInfo.logSafeMongoPath
+      useSSL: connectionInfo.useSSL
 
     mongoose.connect connectionInfo.mongoPath, connectionInfo.options, (mongoErr) ->
       if mongoErr

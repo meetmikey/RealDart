@@ -1,18 +1,18 @@
 mongoose = require 'mongoose'
 Schema = mongoose.Schema
 
-FB_Location =
+FBLocation =
   id: {type: String}
   name: {type: String}
 
-FB_User = new Schema
+FBUser = new Schema
   id: {type: String, required: true}
   name: {type: String}
   first_name: {type: String}
   last_name: {type: String}
   link: {type: String}
-  hometown: {type: FB_Location}
-  location: {type: FB_Location}
+  hometown: {type: FBLocation}
+  location: {type: FBLocation}
   #favorite_athletes: [ [Object] ], 
   #education: [ [Object], [Object], [Object], [Object] ],
   gender: {type: String, enum: ['male', 'female']}
@@ -22,5 +22,5 @@ FB_User = new Schema
   updated_time: {type: String}
   username: {type: String}
 
-mongoose.model('FB_User', FB_User);
-exports.FB_User_Model = mongoose.model('FB_User');
+mongoose.model 'FBUser', FBUser
+exports.FBUserModel = mongoose.model 'FBUser'
