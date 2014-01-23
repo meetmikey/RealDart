@@ -1,7 +1,6 @@
 graph = require 'fbgraph'
 passport = require 'passport'
 FacebookStrategy = require('passport-facebook').Strategy
-
 winston = require('./winstonWrapper').winston
 FBUserModel = require('../schema/fbUser').FBUserModel
 conf = require '../conf'
@@ -47,42 +46,45 @@ passport.use new FacebookStrategy {
       "friends_work_history"
     ]
   } , (accessToken, refreshToken, profile, done) ->
-    winston.doInfo 'FB User info...',
-    accessToken: accessToken
-    refreshToken: refreshToken
-    profile: profile
 
-    fbConnect.fetchAndSaveUserData accessToken, refreshToken, profile, () =>
-        done null, profile
-
-    done null, profile
-
+    fbConnect.saveUserData accessToken, refreshToken, profile, (err) =>
+        done err, profile
 
 passport.serializeUser (user, done) ->
   done null, user.id
 
 passport.deserializeUser (id, done) ->
-  done null, 'TODO: lookup user from storage'
+  FBUserModel.findById id, (err, user) ->
+    if err
+      done(err)
+    else 
+      done null, user
 
-
-exports.fetchAndSaveUserData = (accessToken, refreshToken, profile, callback) =>
+exports.saveUserData = (accessToken, refreshToken, profile, callback) =>
   userData = profile._json
   userData._id = userData.id
-  userData.refreshToken = refreshToken
   userData.accessToken = accessToken
+  updateJSON = fbConnect.getUpdateJSON userData
 
-  fbUser = new FBUserModel userData, {strict : false}
+  console.log updateJSON
 
-  console.log 'new user', fbUser
-  fbUser.save (mongoError) =>
-    if mongoError
-      console.log mongoError
-      callback mongoError.toString()
+  FBUserModel.findOneAndUpdate {_id : userData._id}, updateJSON, {upsert : true}, (err, fbUser) ->
+    if err
+      console.log 'an error occurred', err
+      callback winston.makeError(err)
     else
+      console.log 'new user', fbUser
       fbConnect.fetchAndSaveFriendData fbUser, callback
 
-exports.fetchAndSaveFriendData = (fbUser, callback) =>
+exports.getUpdateJSON = (userData) =>
+  updateJSON = {'$set' : {}}
+  for k, v of userData
+    if k != '_id'
+      updateJSON['$set'][k] = v
+  updateJSON
 
+exports.fetchAndSaveFriendData = (fbUser, callback) =>
+  console.log 'fetchAndSaveFriendData'
   query =
     friends: 'SELECT uid, name FROM user WHERE uid IN (SELECT uid2 FROM friend WHERE uid1 = me())'
 

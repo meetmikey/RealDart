@@ -6,3 +6,4 @@
 
   @coffeescript './src', output: './app'
   @coffeescript './test/coffee', output: './test/js'
+  @coffeescript './test/coffee/spec', output: './test/js/spec'

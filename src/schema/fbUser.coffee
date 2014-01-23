@@ -8,6 +8,8 @@ FBLocation =
 #TODO: remove mixed types!!
 FBUser = new Schema
   _id: {type: String, required: true, unique: true}
+  accessToken : {type : String}
+  refreshToken : {type : String}
   age_range : {type : String}
   bio : {type : String}
   birthday: {type : String}
