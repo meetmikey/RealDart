@@ -1,13 +1,13 @@
 fbConnect = require '../../../app/lib/fbConnect'
 
-describe "getUpdateJSON", ()->
-  it "test getUpdateJSON", () ->
+describe "getUpdateJSONForUser", ()->
+  it "test getUpdateJSONForUser", () ->
     userData =
       'hello' : 'world'
       'more' : 'keys'
       '_id' : 'someId'
 
-    updateJSON = JSON.stringify(fbConnect.getUpdateJSON userData)
+    updateJSON = JSON.stringify(fbConnect.getUpdateJSONForUser userData)
     expectedUpdateJson = JSON.stringify({$set : {'hello' : 'world', 'more' : 'keys'}})
 
     expect(updateJSON).toBe(expectedUpdateJson)

@@ -64,9 +64,7 @@ exports.saveUserData = (accessToken, refreshToken, profile, callback) =>
   userData = profile._json
   userData._id = userData.id
   userData.accessToken = accessToken
-  updateJSON = fbConnect.getUpdateJSON userData
-
-  console.log updateJSON
+  updateJSON = fbConnect.getUpdateJSONForUser userData
 
   FBUserModel.findOneAndUpdate {_id : userData._id}, updateJSON, {upsert : true}, (err, fbUser) ->
     if err
@@ -76,7 +74,7 @@ exports.saveUserData = (accessToken, refreshToken, profile, callback) =>
       console.log 'new user', fbUser
       fbConnect.fetchAndSaveFriendData fbUser, callback
 
-exports.getUpdateJSON = (userData) =>
+exports.getUpdateJSONForUser = (userData) =>
   updateJSON = {'$set' : {}}
   for k, v of userData
     if k != '_id'
