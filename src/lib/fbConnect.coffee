@@ -66,14 +66,17 @@ passport.deserializeUser (id, done) ->
 
 
 exports.fetchAndSaveUserData = (accessToken, refreshToken, profile, callback) =>
-
-  userData = profile
+  userData = profile._json
+  userData._id = userData.id
   userData.refreshToken = refreshToken
   userData.accessToken = accessToken
 
-  fbUser = new FBUserModel userData
+  fbUser = new FBUserModel userData, {strict : false}
+
+  console.log 'new user', fbUser
   fbUser.save (mongoError) =>
     if mongoError
+      console.log mongoError
       callback mongoError.toString()
     else
       fbConnect.fetchAndSaveFriendData fbUser, callback

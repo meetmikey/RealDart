@@ -5,23 +5,42 @@ FBLocation =
   id: {type: String}
   name: {type: String}
 
+#TODO: remove mixed types!!
 FBUser = new Schema
-  id: {type: String, required: true, unique: true}
-  name: {type: String}
+  _id: {type: String, required: true, unique: true}
+  age_range : {type : String}
+  bio : {type : String}
+  birthday: {type : String}
+  cover : Schema.Types.Mixed
+  education : Schema.Types.Mixed
+  email : {type : String}
+  favorite_athletes: Schema.Types.Mixed
+  favorite_teams : Schema.Types.Mixed
   first_name: {type: String}
+  gender: {type: String, enum: ['male', 'female']}
+  hometown: {type: FBLocation}
+  inspirational_people : Schema.Types.Mixed
+  is_verified: {type : Boolean}
+  languages : Schema.Types.Mixed
   last_name: {type: String}
   link: {type: String}
-  hometown: {type: FBLocation}
-  location: {type: FBLocation}
-  #favorite_athletes: [ [Object] ], 
-  #education: [ [Object], [Object], [Object], [Object] ],
-  gender: {type: String, enum: ['male', 'female']}
-  timezone: {type: Number}
   locale: {type: String}
-  verified: {type : Boolean}
-  updated_time: {type: String}
+  location: {type: FBLocation}
+  middle_name : {type : String}
+  name: {type: String}
+  name_format : {type : String}
+  political : {type : String}
+  quotes : {type : String}
+  relationship_status : {type : String}
+  religion : {type : String}
+  significant_other : Schema.Types.Mixed
+  third_party_id : {type : String}
   username: {type: String}
-
+  verified: {type : Boolean}
+  website : {type : String}
+  work : Schema.Types.Mixed
+  timezone: {type: Number}
+  updated_time: {type: String}
 
 
 mongoose.model 'FBUser', FBUser
