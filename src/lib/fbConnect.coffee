@@ -75,4 +75,6 @@ exports.saveUserData = (accessToken, refreshToken, profile, callback) =>
       callback winston.makeError(err)
     else
       # TODO: make this a queue job to onboard the user
-      fbHelpers.fetchAndSaveFriendData fbUser, callback
+      fbHelpers.fetchAndSaveFriendData fbUser, (err, friendIds) ->
+        #TODO: save friends
+        callback()

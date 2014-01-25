@@ -15,7 +15,7 @@ exports.getFriendsFromFQLResponse = (fqlResponse) =>
       if responseItem.name == 'friends'
         friends = responseItem.fql_result_set
         friends.forEach (friend) ->
-          friend.id = friend.uid
+          friend._id = friend.uid
 
   friends
 
