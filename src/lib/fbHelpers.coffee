@@ -14,6 +14,9 @@ exports.getFriendsFromFQLResponse = (fqlResponse) =>
     fqlResponse.forEach (responseItem) ->
       if responseItem.name == 'friends'
         friends = responseItem.fql_result_set
+        friends.forEach (friend) ->
+          friend.id = friend.uid
+
   friends
 
 # given a user object, get the json for updating mongo
@@ -36,4 +39,11 @@ exports.fetchAndSaveFriendData = (fbUser, callback) =>
     winston.doInfo 'FB graph query response',
       res: res
 
-    fbHelpers.getFriendsFromFQLResponse (res.data)
+    friends = fbHelpers.getFriendsFromFQLResponse (res.data)
+    FBUserModel.collection.insert friends, (err) ->
+      if err?.code ==11000
+        callback()
+      else if err
+        callback(winston.makeError(err))
+      else
+        callback()
