@@ -5,6 +5,7 @@ passport = require 'passport'
 FacebookStrategy = require('passport-facebook').Strategy
 winston = require('./winstonWrapper').winston
 FBUserModel = require(homeDir + '/schema/fbUser').FBUserModel
+fbHelpers = require './fbHelpers.js'
 conf = require homeDir + '/conf'
 
 fbConnect = this
@@ -71,9 +72,7 @@ exports.saveUserData = (accessToken, refreshToken, profile, callback) =>
 
   FBUserModel.findOneAndUpdate {_id : userData._id}, updateJSON, {upsert : true}, (err, fbUser) ->
     if err
-      console.log 'an error occurred', err
       callback winston.makeError(err)
     else
-      console.log 'new user', fbUser
       # TODO: make this a queue job to onboard the user
       fbHelpers.fetchAndSaveFriendData fbUser, callback

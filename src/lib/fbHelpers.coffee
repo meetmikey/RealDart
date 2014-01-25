@@ -35,3 +35,5 @@ exports.fetchAndSaveFriendData = (fbUser, callback) =>
   graph.fql query, (err, res) ->
     winston.doInfo 'FB graph query response',
       res: res
+
+    fbHelpers.getFriendsFromFQLResponse (res.data)

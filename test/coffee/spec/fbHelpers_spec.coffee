@@ -45,6 +45,5 @@ describe "getFriendsFromFQLResponse", ()->
     ]
 
     result = JSON.stringify(fbHelpers.getFriendsFromFQLResponse(fqlData))
-    console.log 'the result', result
     expectedResult = JSON.stringify(fqlData[0].fql_result_set)
     expect(result).toBe(expectedResult)
