@@ -9,11 +9,12 @@ fbHelpers = this
 
 # parse the raw fql response and extract friend data
 exports.getFriendsFromFQLResponse = (fqlResponse) =>
+  friends = []
   if fqlResponse?.length
     fqlResponse.forEach (responseItem) ->
       if responseItem.name == 'friends'
         friends = responseItem.fql_result_set
-        friends
+  friends
 
 # given a user object, get the json for updating mongo
 exports.getUpdateJSONForUser = (userData) =>
