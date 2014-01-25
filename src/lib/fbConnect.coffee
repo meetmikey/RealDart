@@ -1,9 +1,12 @@
+homeDir = process.env['REAL_DART_HOME']
+
 graph = require 'fbgraph'
 passport = require 'passport'
 FacebookStrategy = require('passport-facebook').Strategy
 winston = require('./winstonWrapper').winston
-FBUserModel = require('../schema/fbUser').FBUserModel
-conf = require '../conf'
+FBUserModel = require(homeDir + '/schema/fbUser').FBUserModel
+fbHelpers = require './fbHelpers.js'
+conf = require homeDir + '/conf'
 
 fbConnect = this
 
@@ -13,6 +16,7 @@ passport.use new FacebookStrategy {
     callbackURL: "http://local.realdart.com:3000/auth/facebook/callback"
     scope: [
       "user_about_me"
+      "user_birthday"
       "friends_about_me"
       "friends_activities"
       "friends_birthday"
@@ -64,28 +68,13 @@ exports.saveUserData = (accessToken, refreshToken, profile, callback) =>
   userData = profile._json
   userData._id = userData.id
   userData.accessToken = accessToken
-  updateJSON = fbConnect.getUpdateJSONForUser userData
+  updateJSON = fbHelpers.getUpdateJSONForUser userData
 
   FBUserModel.findOneAndUpdate {_id : userData._id}, updateJSON, {upsert : true}, (err, fbUser) ->
     if err
-      console.log 'an error occurred', err
       callback winston.makeError(err)
     else
-      console.log 'new user', fbUser
-      fbConnect.fetchAndSaveFriendData fbUser, callback
-
-exports.getUpdateJSONForUser = (userData) =>
-  updateJSON = {'$set' : {}}
-  for k, v of userData
-    if k != '_id'
-      updateJSON['$set'][k] = v
-  updateJSON
-
-exports.fetchAndSaveFriendData = (fbUser, callback) =>
-  console.log 'fetchAndSaveFriendData'
-  query =
-    friends: 'SELECT uid, name FROM user WHERE uid IN (SELECT uid2 FROM friend WHERE uid1 = me())'
-
-  graph.fql query, (err, res) ->
-    winston.doInfo 'FB graph query response',
-      res: res
+      # TODO: make this a queue job to onboard the user
+      fbHelpers.fetchAndSaveFriendData fbUser, (err, friendIds) ->
+        #TODO: save friends
+        callback()
