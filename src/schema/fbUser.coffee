@@ -5,11 +5,14 @@ FBLocation =
   id: {type: String}
   name: {type: String}
 
+user = new Schema
+  fbUserId : {type : String},
+  lnkdUserId : {type : String}
+
 #TODO: remove mixed types!!
 FBUser = new Schema
   _id: {type: String, required: true, unique: true}
   accessToken : {type : String}
-  refreshToken : {type : String}
   age_range : {type : String}
   bio : {type : String}
   birthday: {type : String}
@@ -43,7 +46,7 @@ FBUser = new Schema
   work : Schema.Types.Mixed
   timezone: {type: Number}
   updated_time: {type: String}
-
+  friends : {type : [String], index : true}
 
 mongoose.model 'FBUser', FBUser
 exports.FBUserModel = mongoose.model 'FBUser'
