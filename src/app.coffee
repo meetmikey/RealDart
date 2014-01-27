@@ -1,3 +1,5 @@
+homeDir = process.env['REAL_DART_HOME']
+
 express = require('express')
 conf = require ('./conf')
 https = require ('https')
@@ -22,11 +24,13 @@ postInit = () =>
     app.use(express.bodyParser())
     app.use(express.cookieParser())
     app.use(express.methodOverride())
-    app.use(express.static(__dirname + '/public'))
+    app.use(express.static('../public'))
     app.use(express.compress())
     app.use(express.cookieSession({secret:conf.express.secret}))
     app.use(passport.initialize())
     app.use(passport.session())
+
+  app.get('/', (req, res) -> res.sendfile('index.html'))
 
   app.get('/auth/facebook', passport.authenticate('facebook'))
 
