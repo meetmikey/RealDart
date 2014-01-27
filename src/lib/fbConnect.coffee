@@ -1,12 +1,12 @@
-homeDir = process.env['REAL_DART_HOME']
+appDir = process.env['REAL_DART_HOME'] + '/app'
 
 graph = require 'fbgraph'
 passport = require 'passport'
 FacebookStrategy = require('passport-facebook').Strategy
 winston = require('./winstonWrapper').winston
-FBUserModel = require(homeDir + '/schema/fbUser').FBUserModel
+FBUserModel = require(appDir + '/schema/fbUser').FBUserModel
 fbHelpers = require './fbHelpers.js'
-conf = require homeDir + '/conf'
+conf = require appDir + '/conf'
 
 fbConnect = this
 

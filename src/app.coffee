@@ -24,7 +24,7 @@ postInit = () =>
     app.use(express.bodyParser())
     app.use(express.cookieParser())
     app.use(express.methodOverride())
-    app.use(express.static('../public'))
+    app.use(express.static(homeDir + '/public'))
     app.use(express.compress())
     app.use(express.cookieSession({secret:conf.express.secret}))
     app.use(passport.initialize())

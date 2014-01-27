@@ -1,10 +1,10 @@
-homeDir = process.env['REAL_DART_HOME']
+appDir = process.env['REAL_DART_HOME'] + '/app'
 
 graph = require 'fbgraph'
 winston = require('./winstonWrapper').winston
-FBUserModel = require(homeDir + '/schema/fbUser').FBUserModel
+FBUserModel = require(appDir + '/schema/fbUser').FBUserModel
 async = require 'async'
-conf = require homeDir + '/conf'
+conf = require appDir + '/conf'
 _ = require 'underscore'
 
 fbHelpers = this
