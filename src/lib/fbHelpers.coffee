@@ -3,7 +3,9 @@ homeDir = process.env['REAL_DART_HOME']
 graph = require 'fbgraph'
 winston = require('./winstonWrapper').winston
 FBUserModel = require(homeDir + '/schema/fbUser').FBUserModel
+async = require 'async'
 conf = require homeDir + '/conf'
+_ = require 'underscore'
 
 fbHelpers = this
 
@@ -16,6 +18,7 @@ exports.getFriendsFromFQLResponse = (fqlResponse) =>
         friends = responseItem.fql_result_set
         friends.forEach (friend) ->
           friend._id = friend.uid
+          delete friend['uid']
 
   friends
 
@@ -40,10 +43,29 @@ exports.fetchAndSaveFriendData = (fbUser, callback) =>
       res: res
 
     friends = fbHelpers.getFriendsFromFQLResponse (res.data)
-    FBUserModel.collection.insert friends, (err) ->
-      if err?.code ==11000
-        callback()
-      else if err
-        callback(winston.makeError(err))
-      else
-        callback()
+    fbHelpers.saveFriendData(fbUser, friends, callback)
+
+# save data in two places...
+# _id's saved on original user, full data stored in individual fbUser objects
+exports.saveFriendData = (fbUser, friends, callback) =>
+
+  async.series([
+    (asyncCb) ->
+      FBUserModel.collection.insert friends, (err) ->
+        if err?.code ==11000
+          asyncCb()
+        else if err
+          asyncCb winston.makeMongoError(err)
+        else
+          asyncCb()
+    (asyncCb) ->
+      fbUser.friends = _.pluck(friends, '_id')
+      fbUser.save (err)->
+        if err
+          asyncCb winston.makeMongoError(err)
+        else
+          asyncCb()
+    ]
+    (err) ->
+      callback err
+  )
