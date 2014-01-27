@@ -5,9 +5,6 @@ FBLocation =
   id: {type: String}
   name: {type: String}
 
-user = new Schema
-  fbUserId : {type : String},
-  lnkdUserId : {type : String}
 
 #TODO: remove mixed types!!
 FBUser = new Schema
