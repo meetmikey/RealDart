@@ -1,6 +1,10 @@
+async = require 'async'
+
 constants = require '../constants'
 utils = require('./utils')
 winston = require('./winstonWrapper').winston
+fbHelpers = require('./fbHelpers')
+
 EventDigestModel = require('../schema/eventDigest').EventDigestModel
 EventModel = require('../schema/event').EventModel
 FBUserModel = require('../schema/fbUser').FBUserModel
@@ -18,6 +22,9 @@ exports.buildAndSaveEventDigest = (user, callback) ->
     digestDate: utils.getDateString()
     hasBeenEmailed: false
     events: []
+
+  winston.doInfo 'new digest',
+    eventDigest: eventDigest
 
   eventDigestHelpers.addFacebookBirthdayEvents eventDigest, user, (error) ->
     if error then callback error; return
@@ -96,6 +103,9 @@ exports.addFacebookBirthdayEvents = (eventDigest, user, callback) ->
 
   fbHelpers.getFacebookFriends user, (error, facebookFriends) ->
     if error then callback error; return
+
+    winston.doInfo 'facebookFriends',
+      facebookFriends: facebookFriends
 
     async.each facebookFriends, (facebookFriend, eachCallback) ->
       

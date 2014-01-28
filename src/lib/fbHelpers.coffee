@@ -69,12 +69,10 @@ exports.fetchAndSaveFriendData = (fbUser, callback) ->
   graph.setAccessToken fbUser.accessToken
 
   graph.fql query, (err, res) ->
-    if err
-      console.log err
-      callback winston.makeError err
-    else
-      friends = fbHelpers.getFriendsFromFQLResponse (res.data)
-      fbHelpers.saveFriendData(fbUser, friends, callback)
+    if err then callback winston.makeError err; return
+
+    friends = fbHelpers.getFriendsFromFQLResponse (res.data)
+    fbHelpers.saveFriendData(fbUser, friends, callback)
 
 # save data in two places...
 # _id's saved on original user, full data stored in individual fbUser objects
@@ -118,15 +116,35 @@ exports.removeNullFields = (friends) =>
 
 exports.getFacebookFriends = (user, callback) ->
   unless user then callback winston.makeMissingParamError 'user'; return
+  unless user.fbUserId then callback winston.makeMissingParamError 'user.fbUserId'; return
+
+  winston.doInfo 'getFacebookFriends'
 
   FBUserModel.findById user.fbUserId, (mongoError, fbUser) ->
     if mongoError then callback winston.makeMongoError mongoError; return
 
-    friendsSelect =
-      _id:
-        $in: fbUser.fbfriends
+    if not fbUser
+      winston.doWarn 'no fbUser',
+        fbUserId: user.fbUserId
+      callback()
+    else if not fbUser.friends
+      winston.doWarn 'no friends',
+        fbUserId: user.fbUserId
+      callback()
+    else
+      friendsSelect =
+        _id:
+          $in: fbUser.friends
 
-    FBUserModel.find friendsSelect, (mongoError, fbFriends) ->
-      if mongoError then callback winston.makeMongoError mongoError; return
+      #friendsSelect = {"_id":{"$in":[245,299]}}
 
-      callback null, fbFriends
+      #winston.doInfo 'friendsSelect',
+      #  friendsSelect: friendsSelect
+
+      FBUserModel.find friendsSelect, (mongoError, fbFriends) ->
+        if mongoError then callback winston.makeMongoError mongoError; return
+
+        winston.doInfo 'fbFriends',
+          fbFriends: fbFriends
+
+        callback null, fbFriends

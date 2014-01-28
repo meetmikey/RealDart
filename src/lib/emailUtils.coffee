@@ -24,4 +24,5 @@ exports.sendEventDigestEmail = ( eventDigest, user, callback ) ->
       text: text
       subject: subject
 
-    sesUtils.sendEmail recipients, sender, text, html, subject, callback
+    callback winston.makeError 'temp'
+    #sesUtils.sendEmail recipients, sender, text, html, subject, callback

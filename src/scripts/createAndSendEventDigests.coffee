@@ -31,9 +31,6 @@ run = (callback) ->
   UserModel.find select, (mongoError, users) ->
     if mongoError then callback winston.makeMongoError mongoError; return
 
-    winston.doInfo 'got users: ',
-      users: users
-
     async.each users, createAndSendEventDigest, (error) ->
       callback error
 
@@ -50,10 +47,7 @@ createAndSendEventDigest = (user, callback) ->
     userId: user._id
     digestDate: utils.getDateString()
 
-  winston.doInfo 'select',
-    select: select
-
-  EventDigestModel.find select, (mongoError, eventDigest) ->
+  EventDigestModel.findOne select, (mongoError, eventDigest) ->
     if mongoError then callback winston.makeMongoError mongoError; return
 
     if eventDigest

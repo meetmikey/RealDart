@@ -43,7 +43,7 @@ FBUser = new Schema
   work : Schema.Types.Mixed
   timezone: {type: Number}
   updated_time: {type: String}
-  friends : {type : [String], index : true}
+  friends : {type : [Number], index : true}
 
 mongoose.model 'FBUser', FBUser
 exports.FBUserModel = mongoose.model 'FBUser'
