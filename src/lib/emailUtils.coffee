@@ -18,4 +18,11 @@ exports.sendEventDigestEmail = ( eventDigest, user, callback ) ->
     html = text
     subject = 'Your daily RealDart'
 
-    sesUtils.sendEmail recipients, sender, text, html, subject, callback
+    winston.doInfo 'about to send email...',
+      recipients: recipients
+      sender: sender
+      text: text
+      subject: subject
+
+    callback winston.makeError 'temp'
+    #sesUtils.sendEmail recipients, sender, text, html, subject, callback

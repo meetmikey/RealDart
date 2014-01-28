@@ -25,8 +25,7 @@ exports.sendEmail = (recipients, sender, text, html, subject, callback) ->
     sendArgs['Message.Body.Html.Charset'] = 'UTF-8'
 
   sesClient.call 'SendEmail', sendArgs, (sesError, result) ->
-    if err
-      callback winston.makeError 'sesError',
-        sesError: sesError
+    if sesError
+      callback winston.makeError 'sesError: ' + sesError
     else
       callback()

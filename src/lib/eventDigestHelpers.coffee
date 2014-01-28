@@ -1,15 +1,20 @@
+async = require 'async'
+
 constants = require '../constants'
 utils = require('./utils')
 winston = require('./winstonWrapper').winston
+fbHelpers = require('./fbHelpers')
+
 EventDigestModel = require('../schema/eventDigest').EventDigestModel
 EventModel = require('../schema/event').EventModel
 FBUserModel = require('../schema/fbUser').FBUserModel
 
 eventDigestHelpers = this
 
-
 exports.buildAndSaveEventDigest = (user, callback) ->
   unless user then callback winston.makeMissingParamError 'user'; return
+
+  winston.doInfo 'buildAndSaveEventDigest'
 
   eventDigest = new EventDigestModel
     userId: user._id
@@ -17,6 +22,9 @@ exports.buildAndSaveEventDigest = (user, callback) ->
     digestDate: utils.getDateString()
     hasBeenEmailed: false
     events: []
+
+  winston.doInfo 'new digest',
+    eventDigest: eventDigest
 
   eventDigestHelpers.addFacebookBirthdayEvents eventDigest, user, (error) ->
     if error then callback error; return
@@ -34,6 +42,8 @@ exports.getEventDigestEmailText = (eventDigest, user, callback) ->
   unless eventDigest then callback winston.makeMissingParamError 'eventDigest'; return
   unless user then callback winston.makeMissingParamError 'user'; return
 
+  winston.doInfo 'getEventDigestEmailText'
+
   emailText = 'Your RealDart events for ' + eventDigest.digestDate + "...\n\n\n"
   for event of eventDigest.events
     switch event.type
@@ -48,14 +58,20 @@ exports.getEventDigestEmailText = (eventDigest, user, callback) ->
 exports.populateEvents = (eventDigest, callback) ->
   unless eventDigest then callback winston.makeMissingParamError 'eventDigest'; return
 
-  if not utils.isArray eventDigest
+  winston.doInfo 'populateEvents'
+
+  if utils.isArray eventDigest.events
     #if they're already present, just callback...
+    callback()
+  else if ( not utils.isArray eventDigest.eventIds ) or ( eventDigest.eventIds.length is 0 )
     callback()
   else
     select =
       _id:
         $in: eventDigest.eventIds
 
+    winston.doInfo 'find1',
+      select: select
     EventModel.find select, (mongoError, events) ->
       if mongoError then callback winston.makeMongoError mongoError; return
 
@@ -65,6 +81,7 @@ exports.populateEvents = (eventDigest, callback) ->
         select:
           _id: event.fbUserId
 
+        winston.doInfo 'find2'
         FBUserModel.find select, (mongoError, fbUser) ->
           if mongoError then eachCallback winston.makeMongoError mongoError; return
 
@@ -79,9 +96,16 @@ exports.populateEvents = (eventDigest, callback) ->
 
 
 exports.addFacebookBirthdayEvents = (eventDigest, user, callback) ->
+  unless eventDigestHelpers then callback winston.makeMissingParamError 'eventDigest'; return
+  unless user then callback winston.makeMissingParamError 'user'; return
+
+  winston.doInfo 'addFacebookBirthdayEvents'
 
   fbHelpers.getFacebookFriends user, (error, facebookFriends) ->
     if error then callback error; return
+
+    winston.doInfo 'facebookFriends',
+      facebookFriends: facebookFriends
 
     async.each facebookFriends, (facebookFriend, eachCallback) ->
       
