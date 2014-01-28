@@ -241,9 +241,11 @@ winston.stacktrace = (skipLinesInput) ->
     stacktrace = fullStacktrace
     if split and ( split.length > ( skipLines + 1 ) )
       stacktrace = lineBreak
+      count = 0
       for stacktraceLine in split
-        if i > skipLines
+        if count > skipLines
           stacktrace += stacktraceLine + lineBreak
+        count++
 
     return stacktrace
 

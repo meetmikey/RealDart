@@ -6,6 +6,8 @@ utils = require '../lib/utils'
 winston = require('../lib/winstonWrapper').winston
 mongooseConnect = require('../lib/mongooseConnect')
 appInitUtils = require '../lib/appInitUtils'
+emailUtils = require '../lib/emailUtils'
+
 UserModel = require('../schema/user').UserModel
 EventDigestModel = require('../schema/eventDigest').EventDigestModel
 eventDigestHelpers = require '../lib/eventDigestHelpers'
@@ -37,6 +39,10 @@ run = (callback) ->
 
 
 createAndSendEventDigest = (user, callback) ->
+  unless user then callback winston.makeMissingParamError 'user'; return
+
+  winston.doInfo 'createAndSendEventDigest'
+
   winston.doInfo 'user: ',
     user: user
 
@@ -44,9 +50,12 @@ createAndSendEventDigest = (user, callback) ->
     userId: user._id
     digestDate: utils.getDateString()
 
+  winston.doInfo 'select',
+    select: select
+
   EventDigestModel.find select, (mongoError, eventDigest) ->
     if mongoError then callback winston.makeMongoError mongoError; return
-    
+
     if eventDigest
       if eventDigest.hasBeenEmailed
         callback()
@@ -54,15 +63,19 @@ createAndSendEventDigest = (user, callback) ->
         eventDigestHelpers.populateEvents eventDigest, (error) ->
           if error then callback error; return
 
-          sendDigestEmail eventDigest, user, callback
+          sendEventDigestEmail eventDigest, user, callback
     else
       eventDigestHelpers.buildAndSaveEventDigest user, (error, eventDigest) ->
         if error then callback error; return
 
-        sendDigestEmail eventDigest, user, callback
+        sendEventDigestEmail eventDigest, user, callback
 
 
-sendDigestEmail = (eventDigest, callback) ->
+sendEventDigestEmail = (eventDigest, user, callback) ->
+  unless eventDigest then callback winston.makeMissingParamError 'eventDigest'; return
+
+  winston.doInfo 'sendEventDigestEmail'
+
   emailUtils.sendEventDigestEmail eventDigest, user, (error) ->
     if error then callback error; return
     
