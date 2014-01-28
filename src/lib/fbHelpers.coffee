@@ -33,36 +33,53 @@ exports.getUpdateJSONForUser = (userData) ->
 
 # get data on a user's friends and save it to the database
 exports.fetchAndSaveFriendData = (fbUser, callback) ->
+  winston.doInfo 'fetchAndSaveFriendData'
+
   query =
     friends: 'SELECT 
-      uid, 
-      name, 
-      birthday, 
       about_me, 
       activities, 
       age_range, 
-      work, 
       birthday_date,
+      birthday,
+      current_location,
       education,
+      email,
+      favorite_athletes,
+      favorite_teams,
+      first_name,
       hometown_location,
+      last_name,
+      middle_name,
+      name,
       pic,
       political,
+      profile_update_time,
+      profile_url,
       relationship_status,
-      significant_other_id,
       religion,
       sex,
-      favorite_teams FROM user WHERE uid IN (SELECT uid2 FROM friend WHERE uid1 = me())'
+      significant_other_id,
+      sports,
+      uid, 
+      website,
+      quotes,
+      work FROM user WHERE uid IN (SELECT uid2 FROM friend WHERE uid1 = me())'
 
   graph.setAccessToken fbUser.accessToken
 
   graph.fql query, (err, res) ->
-    friends = fbHelpers.getFriendsFromFQLResponse (res.data)
-    fbHelpers.saveFriendData(fbUser, friends, callback)
+    if err
+      console.log err
+      callback winston.makeError err
+    else
+      friends = fbHelpers.getFriendsFromFQLResponse (res.data)
+      fbHelpers.saveFriendData(fbUser, friends, callback)
 
 # save data in two places...
 # _id's saved on original user, full data stored in individual fbUser objects
 exports.saveFriendData = (fbUser, friends, callback) ->
-
+  winston.doInfo 'saveFriendData'
   friendsClean = fbHelpers.removeNullFields friends
 
   async.series([
