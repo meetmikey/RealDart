@@ -61,7 +61,9 @@ exports.fetchAndSaveFriendData = (fbUser, callback) ->
       sex,
       significant_other_id,
       sports,
+      tv,
       uid, 
+      wall_count,
       website,
       quotes,
       work FROM user WHERE uid IN (SELECT uid2 FROM friend WHERE uid1 = me())'
