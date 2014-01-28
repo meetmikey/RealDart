@@ -13,6 +13,8 @@ FBUser = new Schema
   age_range : {type : String}
   bio : {type : String}
   birthday: {type : String}
+  birthday_date : {type : String}
+  books : {type : String}
   cover : Schema.Types.Mixed
   education : Schema.Types.Mixed
   email : {type : String}
@@ -28,6 +30,8 @@ FBUser = new Schema
   link: {type: String}
   locale: {type: String}
   location: {type: FBLocation}
+  current_location : {type: FBLocation}
+  hometown_location : {type: FBLocation}
   middle_name : {type : String}
   name: {type: String}
   name_format : {type : String}
