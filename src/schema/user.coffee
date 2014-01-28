@@ -6,7 +6,7 @@ User = new Schema
   email: {type: String}
   firstName: {type: String}
   lastName: {type: String}
-  fbUserId : {type : String}
+  fbUserId : {type : Number}
   lnkdUserId : {type : String}
   timestamp: {type: Date, default: Date.now}
 

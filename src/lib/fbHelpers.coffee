@@ -138,8 +138,6 @@ exports.getFacebookFriends = (user, callback) ->
         _id:
           $in: fbUser.friends
 
-      #friendsSelect = {"_id":{"$in":[245,299]}}
-
       #winston.doInfo 'friendsSelect',
       #  friendsSelect: friendsSelect
 
