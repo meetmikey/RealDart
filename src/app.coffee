@@ -30,6 +30,8 @@ postInit = () =>
     app.use(passport.initialize())
     app.use(passport.session())
 
+  #app.post('register', passport.)
+
   app.get('/', (req, res) -> res.sendfile('index.html'))
 
   app.get('/auth/facebook', passport.authenticate('facebook'))

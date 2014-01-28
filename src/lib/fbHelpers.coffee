@@ -34,14 +34,28 @@ exports.getUpdateJSONForUser = (userData) ->
 # get data on a user's friends and save it to the database
 exports.fetchAndSaveFriendData = (fbUser, callback) ->
   query =
-    friends: 'SELECT uid, name, birthday FROM user WHERE uid IN (SELECT uid2 FROM friend WHERE uid1 = me())'
+    friends: 'SELECT 
+      uid, 
+      name, 
+      birthday, 
+      about_me, 
+      activities, 
+      age_range, 
+      work, 
+      birthday_date,
+      education,
+      hometown_location,
+      pic,
+      political,
+      relationship_status,
+      significant_other_id,
+      religion,
+      sex,
+      favorite_teams FROM user WHERE uid IN (SELECT uid2 FROM friend WHERE uid1 = me())'
 
   graph.setAccessToken fbUser.accessToken
 
   graph.fql query, (err, res) ->
-    winston.doInfo 'FB graph query response',
-      res: res
-
     friends = fbHelpers.getFriendsFromFQLResponse (res.data)
     fbHelpers.saveFriendData(fbUser, friends, callback)
 

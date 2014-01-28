@@ -5,6 +5,7 @@ passport = require 'passport'
 FacebookStrategy = require('passport-facebook').Strategy
 winston = require('./winstonWrapper').winston
 FBUserModel = require(appDir + '/schema/fbUser').FBUserModel
+UserModel = require(appDir + '/schema/user').UserModel
 fbHelpers = require './fbHelpers.js'
 conf = require appDir + '/conf'
 
@@ -48,6 +49,7 @@ passport.use new FacebookStrategy {
       "friends_website"
       "user_work_history"
       "friends_work_history"
+      "email"
     ]
   } , (accessToken, refreshToken, profile, done) ->
 
@@ -70,11 +72,21 @@ exports.saveUserData = (accessToken, refreshToken, profile, callback) =>
   userData.accessToken = accessToken
   updateJSON = fbHelpers.getUpdateJSONForUser userData
 
-  FBUserModel.findOneAndUpdate {_id : userData._id}, updateJSON, {upsert : true}, (err, fbUser) ->
-    if err
-      callback winston.makeError(err)
-    else
-      # TODO: make this a queue job to onboard the user
-      fbHelpers.fetchAndSaveFriendData fbUser, (err, friends) ->
-        #TODO: save friends
-        callback()
+  # save a user object
+  UserModel.findOneAndUpdate {fbUserId : userData._id}, 
+    {$set : {fbUserId : userData._id, firstName : userData.first_name, lastName : userData.last_name}},
+    {upsert : true},
+    (err, user) ->
+
+      if err
+        callback winston.makeMongoError(err)
+      else
+        # save a fb user object
+        FBUserModel.findOneAndUpdate {_id : userData._id}, updateJSON, {upsert : true}, (err, fbUser) ->
+          if err
+            callback winston.makeMongoError(err)
+          else
+            # TODO: make this a queue job to onboard the user
+            fbHelpers.fetchAndSaveFriendData fbUser, (err, friends) ->
+              #TODO: save friends
+              callback()
