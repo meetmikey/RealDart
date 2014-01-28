@@ -63,9 +63,11 @@ exports.fetchAndSaveFriendData = (fbUser, callback) =>
 # _id's saved on original user, full data stored in individual fbUser objects
 exports.saveFriendData = (fbUser, friends, callback) =>
 
+  friendsClean = fbHelpers.removeNullFields friends
+
   async.series([
     (asyncCb) ->
-      FBUserModel.collection.insert friends, (err) ->
+      FBUserModel.collection.insert friendsClean, (err) ->
         if err?.code ==11000
           asyncCb()
         else if err
@@ -83,3 +85,16 @@ exports.saveFriendData = (fbUser, friends, callback) =>
     (err) ->
       callback err
   )
+
+
+exports.removeNullFields = (friends) =>
+  friends?.forEach (friend) ->
+    for key, val of friend
+      #remove null keys
+      if val == null
+        delete friend[key]
+      #remove empty strings or arrays
+      else if val?.length == 0
+        delete friend[key]
+
+  friends

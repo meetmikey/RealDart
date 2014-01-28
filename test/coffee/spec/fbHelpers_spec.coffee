@@ -47,3 +47,24 @@ describe "getFriendsFromFQLResponse", ()->
     result = JSON.stringify(fbHelpers.getFriendsFromFQLResponse(fqlData))
     expectedResult = JSON.stringify(fqlData[0].fql_result_set)
     expect(result).toBe(expectedResult)
+
+
+describe "removeNullFields", () ->
+  it "test generic case", () ->
+    data = [
+      {name : 'sagar', hello : null, arr : ['data', 'in']},
+      {name : 'john', hello : 'world', arr : []}
+    ]
+
+    expectedResult = [
+      {name : 'sagar', arr : ['data', 'in']},
+      {name : 'john', hello : 'world'}
+    ]
+
+    result = JSON.stringify(fbHelpers.removeNullFields(data))
+
+    expect(result).toBe(JSON.stringify(expectedResult))
+
+  it "test undefined input", () ->
+      result = fbHelpers.removeNullFields()
+      expect(result).toBe(undefined)
