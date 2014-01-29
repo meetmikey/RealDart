@@ -8,7 +8,7 @@ EventDigest = new Schema
   hasBeenEmailed: {type: Boolean}
   timestamp: {type: Date, default: Date.now}
 
-  events: {type: [String]} #DUMMY (do not save).
+  events: {type: [Schema.Types.Mixed]} #DUMMY (do not save).
 
 
 EventDigest.index { userId: 1, digestDate: 1 }, {unique : true}

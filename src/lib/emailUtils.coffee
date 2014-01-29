@@ -8,6 +8,9 @@ emailUtils = this
 
 
 exports.sendEventDigestEmail = ( eventDigest, user, callback ) ->
+  unless eventDigest then callback winston.makeMissingParamError 'eventDigest'; return
+  unless user then callback winston.makeMissingParamError 'user'; return
+  unless user.email then callback winston.makeMissingParamError 'user.email'; return
 
   eventDigestHelpers.getEventDigestEmailText eventDigest, user, (error, emailText) ->
     if error then callback error; return
@@ -15,7 +18,7 @@ exports.sendEventDigestEmail = ( eventDigest, user, callback ) ->
     recipients = [user.email]
     sender = conf.sendingEmailAddress
     text = emailText
-    html = text
+    html = ''
     subject = 'Your daily RealDart'
 
     winston.doInfo 'about to send email...',
@@ -24,5 +27,7 @@ exports.sendEventDigestEmail = ( eventDigest, user, callback ) ->
       text: text
       subject: subject
 
-    callback winston.makeError 'temp'
-    #sesUtils.sendEmail recipients, sender, text, html, subject, callback
+    #TEMP
+    #callback winston.makeError 'temp error!'
+    
+    sesUtils.sendEmail recipients, sender, text, html, subject, callback

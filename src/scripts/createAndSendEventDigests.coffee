@@ -40,9 +40,6 @@ createAndSendEventDigest = (user, callback) ->
 
   winston.doInfo 'createAndSendEventDigest'
 
-  winston.doInfo 'user: ',
-    user: user
-
   select =
     userId: user._id
     digestDate: utils.getDateString()

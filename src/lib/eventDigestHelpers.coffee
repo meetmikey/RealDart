@@ -23,9 +23,6 @@ exports.buildAndSaveEventDigest = (user, callback) ->
     hasBeenEmailed: false
     events: []
 
-  winston.doInfo 'new digest',
-    eventDigest: eventDigest
-
   eventDigestHelpers.addFacebookBirthdayEvents eventDigest, user, (error) ->
     if error then callback error; return
 
@@ -45,11 +42,11 @@ exports.getEventDigestEmailText = (eventDigest, user, callback) ->
   winston.doInfo 'getEventDigestEmailText'
 
   emailText = 'Your RealDart events for ' + eventDigest.digestDate + "...\n\n\n"
-  for event of eventDigest.events
+  for event in eventDigest.events
     switch event.type
 
       when constants.EVENT_TYPE.BIRTHDAY
-        emailText += "It's " + event.fbUser.name + "'s birthday!\n"
+        emailText += "It's " + fbHelpers.getPrintableName( event.fbUser ) + "'s birthday!\n"
         break
     
   callback null, emailText
@@ -70,8 +67,6 @@ exports.populateEvents = (eventDigest, callback) ->
       _id:
         $in: eventDigest.eventIds
 
-    winston.doInfo 'find1',
-      select: select
     EventModel.find select, (mongoError, events) ->
       if mongoError then callback winston.makeMongoError mongoError; return
 
@@ -81,7 +76,6 @@ exports.populateEvents = (eventDigest, callback) ->
         select:
           _id: event.fbUserId
 
-        winston.doInfo 'find2'
         FBUserModel.find select, (mongoError, fbUser) ->
           if mongoError then eachCallback winston.makeMongoError mongoError; return
 
@@ -104,16 +98,9 @@ exports.addFacebookBirthdayEvents = (eventDigest, user, callback) ->
   fbHelpers.getFacebookFriends user, (error, facebookFriends) ->
     if error then callback error; return
 
-    winston.doInfo 'facebookFriends',
-      facebookFriends: facebookFriends
-
     async.each facebookFriends, (facebookFriend, eachCallback) ->
       
-      winston.doInfo 'checking birthday'
-        fbFriendBDay: facebookFriend.birthday
-        day: eventDigest.digestDate
-
-      if facebookFriend.birthday is eventDigest.digestDate
+      if eventDigestHelpers.isBirthday( facebookFriend.birthday_date, eventDigest.digestDate )
         event = new EventModel
           userId: user._id
           fbUserId: facebookFriend._id
@@ -124,6 +111,25 @@ exports.addFacebookBirthdayEvents = (eventDigest, user, callback) ->
 
           event.fbUser = facebookFriend
           eventDigest.eventIds.push event._id
+          eventDigest.events.push event
           eachCallback()
+      else
+        eachCallback()
 
     , callback
+
+exports.isBirthday = (fbBirthdayDate, compareDate) ->
+  #fbBirthdayDate: "11/05" or "06/24/1985" or undefined
+  #compareDate: "2014-01-28"
+  if not fbBirthdayDate or not compareDate
+    return false
+
+  fbBirthdayMonth = fbBirthdayDate.substring 0, 2
+  fbBirthdayDay = fbBirthdayDate.substring 3, 5
+
+  compareDateMonth = compareDate.substring 5, 7
+  compareDateDay = compareDate.substring 8, 10
+
+  if ( fbBirthdayMonth is compareDateMonth ) and ( fbBirthdayDay is compareDateDay )
+    return true
+  return false
