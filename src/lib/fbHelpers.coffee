@@ -156,7 +156,13 @@ exports.getFacebookFriends = (user, callback) ->
       FBUserModel.find friendsSelect, (mongoError, fbFriends) ->
         if mongoError then callback winston.makeMongoError mongoError; return
 
-        winston.doInfo 'fbFriends',
-          fbFriends: fbFriends
-
         callback null, fbFriends
+
+exports.getPrintableName = (fbUser) ->
+  if fbUser.first_name and fbUser.last_name
+    return fbUser.first_name + ' ' + fbUser.last_name
+  if fbUser.first_name
+    return fbUser.first_name
+  if fbUser.last_name
+    return 'M. ' + fbUser.last_name
+  return ''

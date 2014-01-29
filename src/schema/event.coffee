@@ -4,16 +4,18 @@ mongoose = require 'mongoose'
 Schema = mongoose.Schema
 
 eventTypes = []
-for eventType of constants.EVENT_TYPE
+for key, eventType of constants.EVENT_TYPE
   eventTypes.push eventType
+
+console.log 'EVENT TYPES: ', eventTypes
 
 Event = new Schema
   userId: {type: Schema.ObjectId, required: true}
-  fbUserId: {type: Schema.ObjectId}
+  fbUserId: {type: Number}
   type: {type: String, enum: eventTypes}
   timestamp: {type: Date, default: Date.now}
 
-  fbUser: {type: String} #DUMMY (do not save).
+  fbUser: {} #DUMMY (do not save).
 
 mongoose.model 'Event', Event
 exports.EventModel = mongoose.model 'Event'
