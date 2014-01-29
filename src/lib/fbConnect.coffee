@@ -86,7 +86,6 @@ exports.saveUserData = (accessToken, refreshToken, profile, callback) =>
           if err
             callback winston.makeMongoError(err)
           else
-            # TODO: make this a queue job to onboard the user
             fbHelpers.fetchAndSaveFriendData fbUser, (err, friends) ->
               #TODO: save friends
               callback()

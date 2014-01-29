@@ -16,6 +16,7 @@ FBUser = new Schema
   birthday_date : {type : String}
   books : {type : String}
   cover : Schema.Types.Mixed
+  current_address : Schema.Types.Mixed
   education : Schema.Types.Mixed
   email : {type : String}
   favorite_athletes: Schema.Types.Mixed
