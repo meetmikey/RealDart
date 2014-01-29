@@ -5,6 +5,8 @@ UserOnboarding = new Schema
   userId: {type: Schema.ObjectId}
   fbAuthed: {type : Boolean, default : false}
   fbProfileScraped : {type : Boolean, default : false}
+  fbProfileScrapedFQL : {type : Boolean, default : false}
+  fbTokenExtend : {type : Boolean, default : false}
   fbFriendsScraped : {type : Boolean, default : false}
   fbFriendsIdsSaved : {type : Boolean, default : false}
   timestamp: {type: Date, default: Date.now}

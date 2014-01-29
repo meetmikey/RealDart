@@ -88,6 +88,52 @@ exports.fetchAndSaveFriendData = (fbUser, callback) ->
     friends = fbHelpers.getFriendsFromFQLResponse (res.data)
     fbHelpers.saveFriendData(fbUser, friends, callback)
 
+
+exports.fetchFQLDataForSelf = (fbUser, callback) ->
+  winston.doInfo 'fetchAndSaveFriendData'
+
+  query =
+    me: 'SELECT 
+      about_me, 
+      activities, 
+      age_range, 
+      birthday_date,
+      birthday,
+      current_location,
+      education,
+      email,
+      favorite_athletes,
+      favorite_teams,
+      first_name,
+      hometown_location,
+      last_name,
+      middle_name,
+      name,
+      pic,
+      political,
+      profile_update_time,
+      profile_url,
+      relationship_status,
+      religion,
+      sex,
+      significant_other_id,
+      sports,
+      tv,
+      uid, 
+      wall_count,
+      website,
+      quotes,
+      work FROM user WHERE uid me()'
+
+  graph.setAccessToken fbUser.accessToken
+
+  graph.fql query, (err, res) ->
+    if err then callback winston.makeError err; return
+
+    #TODO: do something with the data
+    console.log res
+    callback null, res
+
 # save data in two places...
 # _id's saved on original user, full data stored in individual fbUser objects
 exports.saveFriendData = (fbUser, friends, callback) ->
