@@ -33,15 +33,15 @@ exports.getUpdateJSONForUser = (userData) ->
 
 # exchange short-lived access token for long-lived (60 day) token
 exports.extendToken = (accessToken, cb) ->
-  graph.extendAccessToken({
+  graph.extendAccessToken {
     "access_token" : accessToken
     "client_id" : conf.fb.app_id
     "client_secret" : conf.fb.app_secret
   }, (err, facebookRes) ->
-    if err
-      cb winston.makeError err
-    else
-      cb null, facebookRes
+      if err
+        cb winston.makeError(err)
+      else
+        cb null, facebookRes
 
 # get data on a user's friends and save it to the database
 exports.fetchAndSaveFriendData = (fbUser, callback) ->
