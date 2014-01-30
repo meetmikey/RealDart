@@ -1,1 +1,5 @@
-It's {{name}}'s birthday!<br/>
+{{#ifCond type '==' 'birthday'}}
+  It's {{name}}'s birthday!<br/>
+{{else}}
+  (unknown event type)
+{{/ifCond}}

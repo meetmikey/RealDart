@@ -1,5 +1,5 @@
 aws = require 'aws-lib'
-Handlebars = require 'handlebars'
+Handlebars = require('./handlebarsWrapper').Handlebars
 
 conf = require '../conf'
 winston = require('./winstonWrapper').winston
