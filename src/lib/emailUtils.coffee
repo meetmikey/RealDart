@@ -1,9 +1,11 @@
 aws = require 'aws-lib'
+Handlebars = require 'handlebars'
 
 conf = require '../conf'
 winston = require('./winstonWrapper').winston
 sesUtils = require './sesUtils'
 eventDigestHelpers = require './eventDigestHelpers'
+templates = require('./templates')(Handlebars)
 emailUtils = this
 
 
@@ -12,13 +14,13 @@ exports.sendEventDigestEmail = ( eventDigest, user, callback ) ->
   unless user then callback winston.makeMissingParamError 'user'; return
   unless user.email then callback winston.makeMissingParamError 'user.email'; return
 
-  eventDigestHelpers.getEventDigestEmailText eventDigest, user, (error, emailText) ->
+  eventDigestHelpers.getEventDigestEmailText eventDigest, user, (error, emailHTML) ->
     if error then callback error; return
 
     recipients = [user.email]
     sender = conf.sendingEmailAddress
-    text = emailText
-    html = ''
+    text = emailHTML
+    html = emailHTML
     subject = 'Your daily RealDart'
 
     winston.doInfo 'about to send email...',
@@ -31,3 +33,15 @@ exports.sendEventDigestEmail = ( eventDigest, user, callback ) ->
     #callback winston.makeError 'temp error!'
     
     sesUtils.sendEmail recipients, sender, text, html, subject, callback
+
+exports.getEmailTemplateHTML = (templateName, templateData) ->
+  unless templateName then return ''
+
+  winston.doInfo 'partials',
+    partials: Handlebars.partials
+
+  templateData = templateData || {}
+  fullTemplateName = 'src/templates/' + templateName + '.html'
+  emailTemplate = templates[fullTemplateName]
+  emailHTML = emailTemplate templateData
+  emailHTML

@@ -16,6 +16,15 @@ initActions = [
   appInitUtils.CONNECT_MONGO
 ]
 
+digestDate = null
+
+if process.argv.length > 2
+  digestDate = process.argv[2]
+else
+  digestDate = utils.getDateString()
+
+winston.doInfo 'digestDate',
+  digestDate: digestDate
 
 postInit = () ->
   run (error) ->
@@ -42,7 +51,7 @@ createAndSendEventDigest = (user, callback) ->
 
   select =
     userId: user._id
-    digestDate: utils.getDateString()
+    digestDate: digestDate
 
   EventDigestModel.findOne select, (mongoError, eventDigest) ->
     if mongoError then callback winston.makeMongoError mongoError; return
@@ -56,7 +65,7 @@ createAndSendEventDigest = (user, callback) ->
 
           sendEventDigestEmail eventDigest, user, callback
     else
-      eventDigestHelpers.buildAndSaveEventDigest user, (error, eventDigest) ->
+      eventDigestHelpers.buildAndSaveEventDigest user, digestDate, (error, eventDigest) ->
         if error then callback error; return
 
         sendEventDigestEmail eventDigest, user, callback

@@ -4,6 +4,7 @@ constants = require '../constants'
 utils = require('./utils')
 winston = require('./winstonWrapper').winston
 fbHelpers = require('./fbHelpers')
+emailUtils = require './emailUtils'
 
 EventDigestModel = require('../schema/eventDigest').EventDigestModel
 EventModel = require('../schema/event').EventModel
@@ -11,7 +12,7 @@ FBUserModel = require('../schema/fbUser').FBUserModel
 
 eventDigestHelpers = this
 
-exports.buildAndSaveEventDigest = (user, callback) ->
+exports.buildAndSaveEventDigest = (user, digestDate, callback) ->
   unless user then callback winston.makeMissingParamError 'user'; return
 
   winston.doInfo 'buildAndSaveEventDigest'
@@ -19,7 +20,7 @@ exports.buildAndSaveEventDigest = (user, callback) ->
   eventDigest = new EventDigestModel
     userId: user._id
     eventIds: []
-    digestDate: utils.getDateString()
+    digestDate: digestDate
     hasBeenEmailed: false
     events: []
 
@@ -39,18 +40,28 @@ exports.getEventDigestEmailText = (eventDigest, user, callback) ->
   unless eventDigest then callback winston.makeMissingParamError 'eventDigest'; return
   unless user then callback winston.makeMissingParamError 'user'; return
 
-  winston.doInfo 'getEventDigestEmailText'
-
-  emailText = 'Your RealDart events for ' + eventDigest.digestDate + "...\n\n\n"
-  for event in eventDigest.events
-    switch event.type
-
-      when constants.EVENT_TYPE.BIRTHDAY
-        emailText += "It's " + fbHelpers.getPrintableName( event.fbUser ) + "'s birthday!\n"
-        break
+  emailTemplateData = eventDigestHelpers.getEmailTemplateData eventDigest, user
+  emailHTML = emailUtils.getEmailTemplateHTML 'eventDigestEmail', emailTemplateData
     
-  callback null, emailText
+  callback null, emailHTML
 
+
+exports.getEmailTemplateData = (eventDigest, user) ->
+  templateData =
+    digestDate: eventDigest.digestDate
+    events: []
+
+  for event in eventDigest.events
+    templateDataEvent =
+      type: event.type
+
+    switch event.type
+      when constants.EVENT_TYPE.BIRTHDAY
+        templateDataEvent.name = fbHelpers.getPrintableName( event.fbUser )
+
+    templateData.events.push templateDataEvent
+
+  templateData
 
 exports.populateEvents = (eventDigest, callback) ->
   unless eventDigest then callback winston.makeMissingParamError 'eventDigest'; return
