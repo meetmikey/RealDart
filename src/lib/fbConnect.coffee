@@ -14,7 +14,7 @@ fbConnect = this
 passport.use new FacebookStrategy {
     clientID: conf.fb.app_id
     clientSecret: conf.fb.app_secret
-    callbackURL: "http://local.realdart.com:3000/auth/facebook/callback"
+    callbackURL: 'http://' + conf.host + ':' + conf.listenPort + '/auth/facebook/callback'
     scope: [
       "user_about_me"
       "user_birthday"
@@ -56,17 +56,8 @@ passport.use new FacebookStrategy {
     fbConnect.saveUserData accessToken, refreshToken, profile, (err) =>
         done err, profile
 
-passport.serializeUser (user, done) ->
-  done null, user.id
-
-passport.deserializeUser (id, done) ->
-  FBUserModel.findById id, (err, user) ->
-    if err
-      done(err)
-    else 
-      done null, user
-
 exports.saveUserData = (accessToken, refreshToken, profile, callback) =>
+
   userData = profile._json
   userData._id = userData.id
   userData.accessToken = accessToken

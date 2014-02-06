@@ -209,7 +209,6 @@ winston.makeError = (log, extraInput, skipStacktraceLinesInput) ->
 
   error
 
-
 winston.makeResponseError = (log, responseCode, userMessage, extra, skipStacktraceLinesInput) ->
   skipStacktraceLines = 3
   if skipStacktraceLinesInput isnt undefined

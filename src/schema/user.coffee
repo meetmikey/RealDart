@@ -4,6 +4,7 @@ Schema = mongoose.Schema
 User = new Schema
   personId: {type: Schema.ObjectId}
   email: {type: String}
+  password: {type: String}
   firstName: {type: String}
   lastName: {type: String}
   fbUserId : {type : Number}

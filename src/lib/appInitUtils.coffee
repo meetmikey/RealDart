@@ -9,6 +9,12 @@ appInitUtils = this
 
 exports.CONNECT_MONGO = 'mongoConnect'
 
+process.on 'uncaughtException', (err) ->
+  winston.doError 'uncaughtException:',
+    stack: err.stack
+    message: err.message
+  process.exit 1
+
 exports.initApp = ( appName, actions, callback ) =>
 
   winston.logBreak()
