@@ -1,0 +1,2 @@
+RealDart.Config =
+  enableLogging: true

@@ -16,7 +16,6 @@ initActions = [
   appInitUtils.CONNECT_MONGO
 ]
 
-
 postInit = () =>
 
   app = module.exports = express()
@@ -31,7 +30,7 @@ postInit = () =>
     app.use express.bodyParser()
     app.use express.cookieParser()
     app.use express.methodOverride()
-    app.use express.static homeDir + '/public'
+    app.use express.static homeDir + '/../public'
     app.use express.compress()
     app.use express.cookieSession
       secret:conf.express.secret
@@ -43,16 +42,10 @@ postInit = () =>
   app.get '/', (req, res) ->
     res.sendfile 'public/home.html'
 
-
-  app.get '/register', (req, res) ->
-    res.sendfile 'public/register.html'
-
   app.post '/register', userUtils.registerUserRequest
     
 
   #Local login
-  app.get '/login', (req, res) ->
-    res.sendfile 'public/login.html'
   app.post '/login', passport.authenticate 'local',
     successRedirect: '/'
     failureRedirect: '/login'

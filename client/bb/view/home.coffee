@@ -1,0 +1,1 @@
+class RealDart.View.Home extends RealDart.View.Base

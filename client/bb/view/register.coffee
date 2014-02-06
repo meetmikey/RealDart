@@ -1,0 +1,1 @@
+class RealDart.View.Register extends RealDart.View.Base

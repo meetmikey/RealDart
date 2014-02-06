@@ -20,9 +20,6 @@ exports.initApp = ( appName, actions, callback ) =>
   winston.logBreak()
   winston.doInfo appName + ' app starting...'
 
-  winston.doInfo 'utils',
-    utils: utils
-
   if not utils.isArray actions
     winston.doInfo appName + ' app init successful, no required actions.'
     callback()

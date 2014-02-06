@@ -1,0 +1,1 @@
+class RealDart.View.Login extends RealDart.View.Base

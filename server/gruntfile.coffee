@@ -21,10 +21,6 @@ module.exports = (grunt) ->
         options:
           commonjs: true
           namespace: 'Templates'
-          #processPartialName: (filePath) -> # input:  templates/_header.hbs
-            #pieces = filePath.split "/"
-            #lastPiece = pieces[pieces.length - 1] # output: _header.hbs
-            #lastPiece
         files:
           'app/lib/templates.js': ['src/templates/**/*.html']
     watch:

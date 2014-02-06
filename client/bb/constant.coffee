@@ -1,0 +1,2 @@
+RealDart.Constant =
+  some: 'thing'
