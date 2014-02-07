@@ -55,7 +55,7 @@ module.exports = (grunt) ->
     handlebars:
       template:
         options:
-          namespace: 'RealDart.Template'
+          namespace: 'RealDartTemplates'
         files:
           '../public/js/template.js': ['template/**/*.html']
     watch:

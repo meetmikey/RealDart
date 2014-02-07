@@ -3,12 +3,25 @@ class RealDart.Router extends Backbone.Router
   _layout: null
 
   routes:
-    '': 'index'
+    '': 'home'
+    'home': 'home'
+    'login': 'login'
+    'register': 'register'
+    'account': 'account'
 
   initialize: =>
 
-  index: =>
-    @render 'Index'
+  home: =>
+    @render 'Home'
+
+  login: =>
+    @render 'Login'
+
+  register: =>
+    @render 'Register'
+
+  account: =>
+    @render 'Account'
 
   renderLayout: =>
     unless @_layout

@@ -6,6 +6,12 @@ class RealDartHelperUtils
     capitalized = input[0].toUpperCase() + input.slice 1
     capitalized
 
+  uncapitalize: (input) ->
+    unless input and ( input.length > 0 ) then return ''
+
+    capitalized = input[0].toLowerCase() + input.slice 1
+    capitalized
+
   getClassFromName: (className) =>
     @getObjectFromString className
 

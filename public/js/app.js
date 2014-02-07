@@ -39,7 +39,10 @@
       this.render = __bind(this.render, this);
       this.scrollToTop = __bind(this.scrollToTop, this);
       this.renderLayout = __bind(this.renderLayout, this);
-      this.index = __bind(this.index, this);
+      this.account = __bind(this.account, this);
+      this.register = __bind(this.register, this);
+      this.login = __bind(this.login, this);
+      this.home = __bind(this.home, this);
       this.initialize = __bind(this.initialize, this);
       return Router.__super__.constructor.apply(this, arguments);
     }
@@ -47,13 +50,29 @@
     Router.prototype._layout = null;
 
     Router.prototype.routes = {
-      '': 'index'
+      '': 'home',
+      'home': 'home',
+      'login': 'login',
+      'register': 'register',
+      'account': 'account'
     };
 
     Router.prototype.initialize = function() {};
 
-    Router.prototype.index = function() {
-      return this.render('Index');
+    Router.prototype.home = function() {
+      return this.render('Home');
+    };
+
+    Router.prototype.login = function() {
+      return this.render('Login');
+    };
+
+    Router.prototype.register = function() {
+      return this.render('Register');
+    };
+
+    Router.prototype.account = function() {
+      return this.render('Account');
     };
 
     Router.prototype.renderLayout = function() {
@@ -154,6 +173,15 @@
       return capitalized;
     };
 
+    RealDartHelperUtils.prototype.uncapitalize = function(input) {
+      var capitalized;
+      if (!(input && (input.length > 0))) {
+        return '';
+      }
+      capitalized = input[0].toLowerCase() + input.slice(1);
+      return capitalized;
+    };
+
     RealDartHelperUtils.prototype.getClassFromName = function(className) {
       return this.getObjectFromString(className);
     };
@@ -194,6 +222,7 @@
     __extends(Base, _super);
 
     function Base() {
+      this._getTemplateSet = __bind(this._getTemplateSet, this);
       this._getTemplatePathFromName = __bind(this._getTemplatePathFromName, this);
       this._renderTemplate = __bind(this._renderTemplate, this);
       this._assignSubviewElement = __bind(this._assignSubviewElement, this);
@@ -358,14 +387,12 @@
     };
 
     Base.prototype.getRenderedTemplate = function() {
-      var renderedTemplate, templateData, templateName, templatePath;
+      var renderedTemplate, templateData, templateName, templatePath, templateSet;
       templateName = this.getTemplateName();
       templateData = this.getTemplateData();
       templatePath = this._getTemplatePathFromName(templateName);
-      rdLog('templatePath', {
-        templatePath: templatePath
-      });
-      renderedTemplate = HandlebarsTemplates[templatePath](templateData);
+      templateSet = this._getTemplateSet();
+      renderedTemplate = templateSet[templatePath](templateData);
       return renderedTemplate;
     };
 
@@ -463,16 +490,21 @@
 
     Base.prototype._getTemplatePathFromName = function(templateName) {
       var fullName, newPieces, path, pieces;
-      fullName = 'backbone.templates.' + templateName;
+      fullName = 'template.' + templateName;
       pieces = fullName.split('.');
       newPieces = [];
       _.each(pieces, (function(_this) {
         return function(piece) {
-          return newPieces.push(piece.charAt(0).toLowerCase() + piece.slice(1));
+          return newPieces.push(RealDart.Helper.Utils.uncapitalize(piece));
         };
       })(this));
       path = newPieces.join('/');
+      path += '.html';
       return path;
+    };
+
+    Base.prototype._getTemplateSet = function() {
+      return window['RealDartTemplates'];
     };
 
     return Base;
@@ -544,6 +576,8 @@
       this.preInitialize = __bind(this.preInitialize, this);
       return MainLayout.__super__.constructor.apply(this, arguments);
     }
+
+    MainLayout.prototype.templateName = 'mainLayout';
 
     MainLayout.prototype.preInitialize = function() {
       return this.setElement($('#rdContainer'));

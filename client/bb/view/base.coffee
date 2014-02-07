@@ -105,11 +105,8 @@ class RealDart.View.Base extends Backbone.View
     templateName = @getTemplateName()
     templateData = @getTemplateData()
     templatePath = @_getTemplatePathFromName templateName
-
-    rdLog 'templatePath',
-      templatePath: templatePath
-
-    renderedTemplate = HandlebarsTemplates[templatePath]( templateData )
+    templateSet = @_getTemplateSet()
+    renderedTemplate = templateSet[templatePath]( templateData )
     renderedTemplate
 
   # Something's wrong, get out of here.
@@ -191,10 +188,14 @@ class RealDart.View.Base extends Backbone.View
     @$el.html @getRenderedTemplate()
 
   _getTemplatePathFromName: (templateName) =>
-    fullName = 'backbone.templates.' + templateName
+    fullName = 'template.' + templateName
     pieces = fullName.split '.'
     newPieces = []
     _.each pieces, (piece) =>
-      newPieces.push piece.charAt(0).toLowerCase() + piece.slice(1)
+      newPieces.push RealDart.Helper.Utils.uncapitalize piece
     path = newPieces.join '/'
+    path += '.html'
     path
+
+  _getTemplateSet: () =>
+    window['RealDartTemplates']
