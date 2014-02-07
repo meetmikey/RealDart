@@ -1,7 +1,17 @@
 class RD.View.Account extends RD.View.Base
 
-  postRender: =>
-    RD.Helper.API.get 'test', {}, (errorCode, response) ->
-      rdLog 'test response',
-        errorCode: errorCode
-        response: response
+  user: null
+
+  preInitialize: =>
+    @getUser()
+
+  getUser: =>
+    RD.Helper.API.get 'user', {}, (errorCode, response) =>
+      if errorCode then @bail(); return
+      unless response?.user then @bail(); return
+      
+      @user = new RD.Model.User response.user
+      @renderTemplate()
+
+  getTemplateData: =>
+    user: @user?.decorate()

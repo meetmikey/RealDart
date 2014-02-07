@@ -1,6 +1,6 @@
-<h3>Your RealDart Account</h3>
+<h3>{{user.fullName}}</h3>
 
-<a href = "auth/facebook"> facebook connect </a>
+<a href = "auth/facebook"> facebook connect </a> {{#if user.fbUserId}}connected!{{/if}}
 <br>
 
-<a href = "auth/linkedin"> linkedin connect </a>
+<a href = "auth/linkedin"> linkedin connect </a> {{#if user.liUserId}}connected!{{/if}}

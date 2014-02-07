@@ -9,6 +9,7 @@ passport = require 'passport'
 liConnect = require './lib/liConnect'
 fbConnect = require './lib/fbConnect'
 appInitUtils = require './lib/appInitUtils'
+routeUtils = require './lib/routeUtils'
 userUtils = require './lib/userUtils'
 winston = require('./lib/winstonWrapper').winston
 conf = require './conf'
@@ -36,8 +37,11 @@ postInit = () =>
     app.use express.methodOverride()
     app.use express.static homeDir + '/../public'
     app.use express.compress()
+
+    #TODO: use a private key file. See...
+    #https://github.com/auth0/node-jsonwebtoken
     app.use '/api', expressJwt
-      secret: conf.session.jwtSecret
+      secret: routeUtils.getJWTSecret()
 
     #not sure about these with new token stuff...need to come back here.
     #app.use passport.initialize()
@@ -49,10 +53,7 @@ postInit = () =>
   app.post '/login', routeUser.login
   app.post '/register', routeUser.register
 
-  app.get '/api/test', (req, res) ->
-    winston.doInfo 'user ' + req.user.email + ' is calling /api/test'
-    res.json
-      name: userUtils.getFullName req.user
+  app.get '/api/user', routeUser.getUser
 
   #Facebook
   app.get '/auth/facebook', passport.authenticate 'facebook'

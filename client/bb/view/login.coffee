@@ -23,10 +23,10 @@ class RD.View.Login extends RD.View.Base
       email: @$('#email').val()
       password: @$('#password').val()
 
-    RD.Helper.API.postAuth 'login', data, (errorCode, responseText) =>
+    RD.Helper.API.postAuth 'login', data, (errorCode, response) =>
       if errorCode 
         if errorCode < 500
-          @showError responseText
+          @showError response?.error
         else
           @showError 'server error'
       else

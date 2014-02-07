@@ -14,9 +14,9 @@ module.exports = (grunt) ->
           'bb/helper/**/*.coffee'
           'bb/view/base.coffee'
           'bb/view/**/!(base).coffee'
+          'bb/decorator/**/*.coffee'
           'bb/model/base.coffee'
           'bb/model/**/!(base).coffee'
-          'bb/decorator/**/*.coffee'
           'bb/collection/base.coffee'
           'bb/collection/**/!(base).coffee'
         ]

@@ -34,10 +34,10 @@ class RD.View.Register extends RD.View.Base
       email: @$('#email').val()
       password: @$('#password').val()
 
-    RD.Helper.API.postAuth 'register', data, (errorCode, responseText) =>
+    RD.Helper.API.postAuth 'register', data, (errorCode, response) =>
       if errorCode 
         if errorCode < 500
-          @showError responseText
+          @showError response?.error
         else
           @showError 'server error'
       else

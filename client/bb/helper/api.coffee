@@ -48,32 +48,32 @@ class RDHelperAPI
     $.ajax url, ajaxOptions
 
   _handleAjaxResponse: ( jqXHR, successOrError, isAuth, callback ) =>
-    responseText = jqXHR.responseText
     responseCode = jqXHR.status
+    responseText = jqXHR.responseText
+    
+    try
+      responseJSON = JSON.parse responseText
+    catch exception
+      rdError 'exception during response parsing',
+        exception: exception
+      responseJSON = {}
 
     if successOrError is 'success'
       if isAuth
-        @_storeAuthToken responseText
-      callback null, responseText
+        @_storeAuthToken responseJSON
+      callback null, responseJSON
     else
       #in error case, send the responseCode as the error
-      callback responseCode, responseText
+      callback responseCode, responseJSON
 
   _getAuthToken: =>
     token = RD.Helper.localStorage.get @tokenLocalStorageKey
     token
 
-  _storeAuthToken: (responseText) =>
-    unless responseText
+  _storeAuthToken: (responseJSON) =>
+    unless responseJSON and responseJSON.token
       return
-
-    try
-      responseJSON = JSON.parse responseText
-      if responseJSON and responseJSON.token
-        token = responseJSON.token
-        RD.Helper.localStorage.set @tokenLocalStorageKey, token
-    catch exception
-      rdError 'exception during api token extraction',
-        exception: exception
+    token = responseJSON.token
+    RD.Helper.localStorage.set @tokenLocalStorageKey, token
 
 RD.Helper.API = new RDHelperAPI()

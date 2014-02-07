@@ -45,10 +45,13 @@ class RD.View.Base extends Backbone.View
 
   render: =>
     @preRender()
-    @_renderTemplate()
+    @renderTemplate()
     @renderSubViews()
     @postRender()
     this
+
+  renderTemplate: =>
+    @$el.html @getRenderedTemplate()
 
   addSubView: (name, subViewDefinition, subViewData) =>
     fullViewClassName = 'RD.View.' + subViewDefinition.viewClassName
@@ -116,8 +119,6 @@ class RD.View.Base extends Backbone.View
     bailPath = @bailPath || @_defaultBailPath
     RD.router.navigate bailPath, {trigger:true}
 
-
-
   #overide-able...
   preInitialize: =>
   postInitialize: =>
@@ -144,7 +145,7 @@ class RD.View.Base extends Backbone.View
   _subViews: {}
   _parentView: null
   _classSuffix: ''
-  _defaultBailPath: 'home'
+  _defaultBailPath: 'login'
   _shouldRender: true
 
   #un-callable (private) methods
@@ -183,9 +184,6 @@ class RD.View.Base extends Backbone.View
     else
       element = @$ selector
     subView.setElement element
-
-  _renderTemplate: =>
-    @$el.html @getRenderedTemplate()
 
   _getTemplatePathFromName: (templateName) =>
     fullName = 'template.' + templateName

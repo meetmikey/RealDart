@@ -197,16 +197,25 @@
     };
 
     RDHelperAPI.prototype._handleAjaxResponse = function(jqXHR, successOrError, isAuth, callback) {
-      var responseCode, responseText;
-      responseText = jqXHR.responseText;
+      var exception, responseCode, responseJSON, responseText;
       responseCode = jqXHR.status;
+      responseText = jqXHR.responseText;
+      try {
+        responseJSON = JSON.parse(responseText);
+      } catch (_error) {
+        exception = _error;
+        rdError('exception during response parsing', {
+          exception: exception
+        });
+        responseJSON = {};
+      }
       if (successOrError === 'success') {
         if (isAuth) {
-          this._storeAuthToken(responseText);
+          this._storeAuthToken(responseJSON);
         }
-        return callback(null, responseText);
+        return callback(null, responseJSON);
       } else {
-        return callback(responseCode, responseText);
+        return callback(responseCode, responseJSON);
       }
     };
 
@@ -216,23 +225,13 @@
       return token;
     };
 
-    RDHelperAPI.prototype._storeAuthToken = function(responseText) {
-      var exception, responseJSON, token;
-      if (!responseText) {
+    RDHelperAPI.prototype._storeAuthToken = function(responseJSON) {
+      var token;
+      if (!(responseJSON && responseJSON.token)) {
         return;
       }
-      try {
-        responseJSON = JSON.parse(responseText);
-        if (responseJSON && responseJSON.token) {
-          token = responseJSON.token;
-          return RD.Helper.localStorage.set(this.tokenLocalStorageKey, token);
-        }
-      } catch (_error) {
-        exception = _error;
-        return rdError('exception during api token extraction', {
-          exception: exception
-        });
-      }
+      token = responseJSON.token;
+      return RD.Helper.localStorage.set(this.tokenLocalStorageKey, token);
     };
 
     return RDHelperAPI;
@@ -461,7 +460,6 @@
     function Base() {
       this._getTemplateSet = __bind(this._getTemplateSet, this);
       this._getTemplatePathFromName = __bind(this._getTemplatePathFromName, this);
-      this._renderTemplate = __bind(this._renderTemplate, this);
       this._assignSubviewElement = __bind(this._assignSubviewElement, this);
       this._renderSubView = __bind(this._renderSubView, this);
       this._teardown = __bind(this._teardown, this);
@@ -485,6 +483,7 @@
       this.renderSubView = __bind(this.renderSubView, this);
       this.renderSubViews = __bind(this.renderSubViews, this);
       this.addSubView = __bind(this.addSubView, this);
+      this.renderTemplate = __bind(this.renderTemplate, this);
       this.render = __bind(this.render, this);
       this.setSelector = __bind(this.setSelector, this);
       this.getSelector = __bind(this.getSelector, this);
@@ -540,10 +539,14 @@
 
     Base.prototype.render = function() {
       this.preRender();
-      this._renderTemplate();
+      this.renderTemplate();
       this.renderSubViews();
       this.postRender();
       return this;
+    };
+
+    Base.prototype.renderTemplate = function() {
+      return this.$el.html(this.getRenderedTemplate());
     };
 
     Base.prototype.addSubView = function(name, subViewDefinition, subViewData) {
@@ -674,7 +677,7 @@
 
     Base.prototype._classSuffix = '';
 
-    Base.prototype._defaultBailPath = 'home';
+    Base.prototype._defaultBailPath = 'login';
 
     Base.prototype._shouldRender = true;
 
@@ -721,10 +724,6 @@
       return subView.setElement(element);
     };
 
-    Base.prototype._renderTemplate = function() {
-      return this.$el.html(this.getRenderedTemplate());
-    };
-
     Base.prototype._getTemplatePathFromName = function(templateName) {
       var fullName, newPieces, path, pieces;
       fullName = 'template.' + templateName;
@@ -759,17 +758,40 @@
     __extends(Account, _super);
 
     function Account() {
-      this.postRender = __bind(this.postRender, this);
+      this.getTemplateData = __bind(this.getTemplateData, this);
+      this.getUser = __bind(this.getUser, this);
+      this.preInitialize = __bind(this.preInitialize, this);
       return Account.__super__.constructor.apply(this, arguments);
     }
 
-    Account.prototype.postRender = function() {
-      return RD.Helper.API.get('test', {}, function(errorCode, response) {
-        return rdLog('test response', {
-          errorCode: errorCode,
-          response: response
-        });
-      });
+    Account.prototype.user = null;
+
+    Account.prototype.preInitialize = function() {
+      return this.getUser();
+    };
+
+    Account.prototype.getUser = function() {
+      return RD.Helper.API.get('user', {}, (function(_this) {
+        return function(errorCode, response) {
+          if (errorCode) {
+            _this.bail();
+            return;
+          }
+          if (!(response != null ? response.user : void 0)) {
+            _this.bail();
+            return;
+          }
+          _this.user = new RD.Model.User(response.user);
+          return _this.renderTemplate();
+        };
+      })(this));
+    };
+
+    Account.prototype.getTemplateData = function() {
+      var _ref;
+      return {
+        user: (_ref = this.user) != null ? _ref.decorate() : void 0
+      };
     };
 
     return Account;
@@ -844,10 +866,10 @@
         password: this.$('#password').val()
       };
       RD.Helper.API.postAuth('login', data, (function(_this) {
-        return function(errorCode, responseText) {
+        return function(errorCode, response) {
           if (errorCode) {
             if (errorCode < 500) {
-              return _this.showError(responseText);
+              return _this.showError(response != null ? response.error : void 0);
             } else {
               return _this.showError('server error');
             }
@@ -1013,10 +1035,10 @@
         password: this.$('#password').val()
       };
       RD.Helper.API.postAuth('register', data, (function(_this) {
-        return function(errorCode, responseText) {
+        return function(errorCode, response) {
           if (errorCode) {
             if (errorCode < 500) {
-              return _this.showError(responseText);
+              return _this.showError(response != null ? response.error : void 0);
             } else {
               return _this.showError('server error');
             }
@@ -1050,6 +1072,30 @@
 }).call(this);
 
 (function() {
+  var RDUserDecorator,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+  RDUserDecorator = (function() {
+    function RDUserDecorator() {
+      this.decorate = __bind(this.decorate, this);
+    }
+
+    RDUserDecorator.prototype.decorate = function(model) {
+      var object;
+      object = {};
+      object.fullName = model.getFullName();
+      return object;
+    };
+
+    return RDUserDecorator;
+
+  })();
+
+  RD.Decorator.user = new RDUserDecorator();
+
+}).call(this);
+
+(function() {
   var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1072,6 +1118,41 @@
     return Base;
 
   })(Backbone.Model);
+
+}).call(this);
+
+(function() {
+  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  RD.Model.User = (function(_super) {
+    __extends(User, _super);
+
+    function User() {
+      this.getFullName = __bind(this.getFullName, this);
+      return User.__super__.constructor.apply(this, arguments);
+    }
+
+    User.prototype.decorator = RD.Decorator.user;
+
+    User.prototype.getFullName = function() {
+      var firstName, lastName;
+      firstName = this.get('firstName');
+      lastName = this.get('lastName');
+      if (firstName && lastName) {
+        return firstName + ' ' + lastName;
+      } else if (firstName) {
+        return firstName;
+      } else if (lastName) {
+        return 'M. ' + lastName;
+      }
+      return '';
+    };
+
+    return User;
+
+  })(RD.Model.Base);
 
 }).call(this);
 

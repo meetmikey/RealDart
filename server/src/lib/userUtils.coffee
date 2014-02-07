@@ -99,3 +99,17 @@ exports.getFullName = (user) ->
   else if user.lastName
     return 'M. ' + user.lastName
   return ''
+
+
+#Drop any fields we don't want to send to the client
+exports.sanitizeUser = (user) ->
+  unless user then return {}
+
+  delete user.__v
+  delete user._id
+  delete user.passwordHash
+  delete user.passwordResetCode
+  delete user.personId
+  delete user.timestamp
+
+  user
