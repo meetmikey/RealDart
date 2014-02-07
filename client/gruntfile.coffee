@@ -25,6 +25,7 @@ module.exports = (grunt) ->
       vendorJS:
         src: [
           'vendor/js/jquery-1.11.0.min.js'
+          'vendor/js/jquery-validate-1.11.1.min.js'
           'vendor/js/underscore-1.5.2.min.js'
           'vendor/js/backbone-1.1.0.min.js'
           'vendor/js/handlebars-1.3.0-runtime.js' #runtime requires that the templates have been precompiled
@@ -55,7 +56,7 @@ module.exports = (grunt) ->
     handlebars:
       template:
         options:
-          namespace: 'RealDartTemplates'
+          namespace: 'RDTemplates'
         files:
           '../public/js/template.js': ['template/**/*.html']
     watch:

@@ -1,1 +1,1 @@
-class RealDart.View.Home extends RealDart.View.Base
+class RD.View.Home extends RD.View.Base

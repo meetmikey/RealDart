@@ -1,1 +1,1 @@
-class RealDart.View.Account extends RealDart.View.Base
+class RD.View.Account extends RD.View.Base

@@ -1,21 +1,25 @@
-class RealDartHelperLogger
+class RDHelperLogger
 
   log: (msg, extra) =>
     @doLog 'log', msg, extra
+
+  warn: (msg, extra) =>
+    @doLog 'warn', msg, extra
 
   error: (msg, extra) =>
     @doLog 'error', msg, extra
 
   doLog: (type, msg, extra) =>
-    unless RealDart.Config.enableLogging
+    unless RD.config.debugMode
       return
 
-    if RealDart.Helper.Utils.isUndefined extra
+    if RD.Helper.utils.isUndefined extra
       console[type] msg
     else
       console[type] msg, extra
 
-RealDart.Helper.Logger = new RealDartHelperLogger()
+RD.Helper.logger = new RDHelperLogger()
 
-window.rdLog = RealDart.Helper.Logger.log
-window.rdError = RealDart.Helper.Logger.error
+window.rdLog = RD.Helper.logger.log
+window.rdWarn = RD.Helper.logger.warn
+window.rdError = RD.Helper.logger.error

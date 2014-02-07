@@ -12,6 +12,8 @@ appInitUtils = require './lib/appInitUtils'
 userUtils = require './lib/userUtils'
 winston = require('./lib/winstonWrapper').winston
 
+routeUser = require './route/user'
+
 initActions = [
   appInitUtils.CONNECT_MONGO
 ]
@@ -42,8 +44,7 @@ postInit = () =>
   app.get '/', (req, res) ->
     res.sendfile 'public/home.html'
 
-  app.post '/register', userUtils.registerUserRequest
-    
+  app.post '/register', routeUser.register    
 
   #Local login
   app.post '/login', passport.authenticate 'local',
@@ -52,17 +53,15 @@ postInit = () =>
 
   #Facebook
   app.get '/auth/facebook', passport.authenticate 'facebook'
-  app.get '/auth/facebook/callback'
-    , passport.authenticate 'facebook',
-        successRedirect: '/'
-        failureRedirect: '/login'
+  app.get '/auth/facebook/callback', passport.authenticate 'facebook',
+    successRedirect: '/'
+    failureRedirect: '/login'
 
   #LinkedIn
   app.get '/auth/linkedIn', passport.authenticate 'linkedin'
-  app.get '/auth/linkedIn/callback'
-    , passport.authenticate 'linkedin',
-        successRedirect: '/'
-        failureRedirect: '/login'
+  app.get '/auth/linkedIn/callback', passport.authenticate 'linkedin',
+    successRedirect: '/'
+    failureRedirect: '/login'
 
   app.listen conf.listenPort
 

@@ -1,0 +1,1 @@
+class RD.View.MainLayout.Header extends RD.View.Base

@@ -5,3 +5,4 @@ module.exports =
   DATE_FORMAT: 'yyyy-mm-dd'
   EVENT_TYPE:
     BIRTHDAY: 'birthday'
+  PASSWORD_RESET_CODE_LENGTH: 20

@@ -1,5 +1,5 @@
 (function() {
-  window.RealDart = {
+  window.RD = {
     Constant: {},
     Config: {},
     Model: {},
@@ -14,15 +14,20 @@
 }).call(this);
 
 (function() {
-  RealDart.Constant = {
+  RD.constant = {
     some: 'thing'
   };
 
 }).call(this);
 
 (function() {
-  RealDart.Config = {
-    enableLogging: true
+  RD.config = {
+    debugMode: true,
+    api: {
+      host: 'local.realdart.com',
+      port: 3000,
+      useSSL: false
+    }
   };
 
 }).call(this);
@@ -32,7 +37,7 @@
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  RealDart.Router = (function(_super) {
+  RD.Router = (function(_super) {
     __extends(Router, _super);
 
     function Router() {
@@ -77,7 +82,7 @@
 
     Router.prototype.renderLayout = function() {
       if (!this._layout) {
-        this._layout = new RealDart.View.MainLayout();
+        this._layout = new RD.View.MainLayout();
         return this._layout.render();
       }
     };
@@ -106,65 +111,141 @@
 
 (function() {
   $(document).ready(function() {
-    RealDart.router = new RealDart.Router();
-    return Backbone.history.start();
+    RD.router = new RD.Router();
+    Backbone.history.start();
+    return RD.Helper.validator.init();
   });
 
 }).call(this);
 
 (function() {
-  var RealDartHelperLogger,
+  var RDHelperAPI,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
-  RealDartHelperLogger = (function() {
-    function RealDartHelperLogger() {
+  RDHelperAPI = (function() {
+    function RDHelperAPI() {
+      this._call = __bind(this._call, this);
+      this.buildURL = __bind(this.buildURL, this);
+      this.get = __bind(this.get, this);
+      this.post = __bind(this.post, this);
+    }
+
+    RDHelperAPI.prototype.post = function(path, data, callback) {
+      return this._call('post', path, data, callback);
+    };
+
+    RDHelperAPI.prototype.get = function(path, data, callback) {
+      return this._call('get', path, data, callback);
+    };
+
+    RDHelperAPI.prototype.buildURL = function(path) {
+      var url;
+      if (!path) {
+        rdWarn('Helper.API:buildURL: path missing');
+        return '';
+      }
+      url = 'http';
+      if (RD.config.api.useSSL) {
+        url += 's';
+      }
+      url += '://' + RD.config.api.host;
+      if (RD.config.api.port) {
+        url += ':' + RD.config.api.port;
+      }
+      if (path[0] !== '/') {
+        url += '/';
+      }
+      url += path;
+      return url;
+    };
+
+    RDHelperAPI.prototype._call = function(type, path, data, callback) {
+      var url;
+      url = this.buildURL(path);
+      return $.ajax(url, {
+        data: data,
+        type: type,
+        complete: function(jqXHR, successOrError) {
+          var responseCode, responseText;
+          responseText = jqXHR.responseText;
+          responseCode = jqXHR.status;
+          if (successOrError === 'success') {
+            return callback(null, responseText);
+          } else {
+            return callback(responseCode, responseText);
+          }
+        }
+      });
+    };
+
+    return RDHelperAPI;
+
+  })();
+
+  RD.Helper.API = new RDHelperAPI();
+
+}).call(this);
+
+(function() {
+  var RDHelperLogger,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+  RDHelperLogger = (function() {
+    function RDHelperLogger() {
       this.doLog = __bind(this.doLog, this);
       this.error = __bind(this.error, this);
+      this.warn = __bind(this.warn, this);
       this.log = __bind(this.log, this);
     }
 
-    RealDartHelperLogger.prototype.log = function(msg, extra) {
+    RDHelperLogger.prototype.log = function(msg, extra) {
       return this.doLog('log', msg, extra);
     };
 
-    RealDartHelperLogger.prototype.error = function(msg, extra) {
+    RDHelperLogger.prototype.warn = function(msg, extra) {
+      return this.doLog('warn', msg, extra);
+    };
+
+    RDHelperLogger.prototype.error = function(msg, extra) {
       return this.doLog('error', msg, extra);
     };
 
-    RealDartHelperLogger.prototype.doLog = function(type, msg, extra) {
-      if (!RealDart.Config.enableLogging) {
+    RDHelperLogger.prototype.doLog = function(type, msg, extra) {
+      if (!RD.config.debugMode) {
         return;
       }
-      if (RealDart.Helper.Utils.isUndefined(extra)) {
+      if (RD.Helper.utils.isUndefined(extra)) {
         return console[type](msg);
       } else {
         return console[type](msg, extra);
       }
     };
 
-    return RealDartHelperLogger;
+    return RDHelperLogger;
 
   })();
 
-  RealDart.Helper.Logger = new RealDartHelperLogger();
+  RD.Helper.logger = new RDHelperLogger();
 
-  window.rdLog = RealDart.Helper.Logger.log;
+  window.rdLog = RD.Helper.logger.log;
 
-  window.rdError = RealDart.Helper.Logger.error;
+  window.rdWarn = RD.Helper.logger.warn;
+
+  window.rdError = RD.Helper.logger.error;
 
 }).call(this);
 
 (function() {
-  var RealDartHelperUtils,
+  var RDHelperUtils,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
-  RealDartHelperUtils = (function() {
-    function RealDartHelperUtils() {
+  RDHelperUtils = (function() {
+    function RDHelperUtils() {
       this.getObjectFromString = __bind(this.getObjectFromString, this);
       this.getClassFromName = __bind(this.getClassFromName, this);
     }
 
-    RealDartHelperUtils.prototype.capitalize = function(input) {
+    RDHelperUtils.prototype.capitalize = function(input) {
       var capitalized;
       if (!(input && (input.length > 0))) {
         return '';
@@ -173,7 +254,7 @@
       return capitalized;
     };
 
-    RealDartHelperUtils.prototype.uncapitalize = function(input) {
+    RDHelperUtils.prototype.uncapitalize = function(input) {
       var capitalized;
       if (!(input && (input.length > 0))) {
         return '';
@@ -182,11 +263,11 @@
       return capitalized;
     };
 
-    RealDartHelperUtils.prototype.getClassFromName = function(className) {
+    RDHelperUtils.prototype.getClassFromName = function(className) {
       return this.getObjectFromString(className);
     };
 
-    RealDartHelperUtils.prototype.getObjectFromString = function(str) {
+    RDHelperUtils.prototype.getObjectFromString = function(str) {
       var obj, strArray;
       strArray = str.split('.');
       obj = window || this;
@@ -198,18 +279,51 @@
       return obj;
     };
 
-    RealDartHelperUtils.prototype.isUndefined = function(input) {
+    RDHelperUtils.prototype.isUndefined = function(input) {
       if (typeof input === 'undefined') {
         return true;
       }
       return false;
     };
 
-    return RealDartHelperUtils;
+    return RDHelperUtils;
 
   })();
 
-  RealDart.Helper.Utils = new RealDartHelperUtils();
+  RD.Helper.utils = new RDHelperUtils();
+
+}).call(this);
+
+(function() {
+  var RDHelperValidator,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+  RDHelperValidator = (function() {
+    function RDHelperValidator() {
+      this.init = __bind(this.init, this);
+    }
+
+    RDHelperValidator.prototype.init = function() {
+      $.validator.setDefaults({
+        debug: RD.config.debugMode
+      });
+      return $.validator.addMethod('checkPassword', this.checkPassword, 'Must contain lower case, upper case, and a digit.');
+    };
+
+    RDHelperValidator.prototype.checkPassword = function(value) {
+      var digitCheck, isValid, lowerCaseCheck, upperCaseCheck;
+      lowerCaseCheck = /[a-z]/.test(value);
+      upperCaseCheck = /[A-Z]/.test(value);
+      digitCheck = /\d/.test(value);
+      isValid = lowerCaseCheck && upperCaseCheck && digitCheck;
+      return isValid;
+    };
+
+    return RDHelperValidator;
+
+  })();
+
+  RD.Helper.validator = new RDHelperValidator();
 
 }).call(this);
 
@@ -218,7 +332,7 @@
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  RealDart.View.Base = (function(_super) {
+  RD.View.Base = (function(_super) {
     __extends(Base, _super);
 
     function Base() {
@@ -311,8 +425,8 @@
 
     Base.prototype.addSubView = function(name, subViewDefinition, subViewData) {
       var fullViewClassName, subView, subViewClass;
-      fullViewClassName = 'RealDart.View.' + subViewDefinition.viewClassName;
-      subViewClass = RealDart.Helper.Utils.getClassFromName(fullViewClassName);
+      fullViewClassName = 'RD.View.' + subViewDefinition.viewClassName;
+      subViewClass = RD.Helper.utils.getClassFromName(fullViewClassName);
       subViewData = subViewData || {};
       subViewData._selector = subViewDefinition.selector;
       subViewData._parentView = this;
@@ -399,7 +513,7 @@
     Base.prototype.bail = function() {
       var bailPath;
       bailPath = this.bailPath || this._defaultBailPath;
-      return RealDart.router.navigate(bailPath, {
+      return RD.router.navigate(bailPath, {
         trigger: true
       });
     };
@@ -495,7 +609,7 @@
       newPieces = [];
       _.each(pieces, (function(_this) {
         return function(piece) {
-          return newPieces.push(RealDart.Helper.Utils.uncapitalize(piece));
+          return newPieces.push(RD.Helper.utils.uncapitalize(piece));
         };
       })(this));
       path = newPieces.join('/');
@@ -504,7 +618,7 @@
     };
 
     Base.prototype._getTemplateSet = function() {
-      return window['RealDartTemplates'];
+      return window['RDTemplates'];
     };
 
     return Base;
@@ -517,7 +631,7 @@
   var __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  RealDart.View.Account = (function(_super) {
+  RD.View.Account = (function(_super) {
     __extends(Account, _super);
 
     function Account() {
@@ -526,7 +640,7 @@
 
     return Account;
 
-  })(RealDart.View.Base);
+  })(RD.View.Base);
 
 }).call(this);
 
@@ -534,7 +648,7 @@
   var __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  RealDart.View.Home = (function(_super) {
+  RD.View.Home = (function(_super) {
     __extends(Home, _super);
 
     function Home() {
@@ -543,7 +657,7 @@
 
     return Home;
 
-  })(RealDart.View.Base);
+  })(RD.View.Base);
 
 }).call(this);
 
@@ -551,7 +665,7 @@
   var __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  RealDart.View.Login = (function(_super) {
+  RD.View.Login = (function(_super) {
     __extends(Login, _super);
 
     function Login() {
@@ -560,7 +674,7 @@
 
     return Login;
 
-  })(RealDart.View.Base);
+  })(RD.View.Base);
 
 }).call(this);
 
@@ -569,7 +683,7 @@
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  RealDart.View.MainLayout = (function(_super) {
+  RD.View.MainLayout = (function(_super) {
     __extends(MainLayout, _super);
 
     function MainLayout() {
@@ -579,13 +693,24 @@
 
     MainLayout.prototype.templateName = 'mainLayout';
 
+    MainLayout.prototype.subViewDefinitions = {
+      header: {
+        viewClassName: 'MainLayout.Header',
+        selector: '#rdHeader'
+      },
+      footer: {
+        viewClassName: 'MainLayout.Footer',
+        selector: '#rdFooter'
+      }
+    };
+
     MainLayout.prototype.preInitialize = function() {
       return this.setElement($('#rdContainer'));
     };
 
     return MainLayout;
 
-  })(RealDart.View.Base);
+  })(RD.View.Base);
 
 }).call(this);
 
@@ -593,16 +718,33 @@
   var __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  RealDart.View.Register = (function(_super) {
-    __extends(Register, _super);
+  RD.View.MainLayout.Footer = (function(_super) {
+    __extends(Footer, _super);
 
-    function Register() {
-      return Register.__super__.constructor.apply(this, arguments);
+    function Footer() {
+      return Footer.__super__.constructor.apply(this, arguments);
     }
 
-    return Register;
+    return Footer;
 
-  })(RealDart.View.Base);
+  })(RD.View.Base);
+
+}).call(this);
+
+(function() {
+  var __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  RD.View.MainLayout.Header = (function(_super) {
+    __extends(Header, _super);
+
+    function Header() {
+      return Header.__super__.constructor.apply(this, arguments);
+    }
+
+    return Header;
+
+  })(RD.View.Base);
 
 }).call(this);
 
@@ -611,7 +753,106 @@
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  RealDart.Model.Base = (function(_super) {
+  RD.View.Register = (function(_super) {
+    __extends(Register, _super);
+
+    function Register() {
+      this.hideError = __bind(this.hideError, this);
+      this.showError = __bind(this.showError, this);
+      this.getErrorElement = __bind(this.getErrorElement, this);
+      this.register = __bind(this.register, this);
+      this.setupValidation = __bind(this.setupValidation, this);
+      this.postRender = __bind(this.postRender, this);
+      return Register.__super__.constructor.apply(this, arguments);
+    }
+
+    Register.prototype.events = {
+      'submit #registerForm': 'register'
+    };
+
+    Register.prototype.postRender = function() {
+      return this.setupValidation();
+    };
+
+    Register.prototype.setupValidation = function() {
+      return this.$('#registerForm').validate({
+        rules: {
+          firstName: {
+            required: true
+          },
+          lastName: {
+            required: true
+          },
+          email: {
+            required: true,
+            email: true
+          },
+          password: {
+            required: true,
+            minlength: 8,
+            checkPassword: true
+          },
+          password2: {
+            required: true,
+            equalTo: '#password'
+          }
+        }
+      });
+    };
+
+    Register.prototype.register = function(event) {
+      var data;
+      event.preventDefault();
+      this.hideError();
+      data = {
+        email: this.$('#email').val(),
+        firstName: this.$('#firstName').val(),
+        lastName: this.$('#lastName').val(),
+        password: this.$('#password').val()
+      };
+      RD.Helper.API.post('register', data, (function(_this) {
+        return function(errorCode, responseText) {
+          if (errorCode) {
+            if (errorCode < 500) {
+              return _this.showError(responseText);
+            } else {
+              return _this.showError('server error');
+            }
+          } else {
+            return RD.router.navigate('account', {
+              trigger: true
+            });
+          }
+        };
+      })(this));
+      return false;
+    };
+
+    Register.prototype.getErrorElement = function() {
+      return this.$('#registerError');
+    };
+
+    Register.prototype.showError = function(error) {
+      this.getErrorElement().html(error);
+      return this.getErrorElement().show();
+    };
+
+    Register.prototype.hideError = function() {
+      return this.getErrorElement().hide();
+    };
+
+    return Register;
+
+  })(RD.View.Base);
+
+}).call(this);
+
+(function() {
+  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  RD.Model.Base = (function(_super) {
     __extends(Base, _super);
 
     function Base() {
@@ -637,7 +878,7 @@
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  RealDart.Collection.Base = (function(_super) {
+  RD.Collection.Base = (function(_super) {
     __extends(Base, _super);
 
     function Base() {

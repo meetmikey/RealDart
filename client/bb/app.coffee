@@ -1,3 +1,4 @@
 $(document).ready () ->
-  RealDart.router = new RealDart.Router()
+  RD.router = new RD.Router()
   Backbone.history.start()
+  RD.Helper.validator.init()

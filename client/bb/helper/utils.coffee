@@ -1,4 +1,4 @@
-class RealDartHelperUtils
+class RDHelperUtils
 
   capitalize: (input) ->
     unless input and ( input.length > 0 ) then return ''
@@ -28,4 +28,4 @@ class RealDartHelperUtils
       return true
     return false
 
-RealDart.Helper.Utils = new RealDartHelperUtils()
+RD.Helper.utils = new RDHelperUtils()

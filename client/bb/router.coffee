@@ -1,4 +1,4 @@
-class RealDart.Router extends Backbone.Router
+class RD.Router extends Backbone.Router
 
   _layout: null
 
@@ -25,7 +25,7 @@ class RealDart.Router extends Backbone.Router
 
   renderLayout: =>
     unless @_layout
-      @_layout = new RealDart.View.MainLayout()
+      @_layout = new RD.View.MainLayout()
       @_layout.render()
 
   scrollToTop: =>

@@ -1,4 +1,4 @@
-class RealDart.Model.Base extends Backbone.Model
+class RD.Model.Base extends Backbone.Model
 
   decorate: =>
     if @decorator

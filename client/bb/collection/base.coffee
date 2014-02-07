@@ -1,4 +1,4 @@
-class RealDart.Collection.Base extends Backbone.Collection
+class RD.Collection.Base extends Backbone.Collection
 
   compareBy: {}
   sortKey: '_id'

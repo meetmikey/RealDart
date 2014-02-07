@@ -1,4 +1,4 @@
-window.RealDart =
+window.RD =
   Constant: {}
   Config: {}
   Model: {}

@@ -1,4 +1,4 @@
-class RealDart.View.Base extends Backbone.View
+class RD.View.Base extends Backbone.View
 
   #---------------------------------
   #PUBLIC (and overide-able)
@@ -9,7 +9,7 @@ class RealDart.View.Base extends Backbone.View
   outsideDOMScope: false
   subViewDefinitions: {} #e.g...
   #  'mySubView':
-  #     viewClassName: 'SomeSubView'    #== RealDart.View.SomeSubView
+  #     viewClassName: 'SomeSubView'    #== RD.View.SomeSubView
   #     selector: '.mySelector'
 
   #Optional: If not set, it will use the corresponding template file based on the class name.
@@ -51,8 +51,8 @@ class RealDart.View.Base extends Backbone.View
     this
 
   addSubView: (name, subViewDefinition, subViewData) =>
-    fullViewClassName = 'RealDart.View.' + subViewDefinition.viewClassName
-    subViewClass = RealDart.Helper.Utils.getClassFromName fullViewClassName
+    fullViewClassName = 'RD.View.' + subViewDefinition.viewClassName
+    subViewClass = RD.Helper.utils.getClassFromName fullViewClassName
     subViewData = subViewData || {}
     subViewData._selector = subViewDefinition.selector
     subViewData._parentView = this
@@ -114,7 +114,7 @@ class RealDart.View.Base extends Backbone.View
   #   Otherwise the current view will still be rendered.
   bail: =>
     bailPath = @bailPath || @_defaultBailPath
-    RealDart.router.navigate bailPath, {trigger:true}
+    RD.router.navigate bailPath, {trigger:true}
 
 
 
@@ -192,10 +192,10 @@ class RealDart.View.Base extends Backbone.View
     pieces = fullName.split '.'
     newPieces = []
     _.each pieces, (piece) =>
-      newPieces.push RealDart.Helper.Utils.uncapitalize piece
+      newPieces.push RD.Helper.utils.uncapitalize piece
     path = newPieces.join '/'
     path += '.html'
     path
 
   _getTemplateSet: () =>
-    window['RealDartTemplates']
+    window['RDTemplates']

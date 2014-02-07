@@ -1,2 +1,2 @@
-RealDart.Constant =
+RD.constant =
   some: 'thing'

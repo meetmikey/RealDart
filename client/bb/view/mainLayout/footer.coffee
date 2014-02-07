@@ -1,0 +1,1 @@
+class RD.View.MainLayout.Footer extends RD.View.Base
