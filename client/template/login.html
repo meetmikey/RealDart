@@ -1,17 +1,21 @@
 <h3>Login</h3>
 
-<form action="/login" method="post">
+<span class='error' id='loginError' style='display:none;'></span>
+
+<form id='loginForm'>
+
   <div>
-    <label>Username:</label>
-    <input type="text" name="username"/>
+    <label for='email'>Email:</label>
+    <input type='email' id='email' name='email'/>
   </div>
   <div>
-    <label>Password:</label>
-    <input type="password" name="password"/>
+    <label for='password'>Password:</label>
+    <input type='password' id='password' name='password'/>
   </div>
   <div>
-    <input type="submit" value="Log In"/>
+    <input type='submit' value='Login' name='login'/>
   </div>
+
 </form>
 
 <a href='#register'>register</a>

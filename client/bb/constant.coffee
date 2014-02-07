@@ -1,2 +1,2 @@
 RD.constant =
-  some: 'thing'
+  MIN_PASSWORD_LENGTH: 8

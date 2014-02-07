@@ -13,3 +13,7 @@ body {
   /* Height of the footer */
   background: #c1c1c1;
 }
+.error {
+  color: #880000;
+  font-weight: bold;
+}

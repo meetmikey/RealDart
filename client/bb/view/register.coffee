@@ -18,7 +18,7 @@ class RD.View.Register extends RD.View.Base
           email: true
         password:
           required: true
-          minlength: 8
+          minlength: RD.constant.MIN_PASSWORD_LENGTH
           checkPassword: true
         password2:
           required: true
@@ -29,9 +29,9 @@ class RD.View.Register extends RD.View.Base
     @hideError()
 
     data =
-      email: @$('#email').val()
       firstName: @$('#firstName').val()
       lastName: @$('#lastName').val()
+      email: @$('#email').val()
       password: @$('#password').val()
 
     RD.Helper.API.post 'register', data, (errorCode, responseText) =>

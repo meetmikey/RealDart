@@ -15,7 +15,7 @@
 
 (function() {
   RD.constant = {
-    some: 'thing'
+    MIN_PASSWORD_LENGTH: 8
   };
 
 }).call(this);
@@ -662,15 +662,83 @@
 }).call(this);
 
 (function() {
-  var __hasProp = {}.hasOwnProperty,
+  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   RD.View.Login = (function(_super) {
     __extends(Login, _super);
 
     function Login() {
+      this.hideError = __bind(this.hideError, this);
+      this.showError = __bind(this.showError, this);
+      this.getErrorElement = __bind(this.getErrorElement, this);
+      this.login = __bind(this.login, this);
+      this.setupValidation = __bind(this.setupValidation, this);
+      this.postRender = __bind(this.postRender, this);
       return Login.__super__.constructor.apply(this, arguments);
     }
+
+    Login.prototype.events = {
+      'submit #loginForm': 'login'
+    };
+
+    Login.prototype.postRender = function() {
+      return this.setupValidation();
+    };
+
+    Login.prototype.setupValidation = function() {
+      return this.$('#loginForm').validate({
+        rules: {
+          email: {
+            required: true,
+            email: true
+          },
+          password: {
+            required: true
+          }
+        }
+      });
+    };
+
+    Login.prototype.login = function(event) {
+      var data;
+      event.preventDefault();
+      this.hideError();
+      data = {
+        email: this.$('#email').val(),
+        password: this.$('#password').val()
+      };
+      RD.Helper.API.post('login', data, (function(_this) {
+        return function(errorCode, responseText) {
+          if (errorCode) {
+            if (errorCode < 500) {
+              return _this.showError(responseText);
+            } else {
+              return _this.showError('server error');
+            }
+          } else {
+            return RD.router.navigate('account', {
+              trigger: true
+            });
+          }
+        };
+      })(this));
+      return false;
+    };
+
+    Login.prototype.getErrorElement = function() {
+      return this.$('#loginError');
+    };
+
+    Login.prototype.showError = function(error) {
+      this.getErrorElement().html(error);
+      return this.getErrorElement().show();
+    };
+
+    Login.prototype.hideError = function() {
+      return this.getErrorElement().hide();
+    };
 
     return Login;
 
@@ -789,7 +857,7 @@
           },
           password: {
             required: true,
-            minlength: 8,
+            minlength: RD.constant.MIN_PASSWORD_LENGTH,
             checkPassword: true
           },
           password2: {
@@ -805,9 +873,9 @@
       event.preventDefault();
       this.hideError();
       data = {
-        email: this.$('#email').val(),
         firstName: this.$('#firstName').val(),
         lastName: this.$('#lastName').val(),
+        email: this.$('#email').val(),
         password: this.$('#password').val()
       };
       RD.Helper.API.post('register', data, (function(_this) {

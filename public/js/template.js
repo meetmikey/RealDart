@@ -24,7 +24,7 @@ helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
   
 
 
-  return "<h3>Login</h3>\n\n<form action=\"/login\" method=\"post\">\n  <div>\n    <label>Username:</label>\n    <input type=\"text\" name=\"username\"/>\n  </div>\n  <div>\n    <label>Password:</label>\n    <input type=\"password\" name=\"password\"/>\n  </div>\n  <div>\n    <input type=\"submit\" value=\"Log In\"/>\n  </div>\n</form>\n\n<a href='#register'>register</a>";
+  return "<h3>Login</h3>\n\n<span class='error' id='loginError' style='display:none;'></span>\n\n<form id='loginForm'>\n\n  <div>\n    <label for='email'>Email:</label>\n    <input type='email' id='email' name='email'/>\n  </div>\n  <div>\n    <label for='password'>Password:</label>\n    <input type='password' id='password' name='password'/>\n  </div>\n  <div>\n    <input type='submit' value='Login' name='login'/>\n  </div>\n\n</form>\n\n<a href='#register'>register</a>";
   });
 
 this["RDTemplates"]["template/mainLayout.html"] = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {

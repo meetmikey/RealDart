@@ -18,7 +18,7 @@ exports.hashPassword = (password, callback) ->
       callback null, hash
 
 exports.checkPassword = (input, comparisonHash, callback) ->
-  bcrypt.compare inputHash, comparisonHash, (err, res) ->
+  bcrypt.compare input, comparisonHash, (err, res) ->
     if err then callback winston.makeError err; return
 
     if res
@@ -41,7 +41,7 @@ exports.generatePasswordResetCode = (callback) ->
       callback null, passwordResetCode
 
 
-exports.registerUser = (firstName, lastName, email, password, callback) ->
+exports.register = (firstName, lastName, email, password, callback) ->
   unless firstName then callback winston.makeMissingParamError 'firstName'; return
   unless lastName then callback winston.makeMissingParamError 'lastName'; return
   unless email then callback winston.makeMissingParamError 'email'; return
@@ -68,3 +68,23 @@ exports.registerUser = (firstName, lastName, email, password, callback) ->
             callback winston.makeMongoError mongoError
         else
           callback null, user
+
+#callback without error, but also without user means that either the email or the password is wrong.
+exports.login = (email, password, callback) ->
+  unless email then callback winston.makeMissingParamError 'email'; return
+  unless password then callback winston.makeMissingParamError 'password'; return
+
+  UserModel.findOne { email: email }, (mongoError, user) ->
+    if mongoError then callback winston.makeMongoError mongoError; return
+
+    if not user then callback(); return
+
+    userUtils.checkPassword password, user.passwordHash, (error, match) ->
+      if error then callback error; return
+
+      if not match
+        winston.doWarn 'password does not match',
+          email: email
+        callback()
+      else
+        callback null, user

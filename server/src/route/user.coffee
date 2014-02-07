@@ -15,13 +15,32 @@ exports.register = (req, res) ->
   email = req.body.email
   password = req.body.password
 
-  userUtils.registerUser firstName, lastName, email, password, (error, user) ->
+  userUtils.register firstName, lastName, email, password, (error, user) ->
     if error
       winston.handleError error
       res.send 500
     else unless user #if no user returned, it means that the user already existed.
-      winston.doWarn 'duplicate user registration',
+      winston.doWarn 'Duplicate user registration',
         email: email
-      res.send 400, 'account already exists'
+      res.send 400, 'Account already exists'
+    else
+      res.send 200
+
+exports.login = (req, res) ->
+  unless req and req.body then res.send 400; return
+  unless req.body.email then res.send 400, 'email required'; return
+  unless req.body.password then res.send 400, 'password required'; return
+
+  email = req.body.email
+  password = req.body.password
+
+  userUtils.login email, password, (error, user) ->
+    if error
+      winston.handleError error
+      res.send 500
+    else unless user #if no user returned, it means that either the email or password was wrong
+      winston.doWarn 'failed login',
+        email: email
+      res.send 400, 'Incorrect email or password'
     else
       res.send 200

@@ -6,7 +6,6 @@ https = require ('https')
 fs = require 'fs'
 liConnect = require './lib/liConnect'
 fbConnect = require './lib/fbConnect'
-rdConnect = require './lib/rdConnect'
 passport = require 'passport'
 appInitUtils = require './lib/appInitUtils'
 userUtils = require './lib/userUtils'
@@ -39,17 +38,11 @@ postInit = () =>
     app.use passport.initialize()
     app.use passport.session()
 
-  #app.post('register', passport.)
-
   app.get '/', (req, res) ->
     res.sendfile 'public/home.html'
 
-  app.post '/register', routeUser.register    
-
-  #Local login
-  app.post '/login', passport.authenticate 'local',
-    successRedirect: '/'
-    failureRedirect: '/login'
+  app.post '/login', routeUser.login
+  app.post '/register', routeUser.register
 
   #Facebook
   app.get '/auth/facebook', passport.authenticate 'facebook'
