@@ -3,21 +3,37 @@ this["RDTemplates"] = this["RDTemplates"] || {};
 this["RDTemplates"]["template/account.html"] = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
   this.compilerInfo = [4,'>= 1.0.0'];
 helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
-  var buffer = "", stack1, stack2, functionType="function", escapeExpression=this.escapeExpression, self=this;
+  var buffer = "", stack1, stack2, options, functionType="function", escapeExpression=this.escapeExpression, self=this, helperMissing=helpers.helperMissing;
 
 function program1(depth0,data) {
   
   
-  return "connected!";
+  return "\n  <span class='success'>ok!</span>\n";
+  }
+
+function program3(depth0,data) {
+  
+  
+  return "\n  <span class='error'>fail!</span>\n";
   }
 
   buffer += "<h3>"
     + escapeExpression(((stack1 = ((stack1 = (depth0 && depth0.user)),stack1 == null || stack1 === false ? stack1 : stack1.fullName)),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
-    + "</h3>\n\n<a href = 'auth/facebook' target='_blank'> connect facebook </a> ";
-  stack2 = helpers['if'].call(depth0, (depth0 && depth0.facebookStatus), {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data});
+    + "</h3>\n\n<a href = 'auth/facebook' target='_blank'> connect facebook </a>\n";
+  options = {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data};
+  stack2 = ((stack1 = helpers.ifCond || (depth0 && depth0.ifCond)),stack1 ? stack1.call(depth0, (depth0 && depth0.facebookStatus), "==", "success", options) : helperMissing.call(depth0, "ifCond", (depth0 && depth0.facebookStatus), "==", "success", options));
   if(stack2 || stack2 === 0) { buffer += stack2; }
-  buffer += "\n<br>\n\n<a href = 'auth/linkedIn' target='_blank'> connect linkedIn </a> ";
-  stack2 = helpers['if'].call(depth0, ((stack1 = (depth0 && depth0.user)),stack1 == null || stack1 === false ? stack1 : stack1.liUserId), {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data});
+  buffer += "\n";
+  options = {hash:{},inverse:self.noop,fn:self.program(3, program3, data),data:data};
+  stack2 = ((stack1 = helpers.ifCond || (depth0 && depth0.ifCond)),stack1 ? stack1.call(depth0, (depth0 && depth0.facebookStatus), "==", "fail", options) : helperMissing.call(depth0, "ifCond", (depth0 && depth0.facebookStatus), "==", "fail", options));
+  if(stack2 || stack2 === 0) { buffer += stack2; }
+  buffer += "\n<br>\n\n<a href = 'auth/linkedIn' target='_blank'> connect linkedIn </a>\n";
+  options = {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data};
+  stack2 = ((stack1 = helpers.ifCond || (depth0 && depth0.ifCond)),stack1 ? stack1.call(depth0, (depth0 && depth0.linkedInStatus), "==", "success", options) : helperMissing.call(depth0, "ifCond", (depth0 && depth0.linkedInStatus), "==", "success", options));
+  if(stack2 || stack2 === 0) { buffer += stack2; }
+  buffer += "\n";
+  options = {hash:{},inverse:self.noop,fn:self.program(3, program3, data),data:data};
+  stack2 = ((stack1 = helpers.ifCond || (depth0 && depth0.ifCond)),stack1 ? stack1.call(depth0, (depth0 && depth0.linkedInStatus), "==", "fail", options) : helperMissing.call(depth0, "ifCond", (depth0 && depth0.linkedInStatus), "==", "fail", options));
   if(stack2 || stack2 === 0) { buffer += stack2; }
   return buffer;
   });

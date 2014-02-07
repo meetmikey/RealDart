@@ -24,15 +24,9 @@ class RD.View.Account extends RD.View.Base
       @renderTemplate()
 
   getTemplateData: =>
-    data =
-      user: @user?.decorate()
-      linkedInStatus: @linkedInStatus
-      facebookStatus: @facebookStatus
-
-    rdLog 'getTemplateData',
-      data: data
-
-    data
+    user: @user?.decorate()
+    linkedInStatus: @linkedInStatus
+    facebookStatus: @facebookStatus
 
   addMessageListener: =>
     window.addEventListener 'message', @receiveMessage, false
@@ -41,20 +35,12 @@ class RD.View.Account extends RD.View.Base
     window.removeEventListener 'message', @receiveMessage
 
   receiveMessage: (event) =>
-
-    rdLog 'receiveMessage',
-      event: event
-
     if event.origin isnt RD.Helper.API.getProtocolHostAndPort()
       return
 
     responseJSON = RD.Helper.API.getJSONFromText event.data
     service = responseJSON?.service
     status = responseJSON?.status
-
-    rdLog 'service + status',
-      service: service
-      status: status
 
     unless status and service
       return

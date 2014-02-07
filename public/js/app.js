@@ -847,16 +847,12 @@
     };
 
     Account.prototype.getTemplateData = function() {
-      var data, _ref;
-      data = {
+      var _ref;
+      return {
         user: (_ref = this.user) != null ? _ref.decorate() : void 0,
         linkedInStatus: this.linkedInStatus,
         facebookStatus: this.facebookStatus
       };
-      rdLog('getTemplateData', {
-        data: data
-      });
-      return data;
     };
 
     Account.prototype.addMessageListener = function() {
@@ -869,19 +865,12 @@
 
     Account.prototype.receiveMessage = function(event) {
       var responseJSON, service, status;
-      rdLog('receiveMessage', {
-        event: event
-      });
       if (event.origin !== RD.Helper.API.getProtocolHostAndPort()) {
         return;
       }
       responseJSON = RD.Helper.API.getJSONFromText(event.data);
       service = responseJSON != null ? responseJSON.service : void 0;
       status = responseJSON != null ? responseJSON.status : void 0;
-      rdLog('service + status', {
-        service: service,
-        status: status
-      });
       if (!(status && service)) {
         return;
       }

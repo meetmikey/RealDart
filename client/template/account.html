@@ -1,20 +1,18 @@
 <h3>{{user.fullName}}</h3>
 
 <a href = 'auth/facebook' target='_blank'> connect facebook </a>
-{{facebookStatus}}
 {{#ifCond facebookStatus '==' 'success'}}
   <span class='success'>ok!</span>
-{{/if}}
+{{/ifCond}}
 {{#ifCond facebookStatus '==' 'fail'}}
   <span class='error'>fail!</span>
-{{/if}}
+{{/ifCond}}
 <br>
 
 <a href = 'auth/linkedIn' target='_blank'> connect linkedIn </a>
-{{linkedInStatus}}
 {{#ifCond linkedInStatus '==' 'success'}}
   <span class='success'>ok!</span>
-{{/if}}
+{{/ifCond}}
 {{#ifCond linkedInStatus '==' 'fail'}}
   <span class='error'>fail!</span>
-{{/if}}
+{{/ifCond}}
