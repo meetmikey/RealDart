@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  </head>
+
+  <body>
+    
+    <script type='text/javascript'>
+
+      if ( window.opener ) {
+        window.opener.postMessage( '<%- message %>', '<%- targetOrigin %>' );
+        window.close();
+      }
+
+    </script>
+
+  </body>
+</html>
