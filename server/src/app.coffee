@@ -42,15 +42,10 @@ postInit = () =>
     app.use express.static homeDir + '/../public'
     app.use express.compress()
     app.set 'views', homeDir + '/../public/html'
-
-    #TODO: use a private key file. See...
-    #https://github.com/auth0/node-jsonwebtoken
-    app.use '/api', expressJwt
-      secret: routeUtils.getJWTSecret()
-
-    #not sure about these with new token stuff...need to come back here.
     app.use passport.initialize()
     app.use passport.session()
+    app.use '/api', expressJwt
+      secret: routeUtils.getJWTSecret()
 
 
 
@@ -63,7 +58,7 @@ postInit = () =>
   app.post '/register', routeUser.register
 
 
-  #API.
+  #API
   # Note: All authenticated routes should be '/api/...' to use express-jwt authentication
   app.get '/api/user', routeUser.getUser
 
@@ -74,10 +69,10 @@ postInit = () =>
   app.get '/auth/facebook/callback'
     , passport.authenticate( 'facebook', {session: false, failureRedirect: '/auth/facebook/callbackFail'} )
     , (req, res) ->
-      routeUtils.sendCallbackHTML res, 'facebook', true
+        routeUtils.sendCallbackHTML res, 'facebook', true
   app.get '/auth/facebook/callbackFail'
     , (req, res) ->
-      routeUtils.sendCallbackHTML res, 'facebook', false
+        routeUtils.sendCallbackHTML res, 'facebook', false
 
 
   #LinkedIn
@@ -85,10 +80,10 @@ postInit = () =>
   app.get '/auth/linkedIn/callback'
     , passport.authenticate( 'linkedin', {session: false, failureRedirect: '/auth/linkedIn/callbackFail'} )
     , (req, res) ->
-      routeUtils.sendCallbackHTML res, 'linkedIn', true
+        routeUtils.sendCallbackHTML res, 'linkedIn', true
   app.get '/auth/linkedIn/callbackFail'
     , (req, res) ->
-      routeUtils.sendCallbackHTML res, 'linkedIn', false
+        routeUtils.sendCallbackHTML res, 'linkedIn', false
 
 
   #Start 'er up
