@@ -1,15 +1,17 @@
 homeDir = process.env['REAL_DART_HOME']
 
-express = require('express')
-conf = require ('./conf')
-https = require ('https')
+express = require 'express'
+expressJwt = require 'express-jwt'
+https = require 'https'
 fs = require 'fs'
+passport = require 'passport'
+
 liConnect = require './lib/liConnect'
 fbConnect = require './lib/fbConnect'
-passport = require 'passport'
 appInitUtils = require './lib/appInitUtils'
 userUtils = require './lib/userUtils'
 winston = require('./lib/winstonWrapper').winston
+conf = require './conf'
 
 routeUser = require './route/user'
 
@@ -28,21 +30,29 @@ postInit = () =>
     app.use express.errorHandler
       dumpExceptions: true
       showStack: true
-    app.use express.bodyParser()
+    app.use express.urlencoded()
+    app.use express.json()
     app.use express.cookieParser()
     app.use express.methodOverride()
     app.use express.static homeDir + '/../public'
     app.use express.compress()
-    app.use express.cookieSession
-      secret:conf.express.secret
-    app.use passport.initialize()
-    app.use passport.session()
+    app.use '/api', expressJwt
+      secret: conf.session.jwtSecret
+
+    #not sure about these with new token stuff...need to come back here.
+    #app.use passport.initialize()
+    #app.use passport.session()
 
   app.get '/', (req, res) ->
     res.sendfile 'public/home.html'
 
   app.post '/login', routeUser.login
   app.post '/register', routeUser.register
+
+  app.get '/api/test', (req, res) ->
+    winston.doInfo 'user ' + req.user.email + ' is calling /api/test'
+    res.json
+      name: userUtils.getFullName req.user
 
   #Facebook
   app.get '/auth/facebook', passport.authenticate 'facebook'

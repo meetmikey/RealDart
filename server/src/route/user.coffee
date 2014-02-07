@@ -1,5 +1,9 @@
+jwt = require 'jsonwebtoken'
+
 userUtils = require '../lib/userUtils'
 winston = require('../lib/winstonWrapper').winston
+
+conf = require '../conf'
 
 routeUser = this
 
@@ -24,7 +28,7 @@ exports.register = (req, res) ->
         email: email
       res.send 400, 'Account already exists'
     else
-      res.send 200
+      routeUser.sendUserToken user, res
 
 exports.login = (req, res) ->
   unless req and req.body then res.send 400; return
@@ -43,4 +47,10 @@ exports.login = (req, res) ->
         email: email
       res.send 400, 'Incorrect email or password'
     else
-      res.send 200
+      routeUser.sendUserToken user, res
+
+exports.sendUserToken = (user, res) ->
+  token = jwt.sign user, conf.session.jwtSecret,
+    expiresInMinutes: conf.session.expireTimeMinutes
+  res.json
+    token: token

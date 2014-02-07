@@ -22,6 +22,7 @@
 
 (function() {
   RD.config = {
+    environment: 'local',
     debugMode: true,
     api: {
       host: 'local.realdart.com',
@@ -124,21 +125,31 @@
 
   RDHelperAPI = (function() {
     function RDHelperAPI() {
+      this._storeAuthToken = __bind(this._storeAuthToken, this);
+      this._getAuthToken = __bind(this._getAuthToken, this);
+      this._handleAjaxResponse = __bind(this._handleAjaxResponse, this);
       this._call = __bind(this._call, this);
       this.buildURL = __bind(this.buildURL, this);
       this.get = __bind(this.get, this);
       this.post = __bind(this.post, this);
+      this.postAuth = __bind(this.postAuth, this);
     }
 
+    RDHelperAPI.prototype.tokenLocalStorageKey = 'token';
+
+    RDHelperAPI.prototype.postAuth = function(path, data, callback) {
+      return this._call('post', path, data, true, callback);
+    };
+
     RDHelperAPI.prototype.post = function(path, data, callback) {
-      return this._call('post', path, data, callback);
+      return this._call('post', path, data, false, callback);
     };
 
     RDHelperAPI.prototype.get = function(path, data, callback) {
-      return this._call('get', path, data, callback);
+      return this._call('get', path, data, false, callback);
     };
 
-    RDHelperAPI.prototype.buildURL = function(path) {
+    RDHelperAPI.prototype.buildURL = function(path, isAuth) {
       var url;
       if (!path) {
         rdWarn('Helper.API:buildURL: path missing');
@@ -152,6 +163,9 @@
       if (RD.config.api.port) {
         url += ':' + RD.config.api.port;
       }
+      if (!isAuth) {
+        url += '/api';
+      }
       if (path[0] !== '/') {
         url += '/';
       }
@@ -159,23 +173,66 @@
       return url;
     };
 
-    RDHelperAPI.prototype._call = function(type, path, data, callback) {
-      var url;
-      url = this.buildURL(path);
-      return $.ajax(url, {
+    RDHelperAPI.prototype._call = function(type, path, data, isAuth, callback) {
+      var ajaxOptions, token, url;
+      url = this.buildURL(path, isAuth);
+      ajaxOptions = {
         data: data,
         type: type,
-        complete: function(jqXHR, successOrError) {
-          var responseCode, responseText;
-          responseText = jqXHR.responseText;
-          responseCode = jqXHR.status;
-          if (successOrError === 'success') {
-            return callback(null, responseText);
-          } else {
-            return callback(responseCode, responseText);
-          }
+        complete: (function(_this) {
+          return function(jqXHR, successOrError) {
+            return _this._handleAjaxResponse(jqXHR, successOrError, isAuth, callback);
+          };
+        })(this)
+      };
+      token = this._getAuthToken();
+      if (token) {
+        ajaxOptions.beforeSend = (function(_this) {
+          return function(xhr, settings) {
+            return xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+          };
+        })(this);
+      }
+      return $.ajax(url, ajaxOptions);
+    };
+
+    RDHelperAPI.prototype._handleAjaxResponse = function(jqXHR, successOrError, isAuth, callback) {
+      var responseCode, responseText;
+      responseText = jqXHR.responseText;
+      responseCode = jqXHR.status;
+      if (successOrError === 'success') {
+        if (isAuth) {
+          this._storeAuthToken(responseText);
         }
-      });
+        return callback(null, responseText);
+      } else {
+        return callback(responseCode, responseText);
+      }
+    };
+
+    RDHelperAPI.prototype._getAuthToken = function() {
+      var token;
+      token = RD.Helper.localStorage.get(this.tokenLocalStorageKey);
+      return token;
+    };
+
+    RDHelperAPI.prototype._storeAuthToken = function(responseText) {
+      var exception, responseJSON, token;
+      if (!responseText) {
+        return;
+      }
+      try {
+        responseJSON = JSON.parse(responseText);
+        if (responseJSON && responseJSON.token) {
+          token = responseJSON.token;
+          return RD.Helper.localStorage.set(this.tokenLocalStorageKey, token);
+        }
+      } catch (_error) {
+        exception = _error;
+        return rdError('exception during api token extraction', {
+          exception: exception
+        });
+      }
     };
 
     return RDHelperAPI;
@@ -183,6 +240,72 @@
   })();
 
   RD.Helper.API = new RDHelperAPI();
+
+}).call(this);
+
+(function() {
+  var RDHelperLocalStorage,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+  RDHelperLocalStorage = (function() {
+    function RDHelperLocalStorage(args) {
+      this.args = args;
+      this.clear = __bind(this.clear, this);
+      this.remove = __bind(this.remove, this);
+      this.set = __bind(this.set, this);
+      this.get = __bind(this.get, this);
+      this.getKey = __bind(this.getKey, this);
+      this.store = window.localStorage;
+    }
+
+    RDHelperLocalStorage.prototype.supportsLocalStorage = function() {
+      return typeof window.localStorage !== 'undefined';
+    };
+
+    RDHelperLocalStorage.prototype.getKey = function(key) {
+      var environment, fullKey;
+      environment = RD.config.environment;
+      fullKey = 'RD';
+      if (environment) {
+        fullKey += '-' + environment;
+      }
+      fullKey += '-' + key;
+      return fullKey;
+    };
+
+    RDHelperLocalStorage.prototype.get = function(key) {
+      var e, raw, val;
+      raw = this.store.getItem(this.getKey(key));
+      try {
+        val = JSON.parse(raw);
+        return val;
+      } catch (_error) {
+        e = _error;
+        rdError('local storage get exception');
+        return raw;
+      }
+    };
+
+    RDHelperLocalStorage.prototype.set = function(key, value) {
+      var fullKey, jsonValue;
+      fullKey = this.getKey(key);
+      jsonValue = JSON.stringify(value);
+      return this.store.setItem(fullKey, jsonValue);
+    };
+
+    RDHelperLocalStorage.prototype.remove = function(key) {
+      return this.store.removeItem(this.getKey(key));
+    };
+
+    RDHelperLocalStorage.prototype.clear = function() {
+      return this.store.clear();
+    };
+
+    return RDHelperLocalStorage;
+
+  })();
+
+  RD.Helper.localStorage = new RDHelperLocalStorage();
 
 }).call(this);
 
@@ -628,15 +751,26 @@
 }).call(this);
 
 (function() {
-  var __hasProp = {}.hasOwnProperty,
+  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   RD.View.Account = (function(_super) {
     __extends(Account, _super);
 
     function Account() {
+      this.postRender = __bind(this.postRender, this);
       return Account.__super__.constructor.apply(this, arguments);
     }
+
+    Account.prototype.postRender = function() {
+      return RD.Helper.API.get('test', {}, function(errorCode, response) {
+        return rdLog('test response', {
+          errorCode: errorCode,
+          response: response
+        });
+      });
+    };
 
     return Account;
 
@@ -709,7 +843,7 @@
         email: this.$('#email').val(),
         password: this.$('#password').val()
       };
-      RD.Helper.API.post('login', data, (function(_this) {
+      RD.Helper.API.postAuth('login', data, (function(_this) {
         return function(errorCode, responseText) {
           if (errorCode) {
             if (errorCode < 500) {
@@ -878,7 +1012,7 @@
         email: this.$('#email').val(),
         password: this.$('#password').val()
       };
-      RD.Helper.API.post('register', data, (function(_this) {
+      RD.Helper.API.postAuth('register', data, (function(_this) {
         return function(errorCode, responseText) {
           if (errorCode) {
             if (errorCode < 500) {

@@ -60,14 +60,14 @@ exports.register = (firstName, lastName, email, password, callback) ->
         passwordHash: passwordHash
         passwordResetCode: passwordResetCode
 
-      user.save (mongoError) ->
+      user.save (mongoError, savedUser) ->
         if mongoError
           if mongoError.code is 11000
             callback()
           else
             callback winston.makeMongoError mongoError
         else
-          callback null, user
+          callback null, savedUser
 
 #callback without error, but also without user means that either the email or the password is wrong.
 exports.login = (email, password, callback) ->
@@ -88,3 +88,14 @@ exports.login = (email, password, callback) ->
         callback()
       else
         callback null, user
+
+exports.getFullName = (user) ->
+  unless user then return ''
+
+  if user.firstName and user.lastName
+    return user.firstName + ' ' + user.lastName
+  else if user.firstName
+    return user.firstName
+  else if user.lastName
+    return 'M. ' + user.lastName
+  return ''
