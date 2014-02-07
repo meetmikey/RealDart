@@ -4,6 +4,7 @@ passport = require 'passport'
 LinkedInStrategy = require('passport-linkedin').Strategy
 winston = require('./winstonWrapper').winston
 LIUserModel = require(appDir + '/schema/liUser').LIUserModel
+routeUtils = require './routeUtils'
 conf = require appDir + '/conf'
 
 liConnect = this
@@ -11,7 +12,7 @@ liConnect = this
 passport.use new LinkedInStrategy
   consumerKey: conf.li.apiKey
   consumerSecret: conf.li.apiSecret
-  callbackURL: 'http://' + conf.host + ':' + conf.listenPort + '/auth/linkedIn/callback'
+  callbackURL: routeUtils.getProtocolHostAndPort() + '/auth/linkedIn/callback'
   , (token, tokenSecret, profile, done) ->
     liConnect.saveUserData token, tokenSecret, profile, (error, liUser) ->
       if error

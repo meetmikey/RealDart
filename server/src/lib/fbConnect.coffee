@@ -7,6 +7,7 @@ winston = require('./winstonWrapper').winston
 FBUserModel = require(appDir + '/schema/fbUser').FBUserModel
 UserModel = require(appDir + '/schema/user').UserModel
 fbHelpers = require './fbHelpers.js'
+routeUtils = require './routeUtils'
 conf = require appDir + '/conf'
 
 fbConnect = this
@@ -14,7 +15,7 @@ fbConnect = this
 passport.use new FacebookStrategy {
     clientID: conf.fb.app_id
     clientSecret: conf.fb.app_secret
-    callbackURL: 'http://' + conf.host + ':' + conf.listenPort + '/auth/facebook/callback'
+    callbackURL: routeUtils.getProtocolHostAndPort() + '/auth/facebook/callback'
     scope: [
       "user_about_me"
       "user_birthday"
@@ -53,8 +54,12 @@ passport.use new FacebookStrategy {
     ]
   } , (accessToken, refreshToken, profile, done) ->
 
-    fbConnect.saveUserData accessToken, refreshToken, profile, (err) =>
-        done err, profile
+    fbConnect.saveUserData accessToken, refreshToken, profile, (error) =>
+      if error
+        winston.handleError error
+        done 'internal error', profile
+      else
+        done null, profile
 
 exports.saveUserData = (accessToken, refreshToken, profile, callback) =>
 
@@ -67,16 +72,15 @@ exports.saveUserData = (accessToken, refreshToken, profile, callback) =>
   UserModel.findOneAndUpdate {fbUserId : userData._id}, 
     {$set : {fbUserId : userData._id, firstName : userData.first_name, lastName : userData.last_name}},
     {upsert : true},
-    (err, user) ->
+    (mongoError, user) ->
 
-      if err
-        callback winston.makeMongoError(err)
-      else
-        # save a fb user object
-        FBUserModel.findOneAndUpdate {_id : userData._id}, updateJSON, {upsert : true}, (err, fbUser) ->
-          if err
-            callback winston.makeMongoError(err)
-          else
-            fbHelpers.fetchAndSaveFriendData fbUser, (err, friends) ->
-              #TODO: save friends
-              callback()
+      if mongoError then callback winston.makeMongoError mongoError; return
+
+      # save a fb user object
+      FBUserModel.findOneAndUpdate {_id : userData._id}, updateJSON, {upsert : true}, (err, fbUser) ->
+        if err
+          callback winston.makeMongoError(err)
+        else
+          fbHelpers.fetchAndSaveFriendData fbUser, (err, friends) ->
+            #TODO: save friends
+            callback()

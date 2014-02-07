@@ -11,6 +11,12 @@ exports.getJWTSecret = () ->
   #https://github.com/auth0/node-jsonwebtoken
   conf.session.jwtSecret
 
+exports.sendOK = (res, actuallySendOK) ->
+  if actuallySendOK
+    res.send 200, JSON.stringify {status: ok}
+  else
+    res.send 200
+
 #Not a server error, but some failure.  Probably authentication failure.
 exports.sendFail = (res, error) ->
   error = error || ''
@@ -32,3 +38,26 @@ exports.sendUserToken = (res, user) ->
     expiresInMinutes: conf.session.expireTimeMinutes
   res.json
     token: token
+
+exports.sendCallbackHTML = (res, service, isSuccess) ->
+  status = 'fail'
+  if isSuccess
+    status = 'success'
+  targetOrigin = routeUtils.getProtocolHostAndPort()
+
+  res.render 'callback.html',
+    message: JSON.stringify
+      service: service
+      status: status
+    targetOrigin: targetOrigin
+
+
+exports.getProtocolHostAndPort = () ->
+  result = 'http'
+  if conf.server.useSSL
+    result += 's'
+  result += '://'
+  result += conf.server.host
+  if conf.server.listenPort
+    result += ':' + conf.server.listenPort
+  result

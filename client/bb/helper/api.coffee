@@ -12,23 +12,38 @@ class RDHelperAPI
     @_call 'get', path, data, false, callback
 
 
+  getProtocolHostAndPort: () ->
+    apiConfig = RD.config.api
+    result = 'http'
+    if apiConfig.useSSL
+      result += 's'
+    result += '://'
+    result += apiConfig.host
+    if apiConfig.port
+      result += ':' + apiConfig.port
+    result
+
   buildURL: (path, isAuth) =>
     unless path
       rdWarn 'Helper.API:buildURL: path missing'
       return ''
 
-    url = 'http'
-    if RD.config.api.useSSL
-      url += 's'
-    url += '://' + RD.config.api.host
-    if RD.config.api.port
-      url += ':' + RD.config.api.port
+    url = @getProtocolHostAndPort()
     if not isAuth
       url += '/api'
     if path[0] isnt '/'
       url += '/'
     url += path
     url
+
+  getJSONFromText: (text) =>
+    try
+      json = JSON.parse text
+    catch exception
+      rdError 'exception during json parsing',
+        exception: exception
+      json = {}
+    json
 
   _call: (type, path, data, isAuth, callback) =>
 
@@ -49,14 +64,7 @@ class RDHelperAPI
 
   _handleAjaxResponse: ( jqXHR, successOrError, isAuth, callback ) =>
     responseCode = jqXHR.status
-    responseText = jqXHR.responseText
-    
-    try
-      responseJSON = JSON.parse responseText
-    catch exception
-      rdError 'exception during response parsing',
-        exception: exception
-      responseJSON = {}
+    responseJSON = @getJSONFromText jqXHR.responseText
 
     if successOrError is 'success'
       if isAuth

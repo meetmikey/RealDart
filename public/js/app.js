@@ -129,6 +129,7 @@
       this._getAuthToken = __bind(this._getAuthToken, this);
       this._handleAjaxResponse = __bind(this._handleAjaxResponse, this);
       this._call = __bind(this._call, this);
+      this.getJSONFromText = __bind(this.getJSONFromText, this);
       this.buildURL = __bind(this.buildURL, this);
       this.get = __bind(this.get, this);
       this.post = __bind(this.post, this);
@@ -149,20 +150,28 @@
       return this._call('get', path, data, false, callback);
     };
 
+    RDHelperAPI.prototype.getProtocolHostAndPort = function() {
+      var apiConfig, result;
+      apiConfig = RD.config.api;
+      result = 'http';
+      if (apiConfig.useSSL) {
+        result += 's';
+      }
+      result += '://';
+      result += apiConfig.host;
+      if (apiConfig.port) {
+        result += ':' + apiConfig.port;
+      }
+      return result;
+    };
+
     RDHelperAPI.prototype.buildURL = function(path, isAuth) {
       var url;
       if (!path) {
         rdWarn('Helper.API:buildURL: path missing');
         return '';
       }
-      url = 'http';
-      if (RD.config.api.useSSL) {
-        url += 's';
-      }
-      url += '://' + RD.config.api.host;
-      if (RD.config.api.port) {
-        url += ':' + RD.config.api.port;
-      }
+      url = this.getProtocolHostAndPort();
       if (!isAuth) {
         url += '/api';
       }
@@ -171,6 +180,20 @@
       }
       url += path;
       return url;
+    };
+
+    RDHelperAPI.prototype.getJSONFromText = function(text) {
+      var exception, json;
+      try {
+        json = JSON.parse(text);
+      } catch (_error) {
+        exception = _error;
+        rdError('exception during json parsing', {
+          exception: exception
+        });
+        json = {};
+      }
+      return json;
     };
 
     RDHelperAPI.prototype._call = function(type, path, data, isAuth, callback) {
@@ -197,18 +220,9 @@
     };
 
     RDHelperAPI.prototype._handleAjaxResponse = function(jqXHR, successOrError, isAuth, callback) {
-      var exception, responseCode, responseJSON, responseText;
+      var responseCode, responseJSON;
       responseCode = jqXHR.status;
-      responseText = jqXHR.responseText;
-      try {
-        responseJSON = JSON.parse(responseText);
-      } catch (_error) {
-        exception = _error;
-        rdError('exception during response parsing', {
-          exception: exception
-        });
-        responseJSON = {};
-      }
+      responseJSON = this.getJSONFromText(jqXHR.responseText);
       if (successOrError === 'success') {
         if (isAuth) {
           this._storeAuthToken(responseJSON);
@@ -239,6 +253,32 @@
   })();
 
   RD.Helper.API = new RDHelperAPI();
+
+}).call(this);
+
+(function() {
+  Handlebars.registerHelper('ifCond', function(v1, operator, v2, options) {
+    switch (operator) {
+      case '==':
+        return (v1 === v2 ? options.fn(this) : options.inverse(this));
+      case '===':
+        return (v1 === v2 ? options.fn(this) : options.inverse(this));
+      case '<':
+        return (v1 < v2 ? options.fn(this) : options.inverse(this));
+      case '<=':
+        return (v1 <= v2 ? options.fn(this) : options.inverse(this));
+      case '>':
+        return (v1 > v2 ? options.fn(this) : options.inverse(this));
+      case '>=':
+        return (v1 >= v2 ? options.fn(this) : options.inverse(this));
+      case '&&':
+        return (v1 && v2 ? options.fn(this) : options.inverse(this));
+      case '||':
+        return (v1 || v2 ? options.fn(this) : options.inverse(this));
+      default:
+        return options.inverse(this);
+    }
+  });
 
 }).call(this);
 
@@ -758,16 +798,29 @@
     __extends(Account, _super);
 
     function Account() {
+      this.receiveMessage = __bind(this.receiveMessage, this);
+      this.removeMessageListener = __bind(this.removeMessageListener, this);
+      this.addMessageListener = __bind(this.addMessageListener, this);
       this.getTemplateData = __bind(this.getTemplateData, this);
       this.getUser = __bind(this.getUser, this);
+      this.teardown = __bind(this.teardown, this);
       this.preInitialize = __bind(this.preInitialize, this);
       return Account.__super__.constructor.apply(this, arguments);
     }
 
     Account.prototype.user = null;
 
+    Account.prototype.linkedInStatus = null;
+
+    Account.prototype.facebookStatus = null;
+
     Account.prototype.preInitialize = function() {
-      return this.getUser();
+      this.getUser();
+      return this.addMessageListener();
+    };
+
+    Account.prototype.teardown = function() {
+      return this.removeMessageListener();
     };
 
     Account.prototype.getUser = function() {
@@ -782,16 +835,63 @@
             return;
           }
           _this.user = new RD.Model.User(response.user);
+          if (_this.user.fbUserId) {
+            _this.facebookStatus = 'success';
+          }
+          if (_this.user.liUserId) {
+            _this.linkedInStatus = 'success';
+          }
           return _this.renderTemplate();
         };
       })(this));
     };
 
     Account.prototype.getTemplateData = function() {
-      var _ref;
-      return {
-        user: (_ref = this.user) != null ? _ref.decorate() : void 0
+      var data, _ref;
+      data = {
+        user: (_ref = this.user) != null ? _ref.decorate() : void 0,
+        linkedInStatus: this.linkedInStatus,
+        facebookStatus: this.facebookStatus
       };
+      rdLog('getTemplateData', {
+        data: data
+      });
+      return data;
+    };
+
+    Account.prototype.addMessageListener = function() {
+      return window.addEventListener('message', this.receiveMessage, false);
+    };
+
+    Account.prototype.removeMessageListener = function() {
+      return window.removeEventListener('message', this.receiveMessage);
+    };
+
+    Account.prototype.receiveMessage = function(event) {
+      var responseJSON, service, status;
+      rdLog('receiveMessage', {
+        event: event
+      });
+      if (event.origin !== RD.Helper.API.getProtocolHostAndPort()) {
+        return;
+      }
+      responseJSON = RD.Helper.API.getJSONFromText(event.data);
+      service = responseJSON != null ? responseJSON.service : void 0;
+      status = responseJSON != null ? responseJSON.status : void 0;
+      rdLog('service + status', {
+        service: service,
+        status: status
+      });
+      if (!(status && service)) {
+        return;
+      }
+      if (service === 'facebook') {
+        this.facebookStatus = status;
+      }
+      if (service === 'linkedIn') {
+        this.linkedInStatus = status;
+      }
+      return this.renderTemplate();
     };
 
     return Account;

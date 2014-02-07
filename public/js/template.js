@@ -13,10 +13,10 @@ function program1(depth0,data) {
 
   buffer += "<h3>"
     + escapeExpression(((stack1 = ((stack1 = (depth0 && depth0.user)),stack1 == null || stack1 === false ? stack1 : stack1.fullName)),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
-    + "</h3>\n\n<a href = \"auth/facebook\"> facebook connect </a> ";
-  stack2 = helpers['if'].call(depth0, ((stack1 = (depth0 && depth0.user)),stack1 == null || stack1 === false ? stack1 : stack1.fbUserId), {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data});
+    + "</h3>\n\n<a href = 'auth/facebook' target='_blank'> connect facebook </a> ";
+  stack2 = helpers['if'].call(depth0, (depth0 && depth0.facebookStatus), {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data});
   if(stack2 || stack2 === 0) { buffer += stack2; }
-  buffer += "\n<br>\n\n<a href = \"auth/linkedin\"> linkedin connect </a> ";
+  buffer += "\n<br>\n\n<a href = 'auth/linkedIn' target='_blank'> connect linkedIn </a> ";
   stack2 = helpers['if'].call(depth0, ((stack1 = (depth0 && depth0.user)),stack1 == null || stack1 === false ? stack1 : stack1.liUserId), {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data});
   if(stack2 || stack2 === 0) { buffer += stack2; }
   return buffer;
