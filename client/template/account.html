@@ -1,15 +1,38 @@
-<h3>{{user.fullName}}</h3>
+<h2>{{user.fullName}}</h2>
 
-<a href = 'auth/facebook' target='_blank'> connect facebook </a>
+<h3>Setup your account.  3 easy steps.</h3>
+
+<p>
+  Connect your accounts so that we can remind you to keep in touch with the people you know.
+</p>
+
+<a href = 'auth/gmail' target='_blank'>
+  <img src='img/connectEmail.png' />
+</a>
+{{#ifCond emailStatus '==' 'success'}}
+  <span class='success'>ok!</span>
+{{/ifCond}}
+{{#ifCond emailStatus '==' 'fail'}}
+  <span class='error'>fail!</span>
+{{/ifCond}}
+
+<br/><br/>
+
+<a href = 'auth/facebook' target='_blank'>
+  <img src='img/connectFacebook.png' />
+</a>
 {{#ifCond facebookStatus '==' 'success'}}
   <span class='success'>ok!</span>
 {{/ifCond}}
 {{#ifCond facebookStatus '==' 'fail'}}
   <span class='error'>fail!</span>
 {{/ifCond}}
-<br>
 
-<a href = 'auth/linkedIn' target='_blank'> connect linkedIn </a>
+<br/><br/>
+
+<a href = 'auth/linkedIn' target='_blank'>
+  <img src='img/connectLinkedIn.png' />
+</a>
 {{#ifCond linkedInStatus '==' 'success'}}
   <span class='success'>ok!</span>
 {{/ifCond}}

@@ -17,9 +17,17 @@ function program3(depth0,data) {
   return "\n  <span class='error'>fail!</span>\n";
   }
 
-  buffer += "<h3>"
+  buffer += "<h2>"
     + escapeExpression(((stack1 = ((stack1 = (depth0 && depth0.user)),stack1 == null || stack1 === false ? stack1 : stack1.fullName)),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
-    + "</h3>\n\n<a href = 'auth/facebook' target='_blank'> connect facebook </a>\n";
+    + "</h2>\n\n<h3>Setup your account.  3 easy steps.</h3>\n\n<p>\n  Connect your accounts so that we can remind you to keep in touch with the people you know.\n</p>\n\n<a href = 'auth/gmail' target='_blank'>\n  <img src='img/connectEmail.png' />\n</a>\n";
+  options = {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data};
+  stack2 = ((stack1 = helpers.ifCond || (depth0 && depth0.ifCond)),stack1 ? stack1.call(depth0, (depth0 && depth0.emailStatus), "==", "success", options) : helperMissing.call(depth0, "ifCond", (depth0 && depth0.emailStatus), "==", "success", options));
+  if(stack2 || stack2 === 0) { buffer += stack2; }
+  buffer += "\n";
+  options = {hash:{},inverse:self.noop,fn:self.program(3, program3, data),data:data};
+  stack2 = ((stack1 = helpers.ifCond || (depth0 && depth0.ifCond)),stack1 ? stack1.call(depth0, (depth0 && depth0.emailStatus), "==", "fail", options) : helperMissing.call(depth0, "ifCond", (depth0 && depth0.emailStatus), "==", "fail", options));
+  if(stack2 || stack2 === 0) { buffer += stack2; }
+  buffer += "\n\n<br/><br/>\n\n<a href = 'auth/facebook' target='_blank'>\n  <img src='img/connectFacebook.png' />\n</a>\n";
   options = {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data};
   stack2 = ((stack1 = helpers.ifCond || (depth0 && depth0.ifCond)),stack1 ? stack1.call(depth0, (depth0 && depth0.facebookStatus), "==", "success", options) : helperMissing.call(depth0, "ifCond", (depth0 && depth0.facebookStatus), "==", "success", options));
   if(stack2 || stack2 === 0) { buffer += stack2; }
@@ -27,7 +35,7 @@ function program3(depth0,data) {
   options = {hash:{},inverse:self.noop,fn:self.program(3, program3, data),data:data};
   stack2 = ((stack1 = helpers.ifCond || (depth0 && depth0.ifCond)),stack1 ? stack1.call(depth0, (depth0 && depth0.facebookStatus), "==", "fail", options) : helperMissing.call(depth0, "ifCond", (depth0 && depth0.facebookStatus), "==", "fail", options));
   if(stack2 || stack2 === 0) { buffer += stack2; }
-  buffer += "\n<br>\n\n<a href = 'auth/linkedIn' target='_blank'> connect linkedIn </a>\n";
+  buffer += "\n\n<br/><br/>\n\n<a href = 'auth/linkedIn' target='_blank'>\n  <img src='img/connectLinkedIn.png' />\n</a>\n";
   options = {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data};
   stack2 = ((stack1 = helpers.ifCond || (depth0 && depth0.ifCond)),stack1 ? stack1.call(depth0, (depth0 && depth0.linkedInStatus), "==", "success", options) : helperMissing.call(depth0, "ifCond", (depth0 && depth0.linkedInStatus), "==", "success", options));
   if(stack2 || stack2 === 0) { buffer += stack2; }
