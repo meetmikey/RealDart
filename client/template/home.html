@@ -1,5 +1,12 @@
 <h3>Welcome to RealDart</h3>
 
-<a href='#login'>login</a>
+RealDart is awesome.
+<br/>
 
-<a href='#register'>register</a>
+{{#unless isLoggedIn}}
+  <a href='#login'>login</a>
+  <br/>
+
+  <a href='#register'>register</a>
+  <br/>
+{{/unless}}

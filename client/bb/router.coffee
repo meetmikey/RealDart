@@ -28,6 +28,12 @@ class RD.Router extends Backbone.Router
       @_layout = new RD.View.MainLayout()
       @_layout.render()
 
+  #useful for login/logout events
+  renderHeader: =>
+    unless @_layout
+      return
+    @_layout.renderHeader()
+
   scrollToTop: =>
     $('html, body').animate { scrollTop: 0 }, 'slow'
 

@@ -39,9 +39,9 @@ postInit = () =>
     app.use express.methodOverride()
     app.use express.cookieSession
       secret:conf.express.secret
-    app.use express.static homeDir + '/../public'
+    app.use express.static homeDir + '/public'
     app.use express.compress()
-    app.set 'views', homeDir + '/../public/html'
+    app.set 'views', homeDir + '/public/html'
     app.use passport.initialize()
     app.use passport.session()
     app.use '/api', expressJwt

@@ -23,16 +23,14 @@ class RD.View.Login extends RD.View.Base
       email: @$('#email').val()
       password: @$('#password').val()
 
-    RD.Helper.API.postAuth 'login', data, (errorCode, response) =>
-      if errorCode 
-        if errorCode < 500
-          @showError response?.error
-        else
-          @showError 'server error'
+    RD.Helper.user.doAuth 'login', data, (error) =>
+      if error
+        @showError error
       else
         RD.router.navigate 'account',
           trigger: true
-
+        RD.router.renderHeader()
+    
     #prevent form submission
     false
 

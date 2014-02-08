@@ -6,6 +6,7 @@
     Collection: {},
     Decorator: {},
     Helper: {},
+    Global: {},
     View: {
       MainLayout: {}
     }
@@ -44,6 +45,7 @@
     function Router() {
       this.render = __bind(this.render, this);
       this.scrollToTop = __bind(this.scrollToTop, this);
+      this.renderHeader = __bind(this.renderHeader, this);
       this.renderLayout = __bind(this.renderLayout, this);
       this.account = __bind(this.account, this);
       this.register = __bind(this.register, this);
@@ -88,6 +90,13 @@
       }
     };
 
+    Router.prototype.renderHeader = function() {
+      if (!this._layout) {
+        return;
+      }
+      return this._layout.renderHeader();
+    };
+
     Router.prototype.scrollToTop = function() {
       return $('html, body').animate({
         scrollTop: 0
@@ -129,6 +138,7 @@
       this._getAuthToken = __bind(this._getAuthToken, this);
       this._handleAjaxResponse = __bind(this._handleAjaxResponse, this);
       this._call = __bind(this._call, this);
+      this.deleteAuthToken = __bind(this.deleteAuthToken, this);
       this.getJSONFromText = __bind(this.getJSONFromText, this);
       this.buildURL = __bind(this.buildURL, this);
       this.get = __bind(this.get, this);
@@ -139,6 +149,7 @@
     RDHelperAPI.prototype.tokenLocalStorageKey = 'token';
 
     RDHelperAPI.prototype.postAuth = function(path, data, callback) {
+      RD.Helper.user.clearUser();
       return this._call('post', path, data, true, callback);
     };
 
@@ -168,7 +179,7 @@
     RDHelperAPI.prototype.buildURL = function(path, isAuth) {
       var url;
       if (!path) {
-        rdWarn('Helper.API:buildURL: path missing');
+        rdWarn('Helper.api:buildURL: path missing');
         return '';
       }
       url = this.getProtocolHostAndPort();
@@ -196,6 +207,10 @@
       return json;
     };
 
+    RDHelperAPI.prototype.deleteAuthToken = function() {
+      return RD.Helper.localStorage.remove(this.tokenLocalStorageKey);
+    };
+
     RDHelperAPI.prototype._call = function(type, path, data, isAuth, callback) {
       var ajaxOptions, token, url;
       url = this.buildURL(path, isAuth);
@@ -220,16 +235,23 @@
     };
 
     RDHelperAPI.prototype._handleAjaxResponse = function(jqXHR, successOrError, isAuth, callback) {
-      var responseCode, responseJSON;
-      responseCode = jqXHR.status;
+      var errorCode, responseJSON;
+      errorCode = jqXHR.status;
       responseJSON = this.getJSONFromText(jqXHR.responseText);
-      if (successOrError === 'success') {
+      if (successOrError !== 'success') {
+        return callback(errorCode, responseJSON);
+      } else {
+        errorCode = null;
         if (isAuth) {
           this._storeAuthToken(responseJSON);
+          return RD.Helper.user.getUser(true, (function(_this) {
+            return function(getUserErrorCode, user) {
+              return callback(errorCode, responseJSON);
+            };
+          })(this));
+        } else {
+          return callback(errorCode, responseJSON);
         }
-        return callback(null, responseJSON);
-      } else {
-        return callback(responseCode, responseJSON);
       }
     };
 
@@ -252,7 +274,7 @@
 
   })();
 
-  RD.Helper.API = new RDHelperAPI();
+  RD.Helper.api = new RDHelperAPI();
 
 }).call(this);
 
@@ -398,6 +420,80 @@
 }).call(this);
 
 (function() {
+  var RDHelperUser,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+  RDHelperUser = (function() {
+    function RDHelperUser() {
+      this.doAuth = __bind(this.doAuth, this);
+      this.logout = __bind(this.logout, this);
+      this.clearUser = __bind(this.clearUser, this);
+      this.setUser = __bind(this.setUser, this);
+      this.getUser = __bind(this.getUser, this);
+    }
+
+    RDHelperUser.prototype.getUser = function(forceFetch, callback) {
+      if (RD.Global.user && !forceFetch) {
+        return RD.Global.user;
+      }
+      return RD.Helper.api.get('user', {}, (function(_this) {
+        return function(errorCode, response) {
+          if (errorCode) {
+            callback('');
+            return;
+          }
+          if (!(response != null ? response.user : void 0)) {
+            callback('missing user');
+            return;
+          }
+          _this.setUser(new RD.Model.User(response.user));
+          return callback(errorCode, RD.Global.user);
+        };
+      })(this));
+    };
+
+    RDHelperUser.prototype.setUser = function(user) {
+      return RD.Global.user = user;
+    };
+
+    RDHelperUser.prototype.clearUser = function() {
+      RD.Global.user = null;
+      return RD.Helper.api.deleteAuthToken();
+    };
+
+    RDHelperUser.prototype.logout = function() {
+      this.clearUser();
+      RD.router.navigate('login', {
+        trigger: true
+      });
+      return RD.router.renderHeader();
+    };
+
+    RDHelperUser.prototype.doAuth = function(apiCall, data, callback) {
+      return RD.Helper.api.postAuth(apiCall, data, (function(_this) {
+        return function(errorCode, response) {
+          if (errorCode) {
+            if (errorCode < 500) {
+              return callback(response != null ? response.error : void 0);
+            } else {
+              return callback('server error');
+            }
+          } else {
+            return callback();
+          }
+        };
+      })(this));
+    };
+
+    return RDHelperUser;
+
+  })();
+
+  RD.Helper.user = new RDHelperUser();
+
+}).call(this);
+
+(function() {
   var RDHelperUtils,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
@@ -503,6 +599,7 @@
       this._assignSubviewElement = __bind(this._assignSubviewElement, this);
       this._renderSubView = __bind(this._renderSubView, this);
       this._teardown = __bind(this._teardown, this);
+      this._continueRender = __bind(this._continueRender, this);
       this._addSubViewDefinitionAndName = __bind(this._addSubViewDefinitionAndName, this);
       this._initializeSubviews = __bind(this._initializeSubviews, this);
       this.getTemplateData = __bind(this.getTemplateData, this);
@@ -578,11 +675,19 @@
     };
 
     Base.prototype.render = function() {
-      this.preRender();
-      this.renderTemplate();
-      this.renderSubViews();
-      this.postRender();
-      return this;
+      if (this.preRenderAsync) {
+        return this.preRenderAsync((function(_this) {
+          return function(error) {
+            if (error) {
+              return;
+            }
+            return _this._continueRender();
+          };
+        })(this));
+      } else {
+        this.preRender();
+        return this._continueRender();
+      }
     };
 
     Base.prototype.renderTemplate = function() {
@@ -690,6 +795,8 @@
 
     Base.prototype.preRender = function() {};
 
+    Base.prototype.preRenderAsync = null;
+
     Base.prototype.postRender = function() {};
 
     Base.prototype.teardown = function() {};
@@ -731,6 +838,13 @@
         return;
       }
       return this.addSubView(name, subViewDefinition);
+    };
+
+    Base.prototype._continueRender = function() {
+      this.renderTemplate();
+      this.renderSubViews();
+      this.postRender();
+      return this;
     };
 
     Base.prototype._teardown = function() {
@@ -803,6 +917,7 @@
       this.addMessageListener = __bind(this.addMessageListener, this);
       this.getTemplateData = __bind(this.getTemplateData, this);
       this.getUser = __bind(this.getUser, this);
+      this.preRenderAsync = __bind(this.preRenderAsync, this);
       this.teardown = __bind(this.teardown, this);
       this.preInitialize = __bind(this.preInitialize, this);
       return Account.__super__.constructor.apply(this, arguments);
@@ -815,7 +930,6 @@
     Account.prototype.facebookStatus = null;
 
     Account.prototype.preInitialize = function() {
-      this.getUser();
       return this.addMessageListener();
     };
 
@@ -823,25 +937,26 @@
       return this.removeMessageListener();
     };
 
-    Account.prototype.getUser = function() {
-      return RD.Helper.API.get('user', {}, (function(_this) {
-        return function(errorCode, response) {
-          if (errorCode) {
+    Account.prototype.preRenderAsync = function(callback) {
+      return this.getUser(callback);
+    };
+
+    Account.prototype.getUser = function(callback) {
+      return RD.Helper.user.getUser(true, (function(_this) {
+        return function(error, user) {
+          if (error || !user) {
+            callback('fail');
             _this.bail();
             return;
           }
-          if (!(response != null ? response.user : void 0)) {
-            _this.bail();
-            return;
-          }
-          _this.user = new RD.Model.User(response.user);
+          _this.user = user;
           if (_this.user.fbUserId) {
             _this.facebookStatus = 'success';
           }
           if (_this.user.liUserId) {
             _this.linkedInStatus = 'success';
           }
-          return _this.renderTemplate();
+          return callback();
         };
       })(this));
     };
@@ -865,10 +980,10 @@
 
     Account.prototype.receiveMessage = function(event) {
       var responseJSON, service, status;
-      if (event.origin !== RD.Helper.API.getProtocolHostAndPort()) {
+      if (event.origin !== RD.Helper.api.getProtocolHostAndPort()) {
         return;
       }
-      responseJSON = RD.Helper.API.getJSONFromText(event.data);
+      responseJSON = RD.Helper.api.getJSONFromText(event.data);
       service = responseJSON != null ? responseJSON.service : void 0;
       status = responseJSON != null ? responseJSON.status : void 0;
       if (!(status && service)) {
@@ -890,15 +1005,23 @@
 }).call(this);
 
 (function() {
-  var __hasProp = {}.hasOwnProperty,
+  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   RD.View.Home = (function(_super) {
     __extends(Home, _super);
 
     function Home() {
+      this.getTemplateData = __bind(this.getTemplateData, this);
       return Home.__super__.constructor.apply(this, arguments);
     }
+
+    Home.prototype.getTemplateData = function() {
+      return {
+        isLoggedIn: RD.Global.user != null
+      };
+    };
 
     return Home;
 
@@ -954,18 +1077,15 @@
         email: this.$('#email').val(),
         password: this.$('#password').val()
       };
-      RD.Helper.API.postAuth('login', data, (function(_this) {
-        return function(errorCode, response) {
-          if (errorCode) {
-            if (errorCode < 500) {
-              return _this.showError(response != null ? response.error : void 0);
-            } else {
-              return _this.showError('server error');
-            }
+      RD.Helper.user.doAuth('login', data, (function(_this) {
+        return function(error) {
+          if (error) {
+            return _this.showError(error);
           } else {
-            return RD.router.navigate('account', {
+            RD.router.navigate('account', {
               trigger: true
             });
+            return RD.router.renderHeader();
           }
         };
       })(this));
@@ -1000,6 +1120,9 @@
     __extends(MainLayout, _super);
 
     function MainLayout() {
+      this.renderHeader = __bind(this.renderHeader, this);
+      this.getUser = __bind(this.getUser, this);
+      this.preRenderAsync = __bind(this.preRenderAsync, this);
       this.preInitialize = __bind(this.preInitialize, this);
       return MainLayout.__super__.constructor.apply(this, arguments);
     }
@@ -1019,6 +1142,22 @@
 
     MainLayout.prototype.preInitialize = function() {
       return this.setElement($('#rdContainer'));
+    };
+
+    MainLayout.prototype.preRenderAsync = function(callback) {
+      return this.getUser(callback);
+    };
+
+    MainLayout.prototype.getUser = function(callback) {
+      return RD.Helper.user.getUser(false, (function(_this) {
+        return function(error, user) {
+          return callback();
+        };
+      })(this));
+    };
+
+    MainLayout.prototype.renderHeader = function() {
+      return this.renderSubView('header');
     };
 
     return MainLayout;
@@ -1045,15 +1184,34 @@
 }).call(this);
 
 (function() {
-  var __hasProp = {}.hasOwnProperty,
+  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   RD.View.MainLayout.Header = (function(_super) {
     __extends(Header, _super);
 
     function Header() {
+      this.logout = __bind(this.logout, this);
+      this.getTemplateData = __bind(this.getTemplateData, this);
       return Header.__super__.constructor.apply(this, arguments);
     }
+
+    Header.prototype.events = {
+      'click #logout': 'logout'
+    };
+
+    Header.prototype.getTemplateData = function() {
+      var _ref;
+      return {
+        isLoggedIn: RD.Global.user != null,
+        user: (_ref = RD.Global.user) != null ? _ref.decorate() : void 0
+      };
+    };
+
+    Header.prototype.logout = function() {
+      return RD.Helper.user.logout();
+    };
 
     return Header;
 
@@ -1123,18 +1281,15 @@
         email: this.$('#email').val(),
         password: this.$('#password').val()
       };
-      RD.Helper.API.postAuth('register', data, (function(_this) {
-        return function(errorCode, response) {
-          if (errorCode) {
-            if (errorCode < 500) {
-              return _this.showError(response != null ? response.error : void 0);
-            } else {
-              return _this.showError('server error');
-            }
+      RD.Helper.user.doAuth('register', data, (function(_this) {
+        return function(error) {
+          if (error) {
+            return _this.showError(error);
           } else {
-            return RD.router.navigate('account', {
+            RD.router.navigate('account', {
               trigger: true
             });
+            return RD.router.renderHeader();
           }
         };
       })(this));
@@ -1172,6 +1327,9 @@
     RDUserDecorator.prototype.decorate = function(model) {
       var object;
       object = {};
+      object.firstName = model.get('firstName');
+      object.lastName = model.get('lastName');
+      object.email = model.get('email');
       object.fullName = model.getFullName();
       return object;
     };

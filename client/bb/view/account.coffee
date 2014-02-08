@@ -5,23 +5,24 @@ class RD.View.Account extends RD.View.Base
   facebookStatus: null
 
   preInitialize: =>
-    @getUser()
     @addMessageListener()
 
   teardown: =>
     @removeMessageListener()
 
-  getUser: =>
-    RD.Helper.API.get 'user', {}, (errorCode, response) =>
-      if errorCode then @bail(); return
-      unless response?.user then @bail(); return
-      
-      @user = new RD.Model.User response.user
+  preRenderAsync: (callback) =>
+    @getUser callback
+
+  getUser: (callback) =>
+    RD.Helper.user.getUser true, (error, user) =>
+      if error or not user then callback('fail'); @bail(); return
+
+      @user = user
       if @user.fbUserId
         @facebookStatus = 'success'
       if @user.liUserId
         @linkedInStatus = 'success'
-      @renderTemplate()
+      callback()
 
   getTemplateData: =>
     user: @user?.decorate()
@@ -35,10 +36,10 @@ class RD.View.Account extends RD.View.Base
     window.removeEventListener 'message', @receiveMessage
 
   receiveMessage: (event) =>
-    if event.origin isnt RD.Helper.API.getProtocolHostAndPort()
+    if event.origin isnt RD.Helper.api.getProtocolHostAndPort()
       return
 
-    responseJSON = RD.Helper.API.getJSONFromText event.data
+    responseJSON = RD.Helper.api.getJSONFromText event.data
     service = responseJSON?.service
     status = responseJSON?.status
 

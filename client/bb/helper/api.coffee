@@ -3,6 +3,9 @@ class RDHelperAPI
   tokenLocalStorageKey: 'token'
 
   postAuth: (path, data, callback) =>
+    #About to post an auth call (either login or register).
+    #Clear any user data first, to be safe.
+    RD.Helper.user.clearUser()
     @_call 'post', path, data, true, callback
 
   post: (path, data, callback) =>
@@ -25,7 +28,7 @@ class RDHelperAPI
 
   buildURL: (path, isAuth) =>
     unless path
-      rdWarn 'Helper.API:buildURL: path missing'
+      rdWarn 'Helper.api:buildURL: path missing'
       return ''
 
     url = @getProtocolHostAndPort()
@@ -45,6 +48,9 @@ class RDHelperAPI
       json = {}
     json
 
+  deleteAuthToken: =>
+    RD.Helper.localStorage.remove @tokenLocalStorageKey
+
   _call: (type, path, data, isAuth, callback) =>
 
     url = @buildURL path, isAuth
@@ -63,16 +69,24 @@ class RDHelperAPI
     $.ajax url, ajaxOptions
 
   _handleAjaxResponse: ( jqXHR, successOrError, isAuth, callback ) =>
-    responseCode = jqXHR.status
+    errorCode = jqXHR.status
     responseJSON = @getJSONFromText jqXHR.responseText
 
-    if successOrError is 'success'
+    if successOrError isnt 'success'
+      #in error case, send the errorCode as the error
+      callback errorCode, responseJSON
+
+    else
+      #if successful, we set the errorCode to null
+      errorCode = null
+
       if isAuth
         @_storeAuthToken responseJSON
-      callback null, responseJSON
-    else
-      #in error case, send the responseCode as the error
-      callback responseCode, responseJSON
+        #Go ahead and get the user, so it goes into RD.Global.user before we callback
+        RD.Helper.user.getUser true, (getUserErrorCode, user) =>
+          callback errorCode, responseJSON
+      else
+        callback errorCode, responseJSON
 
   _getAuthToken: =>
     token = RD.Helper.localStorage.get @tokenLocalStorageKey
@@ -84,4 +98,4 @@ class RDHelperAPI
     token = responseJSON.token
     RD.Helper.localStorage.set @tokenLocalStorageKey, token
 
-RD.Helper.API = new RDHelperAPI()
+RD.Helper.api = new RDHelperAPI()

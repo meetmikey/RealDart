@@ -5,5 +5,6 @@ window.RD =
   Collection: {}
   Decorator: {}
   Helper: {}
+  Global: {}
   View:
     MainLayout: {}

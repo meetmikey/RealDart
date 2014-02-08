@@ -15,8 +15,13 @@
         <li class="active"><a href="#">Home</a></li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
-        <li><a href="#home">About</a></li>
-      </ul>
+      {{#if isLoggedIn}}
+        <li><a href='#account'>Welcome, {{user.firstName}}</a></li>
+        <li><a href='#' id='logout'>logout</a></li>
+      {{else}}
+        <li><a href='#login'>login</a></li>
+      {{/if}}
+       </ul>
     </div><!--/.nav-collapse -->
   </div>
 </div>

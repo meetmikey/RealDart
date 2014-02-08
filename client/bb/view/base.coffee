@@ -44,11 +44,13 @@ class RD.View.Base extends Backbone.View
     @_selector = selector
 
   render: =>
-    @preRender()
-    @renderTemplate()
-    @renderSubViews()
-    @postRender()
-    this
+    if @preRenderAsync
+      @preRenderAsync (error) =>
+        if error then return
+        return @_continueRender()
+    else
+      @preRender()
+      return @_continueRender()
 
   renderTemplate: =>
     @$el.html @getRenderedTemplate()
@@ -123,6 +125,8 @@ class RD.View.Base extends Backbone.View
   preInitialize: =>
   postInitialize: =>
   preRender: =>
+  #Optionally define preRenderAsync as a replacement for preRender.  It should take and use a callback.
+  preRenderAsync: null
   postRender: =>
   teardown: =>
   getSubViewDefinitions: =>
@@ -160,6 +164,12 @@ class RD.View.Base extends Backbone.View
     unless subViewDefinition and name
       return
     @addSubView name, subViewDefinition
+
+  _continueRender: =>
+    @renderTemplate()
+    @renderSubViews()
+    @postRender()
+    this
 
   _teardown: =>
     @teardownSubViews()

@@ -13,3 +13,14 @@ class RD.View.MainLayout extends RD.View.Base
 
   preInitialize: =>
     @setElement $ '#rdContainer'
+
+  preRenderAsync: (callback) =>
+    @getUser callback
+
+  getUser: (callback) =>
+    RD.Helper.user.getUser false, (error, user) =>
+      callback()
+
+  #useful for login/logout events
+  renderHeader: =>
+    @renderSubView 'header'

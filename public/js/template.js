@@ -41,10 +41,18 @@ function program3(depth0,data) {
 this["RDTemplates"]["template/home.html"] = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
   this.compilerInfo = [4,'>= 1.0.0'];
 helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
+  var buffer = "", stack1, self=this;
+
+function program1(depth0,data) {
   
+  
+  return "\n  <a href='#login'>login</a>\n  <br/>\n\n  <a href='#register'>register</a>\n  <br/>\n";
+  }
 
-
-  return "<h3>Welcome to RealDart</h3>\n\n<a href='#login'>login</a>\n\n<a href='#register'>register</a>";
+  buffer += "<h3>Welcome to RealDart</h3>\n\nRealDart is awesome.\n<br/>\n\n";
+  stack1 = helpers.unless.call(depth0, (depth0 && depth0.isLoggedIn), {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data});
+  if(stack1 || stack1 === 0) { buffer += stack1; }
+  return buffer;
   });
 
 this["RDTemplates"]["template/login.html"] = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
@@ -77,10 +85,28 @@ helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
 this["RDTemplates"]["template/mainLayout/header.html"] = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
   this.compilerInfo = [4,'>= 1.0.0'];
 helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
+  var buffer = "", stack1, functionType="function", escapeExpression=this.escapeExpression, self=this;
+
+function program1(depth0,data) {
   
+  var buffer = "", stack1;
+  buffer += "\n        <li><a href='#account'>Welcome, "
+    + escapeExpression(((stack1 = ((stack1 = (depth0 && depth0.user)),stack1 == null || stack1 === false ? stack1 : stack1.firstName)),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
+    + "</a></li>\n        <li><a href='#' id='logout'>logout</a></li>\n      ";
+  return buffer;
+  }
 
+function program3(depth0,data) {
+  
+  
+  return "\n        <li><a href='#login'>login</a></li>\n      ";
+  }
 
-  return "<!-- Fixed navbar -->\n<div class=\"navbar navbar-default navbar-fixed-top\" role=\"navigation\">\n  <div class=\"container\">\n    <div class=\"navbar-header\">\n      <button type=\"button\" class=\"navbar-toggle\" data-toggle=\"collapse\" data-target=\".navbar-collapse\">\n        <span class=\"sr-only\">Toggle navigation</span>\n        <span class=\"icon-bar\"></span>\n        <span class=\"icon-bar\"></span>\n        <span class=\"icon-bar\"></span>\n      </button>\n      <a class=\"navbar-brand\" href=\"#\">RealDart</a>\n    </div>\n    <div class=\"navbar-collapse collapse\">\n      <ul class=\"nav navbar-nav\">\n        <li class=\"active\"><a href=\"#\">Home</a></li>\n      </ul>\n      <ul class=\"nav navbar-nav navbar-right\">\n        <li><a href=\"#home\">About</a></li>\n      </ul>\n    </div><!--/.nav-collapse -->\n  </div>\n</div>";
+  buffer += "<!-- Fixed navbar -->\n<div class=\"navbar navbar-default navbar-fixed-top\" role=\"navigation\">\n  <div class=\"container\">\n    <div class=\"navbar-header\">\n      <button type=\"button\" class=\"navbar-toggle\" data-toggle=\"collapse\" data-target=\".navbar-collapse\">\n        <span class=\"sr-only\">Toggle navigation</span>\n        <span class=\"icon-bar\"></span>\n        <span class=\"icon-bar\"></span>\n        <span class=\"icon-bar\"></span>\n      </button>\n      <a class=\"navbar-brand\" href=\"#\">RealDart</a>\n    </div>\n    <div class=\"navbar-collapse collapse\">\n      <ul class=\"nav navbar-nav\">\n        <li class=\"active\"><a href=\"#\">Home</a></li>\n      </ul>\n      <ul class=\"nav navbar-nav navbar-right\">\n      ";
+  stack1 = helpers['if'].call(depth0, (depth0 && depth0.isLoggedIn), {hash:{},inverse:self.program(3, program3, data),fn:self.program(1, program1, data),data:data});
+  if(stack1 || stack1 === 0) { buffer += stack1; }
+  buffer += "\n       </ul>\n    </div><!--/.nav-collapse -->\n  </div>\n</div>";
+  return buffer;
   });
 
 this["RDTemplates"]["template/register.html"] = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
