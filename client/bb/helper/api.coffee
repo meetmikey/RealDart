@@ -43,7 +43,7 @@ class RDHelperAPI
     try
       json = JSON.parse text
     catch exception
-      rdError 'exception during json parsing',
+      rdWarn 'exception during json parsing',
         exception: exception
       json = {}
     json

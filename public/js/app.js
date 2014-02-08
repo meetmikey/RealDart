@@ -199,7 +199,7 @@
         json = JSON.parse(text);
       } catch (_error) {
         exception = _error;
-        rdError('exception during json parsing', {
+        rdWarn('exception during json parsing', {
           exception: exception
         });
         json = {};
