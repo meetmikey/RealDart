@@ -59,7 +59,7 @@ passport.use new FacebookStrategy {
     fbConnect.saveUserAndQueueImport accessToken, refreshToken, profile, (error) ->
       if error
         winston.handleError error
-        done 'error while handling auth', profile
+        done 'server error', profile
       else
         done null, profile
 
@@ -82,12 +82,8 @@ exports.saveUserAndQueueImport = (accessToken, refreshToken, profile, callback) 
   FBUserModel.findOneAndUpdate select, updateJSON, options, (mongoError, fbUser) ->
     if mongoError then callback winston.makeMongoError mongoError; return
 
-    sqsUtils.addJobToQueue commonConf.queue.dataImport,
+    job =
       service: commonConstants.service.FACEBOOK
       fbUserId: fbUser._id
 
-    , (error) ->
-      callback error
-
-
-    #queue job should call fbHelpers.fetchAndSaveFriendData()
+    sqsUtils.addJobToQueue commonConf.queue.dataImport, job, callback
