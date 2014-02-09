@@ -19,12 +19,12 @@ sqsUtils = this
 #  --------------------------------------
 
 exports.addJobToQueue = ( queueName, job, callback ) ->
-  queue = _getQueue queueName
+  queue = sqsUtils._getQueue queueName
   unless queue then winston.doError 'missing queue', {queueName: queueName}; return
   sqsUtils._addMessageToQueue queue, queueName, job, 0, callback
 
 exports.pollQueue = ( queueName, handleMessage, maxWorkers, workerTimeout ) ->
-  queue = _getQueue queueName
+  queue = sqsUtils._getQueue queueName
   unless queue then winston.doError 'missing queue', {queueName: queueName}; return
   sqsUtils._pollQueue queue, queueName, handleMessage, maxWorkers, workerTimeout
 
@@ -52,7 +52,20 @@ exports.setStopSignalForQueue = (queueName, reason) ->
   sesUtils.sendInternalNotificationEmail msg, subject, (error) ->
     if error then winston.handlError error
 
+#This is called by appInitUtils.
+# So for any app that will do worker jobs, just include the HANDLE_SQS_WORKERS initAction
+exports.initWorkers = () ->
+  sqsUtils._workers = {}
+  sqsUtils._checkWorkersIntervals = {}
+  sqsUtils._stopSignalReceived = false
+  sqsUtils._stopWorkForQueueReceived = {}
 
+  for queueName of conf.queue
+    sqsUtils._stopWorkForQueueReceived[queueName] = false
+    sqsUtils._workers[queueName] = {}
+
+  process.on 'SIGUSR2', () ->
+  sqsUtils.stopSignal()
 
 
 # ALL PRIVATE BELOW HERE
@@ -66,21 +79,33 @@ exports.setStopSignalForQueue = (queueName, reason) ->
 # --------------------------------------
 
 exports._init = () ->
-  sqsUtils._workers = {}
-  sqsUtils._checkWorkersIntervals = {}
-  sqsUtils._stopSignalReceived = false
-  sqsUtils._stopWorkForQueueReceived = {}
 
+  winston.doInfo 'INIT!!!!!!!!!!!!!!!!!!!!!!'
+
+  sqsUtils._initQueues()
+
+exports._initQueues = () ->
   sqsUtils._queues = {}
+
+
+
   for queueName of conf.queue
-    queuePath = '/' + conf.aws.accountID + '/' + conf.aws.sqs.queueNamePrefix + '-' + queueName
+
+    winston.doInfo 'queueNameStuff',
+      prefix: conf.aws.sqs.queueNamePrefix
+      queueName: queueName
+      capitalizedQueueName: utils.capitalize queueName
+      confQueue: conf.queue
+
+    queuePath = '/' + conf.aws.accountId + '/' + conf.aws.sqs.queueNamePrefix + utils.capitalize queueName
     queueOptions =
       path: queuePath
 
+    winston.doInfo 'queueOptions',
+      queueOptions: queueOptions
+
     queue = aws.createSQSClient conf.aws.key, conf.aws.secret, queueOptions
     sqsUtils._queues[queueName] = queue
-    sqsUtils._stopWorkForQueueReceived[queueName] = false
-    sqsUtils._workers[queueName] = {}
 
 exports._getQueue = (queueName) ->
   sqsUtils._queues?[queueName]
@@ -141,7 +166,7 @@ exports._getMessageFromQueueNoRetry = ( queue, queueName, callback ) ->
       sqsUtils._handleTooManyDequeues queue, queueName, sqsMessage, callback
       return
 
-    messageBodyJSON = _getMessageBodyJSON sqsMessage
+    messageBodyJSON = sqsUtils._getMessageBodyJSON sqsMessage
     callback null, messageBodyJSON, sqsUtils._handleMessageDeletion
 
 
@@ -228,12 +253,12 @@ exports._isTooManyDequeues = (sqsMessage) ->
 
 
 exports._addMessageToQueue = ( queue, queueName, messageBodyJSON, delaySeconds, callback ) ->
-  utils.runWithRetries sqsUtils._addMessageToQueueNoRetry, constants.SQS_RETRIES, callback, queue, queueName, message, delaySeconds
+  utils.runWithRetries sqsUtils._addMessageToQueueNoRetry, constants.SQS_RETRIES, callback, queue, queueName, messageBodyJSON, delaySeconds
 
 exports._addMessageToQueueNoRetry = ( queue, queueName, messageBodyJSON, delaySeconds, callback ) ->
   if not queue then callback winston.makeMissingParamError('queue'); return
   if not queueName then callback winston.makeMissingParamError('queueName'); return
-  if not message then callback winston.makeMissingParamError('message'); return
+  if not messageBodyJSON then callback winston.makeMissingParamError('messageBodyJSON'); return
 
   messageBody = JSON.stringify messageBodyJSON
   sqsMessage =

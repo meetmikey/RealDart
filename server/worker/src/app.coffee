@@ -4,11 +4,13 @@ appInitUtils = require commonAppDir + '/lib/appInitUtils'
 winston = require(commonAppDir + '/lib/winstonWrapper').winston
 sqsUtils = require commonAppDir + '/lib/sqsUtils'
 commonConf = require commonAppDir + '/conf'
+commonConstants = require commonAppDir + '/constants'
 
 constants = require './constants'
 
 initActions = [
-  appInitUtils.CONNECT_MONGO
+  commonConstants.initAction.CONNECT_MONGO
+  commonConstants.initAction.HANDLE_SQS_WORKERS
 ]
 
 serverWorkerApp = this

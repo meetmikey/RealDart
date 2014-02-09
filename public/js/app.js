@@ -944,11 +944,15 @@
     Account.prototype.getUser = function(callback) {
       return RD.Helper.user.getUser(true, (function(_this) {
         return function(error, user) {
+          rdLog('account getUser', {
+            user: user
+          });
           if (error || !user) {
             callback('fail');
             _this.bail();
             return;
           }
+          rdLog('here');
           _this.user = user;
           if (_this.user.fbUserId) {
             _this.facebookStatus = 'success';

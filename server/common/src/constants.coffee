@@ -10,6 +10,7 @@ module.exports =
   DEFAULT_WORKER_TIMEOUT: 20*60*1000
   SQS_RETRIES: 5
   QUEUE_MAX_MESSAGE_RECEIVE_COUNT: 25
+  DEFAULT_RANDOM_ID_LENGTH: 10
 
   #Milliseconds to wait with one miss.  Will do exponential back-off if many misses.
   #A 'miss' is either an error or 'no message'
@@ -27,3 +28,7 @@ module.exports =
 
   message:
     SQS_ALL_WORKERS_DONE: 'All workers done.'
+
+  initAction:
+    CONNECT_MONGO: 'connectMongo'
+    HANDLE_SQS_WORKERS: 'handleSQSWorkers'

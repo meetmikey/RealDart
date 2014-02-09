@@ -5,7 +5,10 @@ FacebookStrategy = require('passport-facebook').Strategy
 
 winston = require(commonAppDir + '/lib/winstonWrapper').winston
 fbHelpers = require commonAppDir + '/lib/fbHelpers.js'
+sqsUtils = require commonAppDir + '/lib/sqsUtils.js'
+FBUserModel = require(commonAppDir + '/schema/fbUser').FBUserModel
 commonConf = require commonAppDir + '/conf'
+commonConstants = require commonAppDir + '/constants'
 
 routeUtils = require './routeUtils'
 
@@ -65,7 +68,8 @@ exports.saveUserAndQueueImport = (accessToken, refreshToken, profile, callback) 
   userData = profile._json
   userData._id = userData.id
   userData.accessToken = accessToken
-  userData.refreshToken = refreshToken
+  if refreshToken
+    userData.refreshToken = refreshToken
 
   select =
     _id: userData._id
@@ -75,11 +79,12 @@ exports.saveUserAndQueueImport = (accessToken, refreshToken, profile, callback) 
   options =
     upsert: true
 
-  FBUserModel.findOneAndUpdate select, updateJSON, options, (mongoError, user) ->
+  FBUserModel.findOneAndUpdate select, updateJSON, options, (mongoError, fbUser) ->
     if mongoError then callback winston.makeMongoError mongoError; return
 
-    sqsUtils.addMessageToQueue commonConf.queue.dataImport,
-      service: constants.service.FACEBOOK
+    sqsUtils.addJobToQueue commonConf.queue.dataImport,
+      service: commonConstants.service.FACEBOOK
+      fbUserId: fbUser._id
 
     , (error) ->
       callback error

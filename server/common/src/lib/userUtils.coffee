@@ -105,11 +105,15 @@ exports.getFullName = (user) ->
 exports.sanitizeUser = (user) ->
   unless user then return {}
 
-  delete user.__v
-  delete user._id
-  delete user.passwordHash
-  delete user.passwordResetCode
-  delete user.personId
-  delete user.timestamp
+  fieldsToRemove = [
+    '__v'
+    'passwordHash'
+    'passwordResetCode'
+    'personId'
+    'timestamp'
+  ]
+
+  for field in fieldsToRemove
+    user[field] = undefined
 
   user

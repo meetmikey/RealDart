@@ -1,5 +1,7 @@
 #!/usr/local/bin/node
 
+commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
+
 async = require 'async'
 
 utils = require '../lib/utils'
@@ -12,8 +14,10 @@ UserModel = require('../schema/user').UserModel
 EventDigestModel = require('../schema/eventDigest').EventDigestModel
 eventDigestHelpers = require '../lib/eventDigestHelpers'
 
+commonConstants = require commonAppDir + '/constants'
+
 initActions = [
-  appInitUtils.CONNECT_MONGO
+  commonConstants.initAction.CONNECT_MONGO
 ]
 
 digestDate = null

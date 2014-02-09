@@ -1,4 +1,8 @@
 commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
+publicDir = __dirname + '/public'
+
+console.log '__dirname: ' + __dirname
+console.log 'publicDir: ' + publicDir
 
 express = require 'express'
 expressJwt = require 'express-jwt'
@@ -11,6 +15,8 @@ appInitUtils = require commonAppDir + '/lib/appInitUtils'
 userUtils = require commonAppDir + '/lib/userUtils'
 winston = require(commonAppDir + '/lib/winstonWrapper').winston
 
+commonConstants = require commonAppDir + '/constants'
+
 liConnect = require './lib/liConnect'
 fbConnect = require './lib/fbConnect'
 routeUtils = require './lib/routeUtils'
@@ -18,7 +24,7 @@ routeUser = require './route/user'
 conf = require './conf'
 
 initActions = [
-  appInitUtils.CONNECT_MONGO
+  commonConstants.initAction.CONNECT_MONGO
 ]
 
 postInit = () =>
@@ -38,9 +44,9 @@ postInit = () =>
     app.use express.methodOverride()
     app.use express.cookieSession
       secret:conf.express.secret
-    app.use express.static __dirname + '/../public'
+    app.use express.static publicDir
     app.use express.compress()
-    app.set 'views', __dirname + '/../public/html'
+    app.set 'views', publicDir + '/html'
     app.use passport.initialize()
     app.use passport.session()
     app.use '/api', expressJwt
@@ -50,7 +56,7 @@ postInit = () =>
 
   #The home page (with the full backbone app)
   app.get '/', (req, res) ->
-    res.sendfile 'public/html/home.html'
+    res.sendfile publicDir + '/html/home.html'
 
   #Authentication
   app.post '/login', routeUser.login

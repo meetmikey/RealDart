@@ -3,6 +3,8 @@ commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
 userUtils = require commonAppDir + '/lib/userUtils'
 winston = require(commonAppDir + '/lib/winstonWrapper').winston
 
+UserModel = require(commonAppDir + '/schema/user').UserModel
+
 routeUtils = require '../lib/routeUtils'
 
 routeUser = this
@@ -50,5 +52,11 @@ exports.login = (req, res) ->
 #Auth has already happened.  Just send the user.
 exports.getUser = (req, res) ->
   unless req and req.user then res.send 400; return
-  res.send
-    user: userUtils.sanitizeUser req.user
+
+  UserModel.findById req.user._id, (mongoError, user) ->
+    if mongoError then winston.doMongoError mongoError, {}, res; return
+
+    sanitizedUser = userUtils.sanitizeUser user
+
+    routeUtils.sendOK res,
+      user: sanitizedUser

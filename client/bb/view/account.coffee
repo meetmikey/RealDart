@@ -15,7 +15,13 @@ class RD.View.Account extends RD.View.Base
 
   getUser: (callback) =>
     RD.Helper.user.getUser true, (error, user) =>
+
+      rdLog 'account getUser',
+        user: user
+
       if error or not user then callback('fail'); @bail(); return
+
+      rdLog 'here'
 
       @user = user
       if @user.fbUserId

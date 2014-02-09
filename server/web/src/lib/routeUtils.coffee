@@ -13,11 +13,9 @@ exports.getJWTSecret = () ->
   #https://github.com/auth0/node-jsonwebtoken
   conf.session.jwtSecret
 
-exports.sendOK = (res, actuallySendOK) ->
-  if actuallySendOK
-    res.send 200, JSON.stringify {status: ok}
-  else
-    res.send 200
+exports.sendOK = (res, data) ->
+  data = data || {ok: true}
+  res.send 200, JSON.stringify data
 
 #Not a server error, but some failure.  Probably authentication failure.
 exports.sendFail = (res, error) ->

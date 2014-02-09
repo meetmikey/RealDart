@@ -2,6 +2,8 @@ crypto = require 'crypto'
 dateFormat = require 'dateformat'
 constants = require '../constants'
 
+winston = require('./winstonWrapper').winston
+
 utils = this
 
 exports.isArray = ( input ) ->
@@ -18,6 +20,16 @@ exports.isObject = ( input ) ->
     return true
   return false
 
+exports.capitalize = (input) ->
+  unless input and ( input.length > 0 ) then return ''
+  capitalized = input[0].toUpperCase() + input.slice 1
+  capitalized
+
+exports.uncapitalize = (input) ->
+  unless input and ( input.length > 0 ) then return ''
+  capitalized = input[0].toLowerCase() + input.slice 1
+  capitalized
+
 exports.isString = ( input ) ->
   return Object.prototype.toString.call( input ) == '[object String]'
 
@@ -26,6 +38,20 @@ exports.getDateString = (dateInput) ->
   dateValue = dateInput || new Date()
   dateString = dateFormat dateInput, constants.DATE_FORMAT
   dateString
+
+exports.getRandomId = ( lengthInput ) ->
+  rand = Math.random()
+  date = Date.now()
+  seedString = rand.toString() + date.toString()
+
+  hash = utils.getHash seedString, 'md5'
+
+  length = constants.DEFAULT_RANDOM_ID_LENGTH
+  if lengthInput
+    length = lengthInput
+
+  hash = hash.substring 0, length
+  hash
 
 exports.getHash = (input, typeInput) ->
   unless input
@@ -93,7 +119,7 @@ exports.runWithRetriesCallback = ( func, numRemainingAttempts, callback, numPrev
       randomId: randomId
       numRemainingAttempts: numRemainingAttempts
       numFails: numFails
-      arg1: arg1
+      #arg1: arg1
       arg2: arg2
       arg3: arg3
     
