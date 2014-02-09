@@ -20,8 +20,8 @@ exports.doDataImportJob = (job, callback) ->
       dataImportHelpers.doFacebookDataImportJob job, callback
     when commonConstants.service.LINKED_IN
       dataImportHelpers.doLinkedInDataImportJob job, callback
-    when commonConstants.service.GMAIL
-      dataImportHelpers.doGmailDataImportJob job, callback
+    when commonConstants.service.GOOGLE
+      dataImportHelpers.doGoogleDataImportJob job, callback
     else
       callback winston.makeError 'invalid dataImport service',
         service: service
@@ -46,10 +46,10 @@ exports.doLinkedInDataImportJob = (job, callback) ->
   #TODO: write this...
   callback()
 
-exports.doGmailDataImportJob = (job, callback) ->
+exports.doGoogleDataImportJob = (job, callback) ->
   unless job then callback winston.makeMissingParamError 'job'; return
 
-  winston.doInfo 'doGmailDataImportJob',
+  winston.doInfo 'doGoogleDataImportJob',
     job: job
 
   #TODO: write this...

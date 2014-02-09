@@ -29,20 +29,21 @@ passport.use new LinkedInStrategy
 
 exports.saveUserAndQueueImport = (token, tokenSecret, profile, callback) ->
 
-  liUser = new LIUserModel profile
-  liUser._id =  profile.id
-  liUser.token = token
-  liUser.tokenSecret = tokenSecret
+  liUserId =  profile.id
+  liUserJSON = liHelpers.getUserJSONFromProfile profile
+  liUserJSON.token = token
+  liUserJSON.tokenSecret = tokenSecret
 
   select =
-    _id: liUser._id
+    _id: liUserId
 
-  updateJSON = liHelpers.getUpdateJSONForUser profile
+  update =
+    $set: liUserJSON
 
   options =
     upsert: true
 
-  LIUserModel.findOneAndUpdate select, updateJSON, options, (mongoError, liUser) ->
+  LIUserModel.findOneAndUpdate select, update, options, (mongoError, liUser) ->
     if mongoError then callback winston.makeMongoError mongoError; return
 
     job =

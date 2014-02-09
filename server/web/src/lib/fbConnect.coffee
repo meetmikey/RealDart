@@ -65,21 +65,22 @@ passport.use new FacebookStrategy {
 
 exports.saveUserAndQueueImport = (accessToken, refreshToken, profile, callback) ->
 
-  userData = profile._json
-  userData._id = userData.id
-  userData.accessToken = accessToken
+  fbUserId = profile.id
+  fbUserJSON = fbHelpers.getUserJSONFromProfile profile
+  fbUserJSON.accessToken = accessToken
   if refreshToken
-    userData.refreshToken = refreshToken
+    fbUserJSON.refreshToken = refreshToken
 
   select =
-    _id: userData._id
+    _id: fbUserId
 
-  updateJSON = fbHelpers.getUpdateJSONForUser userData
+  update =
+    $set: fbUserJSON
 
   options =
     upsert: true
 
-  FBUserModel.findOneAndUpdate select, updateJSON, options, (mongoError, fbUser) ->
+  FBUserModel.findOneAndUpdate select, update, options, (mongoError, fbUser) ->
     if mongoError then callback winston.makeMongoError mongoError; return
 
     job =

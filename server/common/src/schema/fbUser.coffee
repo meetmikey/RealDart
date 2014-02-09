@@ -5,6 +5,10 @@ FBLocation =
   id: {type: String}
   name: {type: String}
 
+FBUserName =
+  familyName: {type: String}
+  givenName: {type: String}
+
 
 #TODO: remove mixed types!!
 FBUser = new Schema
@@ -35,7 +39,7 @@ FBUser = new Schema
   current_location : {type: FBLocation}
   hometown_location : {type: FBLocation}
   middle_name : {type : String}
-  name: {type: String}
+  name: {type: FBUserName}
   name_format : {type : String}
   political : {type : String}
   quotes : {type : String}

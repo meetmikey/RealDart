@@ -1,6 +1,7 @@
 class RD.View.Account extends RD.View.Base
 
   user: null
+  googleStatus: null
   linkedInStatus: null
   facebookStatus: null
 
@@ -15,15 +16,11 @@ class RD.View.Account extends RD.View.Base
 
   getUser: (callback) =>
     RD.Helper.user.getUser true, (error, user) =>
-
-      rdLog 'account getUser',
-        user: user
-
       if error or not user then callback('fail'); @bail(); return
 
-      rdLog 'here'
-
       @user = user
+      if @user.googleUserId
+        @googleStatus = 'success'
       if @user.fbUserId
         @facebookStatus = 'success'
       if @user.liUserId
@@ -32,8 +29,9 @@ class RD.View.Account extends RD.View.Base
 
   getTemplateData: =>
     user: @user?.decorate()
-    linkedInStatus: @linkedInStatus
+    googleStatus: @googleStatus
     facebookStatus: @facebookStatus
+    linkedInStatus: @linkedInStatus
 
   addMessageListener: =>
     window.addEventListener 'message', @receiveMessage, false
@@ -42,6 +40,10 @@ class RD.View.Account extends RD.View.Base
     window.removeEventListener 'message', @receiveMessage
 
   receiveMessage: (event) =>
+
+    rdLog 'receiveMessage',
+      event: event
+
     if event.origin isnt RD.Helper.api.getProtocolHostAndPort()
       return
 
@@ -52,9 +54,14 @@ class RD.View.Account extends RD.View.Base
     unless status and service
       return
 
-    if service is 'facebook'
+    if service is 'google'
+      @googleStatus = status
+    else if service is 'facebook'
       @facebookStatus = status
-    if service is 'linkedIn'
+    else if service is 'linkedIn'
       @linkedInStatus = status
+
+    rdLog 'googleStatus',
+      googleStatus: @googleStatus
 
     @renderTemplate()

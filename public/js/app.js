@@ -925,6 +925,8 @@
 
     Account.prototype.user = null;
 
+    Account.prototype.googleStatus = null;
+
     Account.prototype.linkedInStatus = null;
 
     Account.prototype.facebookStatus = null;
@@ -944,16 +946,15 @@
     Account.prototype.getUser = function(callback) {
       return RD.Helper.user.getUser(true, (function(_this) {
         return function(error, user) {
-          rdLog('account getUser', {
-            user: user
-          });
           if (error || !user) {
             callback('fail');
             _this.bail();
             return;
           }
-          rdLog('here');
           _this.user = user;
+          if (_this.user.googleUserId) {
+            _this.googleStatus = 'success';
+          }
           if (_this.user.fbUserId) {
             _this.facebookStatus = 'success';
           }
@@ -969,8 +970,9 @@
       var _ref;
       return {
         user: (_ref = this.user) != null ? _ref.decorate() : void 0,
-        linkedInStatus: this.linkedInStatus,
-        facebookStatus: this.facebookStatus
+        googleStatus: this.googleStatus,
+        facebookStatus: this.facebookStatus,
+        linkedInStatus: this.linkedInStatus
       };
     };
 
@@ -984,6 +986,9 @@
 
     Account.prototype.receiveMessage = function(event) {
       var responseJSON, service, status;
+      rdLog('receiveMessage', {
+        event: event
+      });
       if (event.origin !== RD.Helper.api.getProtocolHostAndPort()) {
         return;
       }
@@ -993,12 +998,16 @@
       if (!(status && service)) {
         return;
       }
-      if (service === 'facebook') {
+      if (service === 'google') {
+        this.googleStatus = status;
+      } else if (service === 'facebook') {
         this.facebookStatus = status;
-      }
-      if (service === 'linkedIn') {
+      } else if (service === 'linkedIn') {
         this.linkedInStatus = status;
       }
+      rdLog('googleStatus', {
+        googleStatus: this.googleStatus
+      });
       return this.renderTemplate();
     };
 

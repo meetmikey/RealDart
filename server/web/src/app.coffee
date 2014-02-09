@@ -19,6 +19,7 @@ commonConstants = require commonAppDir + '/constants'
 
 liConnect = require './lib/liConnect'
 fbConnect = require './lib/fbConnect'
+googleConnect = require './lib/googleConnect'
 routeUtils = require './lib/routeUtils'
 routeUser = require './route/user'
 conf = require './conf'
@@ -68,16 +69,26 @@ postInit = () =>
   app.get '/api/user', routeUser.getUser
 
 
+  #Google
+  app.get '/auth/google', passport.authenticate 'google'
+  app.get '/auth/google/callback'
+    , passport.authenticate( 'google', {session: false, failureRedirect: '/auth/google/callbackFail'} )
+    , (req, res) ->
+        routeUtils.sendCallbackHTML res, commonConstants.service.GOOGLE, true
+  app.get '/auth/google/callbackFail'
+    , (req, res) ->
+        routeUtils.sendCallbackHTML res, commonConstants.service.GOOGLE, false
+
 
   #Facebook
   app.get '/auth/facebook', passport.authenticate 'facebook'
   app.get '/auth/facebook/callback'
     , passport.authenticate( 'facebook', {session: false, failureRedirect: '/auth/facebook/callbackFail'} )
     , (req, res) ->
-        routeUtils.sendCallbackHTML res, 'facebook', true
+        routeUtils.sendCallbackHTML res, commonConstants.service.FACEBOOK, true
   app.get '/auth/facebook/callbackFail'
     , (req, res) ->
-        routeUtils.sendCallbackHTML res, 'facebook', false
+        routeUtils.sendCallbackHTML res, commonConstants.service.FACEBOOK, false
 
 
   #LinkedIn
@@ -85,10 +96,10 @@ postInit = () =>
   app.get '/auth/linkedIn/callback'
     , passport.authenticate( 'linkedin', {session: false, failureRedirect: '/auth/linkedIn/callbackFail'} )
     , (req, res) ->
-        routeUtils.sendCallbackHTML res, 'linkedIn', true
+        routeUtils.sendCallbackHTML res, commonConstants.service.LINKED_IN, true
   app.get '/auth/linkedIn/callbackFail'
     , (req, res) ->
-        routeUtils.sendCallbackHTML res, 'linkedIn', false
+        routeUtils.sendCallbackHTML res, commonConstants.service.LINKED_IN, false
 
 
   #Start 'er up

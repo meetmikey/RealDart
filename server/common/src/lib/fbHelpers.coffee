@@ -23,13 +23,26 @@ exports.getFriendsFromFQLResponse = (fqlResponse) ->
 
   friends
 
-# given a user object, get the json for updating mongo
-exports.getUpdateJSONForUser = (userData) ->
-  updateJSON = {'$set' : {}}
-  for k, v of userData
-    if k != '_id'
-      updateJSON['$set'][k] = v
-  updateJSON
+exports.getUserJSONFromProfile = (profile) ->
+  userJSON = {}
+  omitKeys = [
+    '_id'
+    '_raw'
+    '_json'
+  ]
+  for key, value of profile
+    if omitKeys.indexOf( key ) isnt -1
+      continue
+    else
+      userJSON[key] = value
+
+
+  winston.doInfo 'fbHelpers: getUserJSONFromProfile',
+    profile: profile
+    userJSON: userJSON
+
+
+  userJSON
 
 
 # exchange short-lived access token for long-lived (60 day) token

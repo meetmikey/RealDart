@@ -6,13 +6,13 @@
   Connect your accounts so that we can remind you to keep in touch with the people you know.
 </p>
 
-<a href = 'auth/gmail' target='_blank'>
+<a href = 'auth/google' target='_blank'>
   <img src='img/connectEmail.png' />
 </a>
-{{#ifCond emailStatus '==' 'success'}}
+{{#ifCond googleStatus '==' 'success'}}
   <span class='success'>ok!</span>
 {{/ifCond}}
-{{#ifCond emailStatus '==' 'fail'}}
+{{#ifCond googleStatus '==' 'fail'}}
   <span class='error'>fail!</span>
 {{/ifCond}}
 

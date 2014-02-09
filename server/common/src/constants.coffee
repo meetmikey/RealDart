@@ -24,7 +24,7 @@ module.exports =
   service:
     FACEBOOK: 'facebook'
     LINKED_IN: 'linkedIn'
-    GMAIL: 'gmail'
+    GOOGLE: 'google'
 
   message:
     SQS_ALL_WORKERS_DONE: 'All workers done.'
