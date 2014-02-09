@@ -84,8 +84,6 @@ exports._init = () ->
 exports._initQueues = () ->
   sqsUtils._queues = {}
 
-
-
   for queueName of conf.queue
     queuePath = '/' + conf.aws.accountId + '/' + conf.aws.sqs.queueNamePrefix + utils.capitalize queueName
     queueOptions =
@@ -159,14 +157,14 @@ exports._getMessageFromQueueNoRetry = ( queue, queueName, callback ) ->
 
 exports._getMessageBodyJSON = (sqsMessage) ->
   messageBody = sqsUtils._getSQSMessageAttribute sqsMessage, 'Body'
-  unless messageBody then return {}
+  unless messageBody then return null
 
   try
     messageBodyJSON = JSON.parse messageBody
   catch exception
     winston.doError 'sqs message body parse exception',
       exception: exception
-    messageBodyJSON = {}
+    messageBodyJSON = null
 
   messageBodyJSON
 
@@ -406,7 +404,7 @@ exports._checkWorkers = ( queue, queueName, handleMessage, maxWorkers, workerTim
 
   else
     numWorkers = 0
-    for workerId in sqsUtils._workers[queueName]
+    for workerId, workerInfo of sqsUtils._workers[queueName]
       workerInfo = sqsUtils._workers[queueName][workerId]
 
       lastContactTime = workerInfo['lastContactTime']
