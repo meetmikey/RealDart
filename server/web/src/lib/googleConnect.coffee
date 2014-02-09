@@ -37,10 +37,6 @@ exports.saveUserAndQueueImport = (identifierURL, profile, callback) ->
   update =
     $set: googleUserJSON
 
-  winston.doInfo 'saveUserAndQueueImport',
-    profile: profile
-    _id: googleUserId
-
   options =
     upsert: true
 

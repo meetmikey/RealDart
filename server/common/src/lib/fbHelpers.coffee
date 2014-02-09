@@ -35,13 +35,6 @@ exports.getUserJSONFromProfile = (profile) ->
       continue
     else
       userJSON[key] = value
-
-
-  winston.doInfo 'fbHelpers: getUserJSONFromProfile',
-    profile: profile
-    userJSON: userJSON
-
-
   userJSON
 
 

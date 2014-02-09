@@ -40,10 +40,6 @@ class RD.View.Account extends RD.View.Base
     window.removeEventListener 'message', @receiveMessage
 
   receiveMessage: (event) =>
-
-    rdLog 'receiveMessage',
-      event: event
-
     if event.origin isnt RD.Helper.api.getProtocolHostAndPort()
       return
 
@@ -60,8 +56,5 @@ class RD.View.Account extends RD.View.Base
       @facebookStatus = status
     else if service is 'linkedIn'
       @linkedInStatus = status
-
-    rdLog 'googleStatus',
-      googleStatus: @googleStatus
 
     @renderTemplate()

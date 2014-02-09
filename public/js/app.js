@@ -986,9 +986,6 @@
 
     Account.prototype.receiveMessage = function(event) {
       var responseJSON, service, status;
-      rdLog('receiveMessage', {
-        event: event
-      });
       if (event.origin !== RD.Helper.api.getProtocolHostAndPort()) {
         return;
       }
@@ -1005,9 +1002,6 @@
       } else if (service === 'linkedIn') {
         this.linkedInStatus = status;
       }
-      rdLog('googleStatus', {
-        googleStatus: this.googleStatus
-      });
       return this.renderTemplate();
     };
 
