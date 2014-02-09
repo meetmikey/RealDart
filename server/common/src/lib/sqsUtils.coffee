@@ -65,7 +65,7 @@ exports.initWorkers = () ->
     sqsUtils._workers[queueName] = {}
 
   process.on 'SIGUSR2', () ->
-  sqsUtils.stopSignal()
+    sqsUtils.stopSignal()
 
 
 # ALL PRIVATE BELOW HERE
@@ -79,9 +79,6 @@ exports.initWorkers = () ->
 # --------------------------------------
 
 exports._init = () ->
-
-  winston.doInfo 'INIT!!!!!!!!!!!!!!!!!!!!!!'
-
   sqsUtils._initQueues()
 
 exports._initQueues = () ->
@@ -90,20 +87,9 @@ exports._initQueues = () ->
 
 
   for queueName of conf.queue
-
-    winston.doInfo 'queueNameStuff',
-      prefix: conf.aws.sqs.queueNamePrefix
-      queueName: queueName
-      capitalizedQueueName: utils.capitalize queueName
-      confQueue: conf.queue
-
     queuePath = '/' + conf.aws.accountId + '/' + conf.aws.sqs.queueNamePrefix + utils.capitalize queueName
     queueOptions =
       path: queuePath
-
-    winston.doInfo 'queueOptions',
-      queueOptions: queueOptions
-
     queue = aws.createSQSClient conf.aws.key, conf.aws.secret, queueOptions
     sqsUtils._queues[queueName] = queue
 
@@ -167,7 +153,8 @@ exports._getMessageFromQueueNoRetry = ( queue, queueName, callback ) ->
       return
 
     messageBodyJSON = sqsUtils._getMessageBodyJSON sqsMessage
-    callback null, messageBodyJSON, sqsUtils._handleMessageDeletion
+    callback null, messageBodyJSON, (handleMessageError, callback) ->
+      sqsUtils._handleMessageDeletion queue, queueName, sqsMessage, handleMessageError, callback
 
 
 exports._getMessageBodyJSON = (sqsMessage) ->
@@ -184,8 +171,10 @@ exports._getMessageBodyJSON = (sqsMessage) ->
   messageBodyJSON
 
 
-exports._handleMessageDeletion = (error, callback) ->
-  unless sqsUtils._shouldDeleteFromQueue error
+exports._handleMessageDeletion = (queue, queueName, sqsMessage, handleMessageError, callback) ->
+  unless sqsMessage then callback(); return
+
+  unless sqsUtils._shouldDeleteFromQueue handleMessageError
     # Call this so we can get a new message anyway despite the fact that
     # we have opted not to delete the message from the queue
     callback()
@@ -193,8 +182,6 @@ exports._handleMessageDeletion = (error, callback) ->
     
   receiptHandle = sqsUtils._getSQSMessageAttribute sqsMessage, 'ReceiptHandle'
   unless receiptHandle
-    winston.doError 'no receipt handle!',
-      sqsMessage: sqsMessage
     return
 
   sqsUtils._deleteMessageFromQueue queue, queueName, sqsMessage, callback
@@ -298,8 +285,9 @@ exports._deleteMessageFromQueueNoRetry = ( queue, queueName, sqsMessage, callbac
   outbound =
     ReceiptHandle: receiptHandle
 
-  winston.doInfo 'deleting message from queue...',
-    receiptHandle: receiptHandle
+  winston.doInfo 'deleting message from queue',
+
+
   queue.call 'DeleteMessage', outbound, (sqsError) ->
     if sqsError
       winston.doError 'got error from DeleteMessage',
@@ -314,7 +302,7 @@ exports._deleteMessageFromQueueNoRetry = ( queue, queueName, sqsMessage, callbac
       callback()
 
 exports._getSQSMessageAttribute = ( sqsMessage, attribute ) ->
-  return sqsMessage?.ReceiveMessageResult?.Message[attribute]
+  return sqsMessage?.ReceiveMessageResult?.Message?[attribute]
 
 
 

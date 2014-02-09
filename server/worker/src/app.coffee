@@ -6,6 +6,8 @@ sqsUtils = require commonAppDir + '/lib/sqsUtils'
 commonConf = require commonAppDir + '/conf'
 commonConstants = require commonAppDir + '/constants'
 
+dataImportHelpers = require './lib/dataImportHelpers'
+
 constants = require './constants'
 
 initActions = [
@@ -38,5 +40,6 @@ exports.doJob = (job, queueName, callback) ->
       winston.doError 'unsupported queueName',
         queueName: queueName
         job: job
+      callback()
 
-appInitUtils.initApp 'workerApp', initActions, commonConf, serverWorkerApp.postInit
+appInitUtils.initApp 'workerApp', initActions, serverWorkerApp.postInit

@@ -53,6 +53,17 @@ exports.getRandomId = ( lengthInput ) ->
   hash = hash.substring 0, length
   hash
 
+exports.getUniqueId = () ->
+  uniqueId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace /[xy]/g, (c) ->
+    r = Math.random()*16|0
+    if c is 'x'
+      v = c = r
+    else
+      v = c = (r&0x3|0x8)
+    uniqueId = v.toString 16
+    uniqueId
+  uniqueId
+
 exports.getHash = (input, typeInput) ->
   unless input
     winston.doWarn 'utils: getHash: no input!'

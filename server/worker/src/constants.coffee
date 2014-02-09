@@ -1,2 +1,2 @@
 module.exports = 
-  MAX_WORKERS_PER_QUEUE: 20
+  MAX_WORKERS_PER_QUEUE: 1
