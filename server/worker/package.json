@@ -1,0 +1,12 @@
+{
+  "name": "RealDart_ServerWorker",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+      "grunt-contrib-watch": "~>0.5.3"
+    , "grunt-contrib-coffee": "~>0.9.0"
+  },
+  "engines": {
+    "node": "0.10.21"
+  }
+}

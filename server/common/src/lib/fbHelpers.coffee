@@ -1,11 +1,12 @@
-appDir = process.env['REAL_DART_HOME'] + '/app'
+commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
 
-graph = require 'fbgraph'
-winston = require('./winstonWrapper').winston
-FBUserModel = require(appDir + '/schema/fbUser').FBUserModel
 async = require 'async'
-conf = require appDir + '/conf'
+graph = require 'fbgraph'
 _ = require 'underscore'
+
+winston = require(commonAppDir + '/lib/winstonWrapper').winston
+FBUserModel = require(commonAppDir + '/schema/fbUser').FBUserModel
+commonConf = require commonAppDir + '/conf'
 
 fbHelpers = this
 
@@ -35,8 +36,8 @@ exports.getUpdateJSONForUser = (userData) ->
 exports.extendToken = (accessToken, cb) ->
   graph.extendAccessToken {
     "access_token" : accessToken
-    "client_id" : conf.fb.app_id
-    "client_secret" : conf.fb.app_secret
+    "client_id" : commonConf.fb.app_id
+    "client_secret" : commonConf.fb.app_secret
   }, (err, facebookRes) ->
       if err
         cb winston.makeError(err)
@@ -150,7 +151,7 @@ exports.saveFriendData = (fbUser, friends, callback) ->
         else
           asyncCb()
     (asyncCb) ->
-      fbUser.friends = _.pluck(friends, '_id')
+      fbUser.friends = _.pluck friends, '_id'
       fbUser.save (err)->
         if err
           asyncCb winston.makeMongoError(err)

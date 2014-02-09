@@ -1,18 +1,19 @@
-appDir = process.env['REAL_DART_HOME'] + '/app'
+commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
 
-graph = require 'fbgraph'
 passport = require 'passport'
 FacebookStrategy = require('passport-facebook').Strategy
-winston = require('./winstonWrapper').winston
-fbHelpers = require './fbHelpers.js'
+
+winston = require(commonAppDir + '/lib/winstonWrapper').winston
+fbHelpers = require commonAppDir + '/lib/fbHelpers.js'
+commonConf = require commonAppDir + '/conf'
+
 routeUtils = require './routeUtils'
-conf = require appDir + '/conf'
 
 fbConnect = this
 
 passport.use new FacebookStrategy {
-    clientID: conf.fb.app_id
-    clientSecret: conf.fb.app_secret
+    clientID: commonConf.fb.app_id
+    clientSecret: commonConf.fb.app_secret
     callbackURL: routeUtils.getProtocolHostAndPort() + '/auth/facebook/callback'
     scope: [
       "user_about_me"
@@ -77,7 +78,7 @@ exports.saveUserAndQueueImport = (accessToken, refreshToken, profile, callback) 
   FBUserModel.findOneAndUpdate select, updateJSON, options, (mongoError, user) ->
     if mongoError then callback winston.makeMongoError mongoError; return
 
-    sqsUtils.addMessageToQueue conf.queue.dataImport,
+    sqsUtils.addMessageToQueue commonConf.queue.dataImport,
       service: constants.service.FACEBOOK
 
     , (error) ->

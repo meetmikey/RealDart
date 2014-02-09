@@ -1,8 +1,9 @@
+
 aws = require 'aws-lib'
 os = require 'os'
 sesUtils = require './sesUtils'
 
-winston = require './winstonWrapper'.winston
+winston = require('./winstonWrapper').winston
 utils = require('./utils')
 
 QueueFailModel = require('../schema/queueFail').QueueFailModel
@@ -17,10 +18,10 @@ sqsUtils = this
 #  Public queue functions
 #  --------------------------------------
 
-exports.addMessageToQueue = ( queueName, message, callback ) ->
+exports.addJobToQueue = ( queueName, job, callback ) ->
   queue = _getQueue queueName
   unless queue then winston.doError 'missing queue', {queueName: queueName}; return
-  sqsUtils._addMessageToQueue queue, queueName, message, 0, callback
+  sqsUtils._addMessageToQueue queue, queueName, job, 0, callback
 
 exports.pollQueue = ( queueName, handleMessage, maxWorkers, workerTimeout ) ->
   queue = _getQueue queueName
@@ -140,8 +141,22 @@ exports._getMessageFromQueueNoRetry = ( queue, queueName, callback ) ->
       sqsUtils._handleTooManyDequeues queue, queueName, sqsMessage, callback
       return
 
-    messageBody = sqsUtils._getSQSMessageAttribute sqsMessage, 'Body'
-    callback null, messageBody, sqsUtils._handleMessageDeletion
+    messageBodyJSON = _getMessageBodyJSON sqsMessage
+    callback null, messageBodyJSON, sqsUtils._handleMessageDeletion
+
+
+exports._getMessageBodyJSON = (sqsMessage) ->
+  messageBody = sqsUtils._getSQSMessageAttribute sqsMessage, 'Body'
+  unless messageBody then return {}
+
+  try
+    messageBodyJSON = JSON.parse messageBody
+  catch exception
+    winston.doError 'sqs message body parse exception',
+      exception: exception
+    messageBodyJSON = {}
+
+  messageBodyJSON
 
 
 exports._handleMessageDeletion = (error, callback) ->
@@ -166,11 +181,11 @@ exports._handleTooManyDequeues = (queue, queueName, sqsMessage, callback) ->
   if not queueName then callback winston.makeMissingParamError('queueName'); return
   if not sqsMessage then callback winston.makeMissingParamError('sqsMessage'); return
   
-  messageBody = sqsUtils._getSQSMessageAttribute sqsMessage, 'Body'
+  messageBodyJSON = sqsUtils._getMessageBodyJSON sqsMessage
 
   queueFail = new QueueFailModel
     queueName: queueName
-    messageBody: JSON.stringify messageBody
+    messageBody: JSON.stringify messageBodyJSON
 
   winston.doError 'Not processing and deleting queue message b/c it has been requeued too many times',
     sqsMessage: sqsMessage
@@ -212,15 +227,15 @@ exports._isTooManyDequeues = (sqsMessage) ->
   return false
 
 
-exports._addMessageToQueue = ( queue, queueName, message, delaySeconds, callback ) ->
+exports._addMessageToQueue = ( queue, queueName, messageBodyJSON, delaySeconds, callback ) ->
   utils.runWithRetries sqsUtils._addMessageToQueueNoRetry, constants.SQS_RETRIES, callback, queue, queueName, message, delaySeconds
 
-exports._addMessageToQueueNoRetry = ( queue, queueName, message, delaySeconds, callback ) ->
+exports._addMessageToQueueNoRetry = ( queue, queueName, messageBodyJSON, delaySeconds, callback ) ->
   if not queue then callback winston.makeMissingParamError('queue'); return
   if not queueName then callback winston.makeMissingParamError('queueName'); return
   if not message then callback winston.makeMissingParamError('message'); return
 
-  messageBody = JSON.stringify message
+  messageBody = JSON.stringify messageBodyJSON
   sqsMessage =
     MessageBody: messageBody
 
@@ -229,7 +244,7 @@ exports._addMessageToQueueNoRetry = ( queue, queueName, message, delaySeconds, c
 
   queue.call 'SendMessage', sqsMessage, ( sqsError, result ) ->
     winston.doInfo 'Sent message to queue',
-      messageBody: messageBody
+      messageBodyJSON: messageBodyJSON
     if callback
       winstonError = null
       if sqsError
@@ -308,20 +323,20 @@ exports._workQueue = ( workerId, queue, queueName, maxWorkers, handleMessage, pr
     sqsUtils._updateWorkerLastContactTime workerId, queue, queueName, maxWorkers, handleMessage, true
     hasCalledBack = false
 
-    sqsUtils._getMessageFromQueue queue, queueName, ( error, messageBody, messageCallback ) ->
+    sqsUtils._getMessageFromQueue queue, queueName, ( error, messageBodyJSON, messageCallback ) ->
       sqsUtils._updateWorkerLastContactTime workerId, queue, queueName, maxWorkers, handleMessage
       if error
         winston.handleError error
         sqsUtils._reworkQueue workerId, queue, queueName, maxWorkers, handleMessage, true, previousConsecutiveMisses
 
-      else if not messageBody
+      else if not messageBodyJSON
         sqsUtils._reworkQueue workerId, queue, queueName, maxWorkers, handleMessage, true, previousConsecutiveMisses
 
       else
-        sqsUtils._workers[queueName][workerId]['messageBody'] = messageBody
-        handleMessage messageBody, (error) ->
+        sqsUtils._workers[queueName][workerId]['messageBodyJSON'] = messageBodyJSON
+        handleMessage messageBodyJSON, (error) ->
           if sqsUtils._workers[queueName][workerId]
-            sqsUtils._workers[queueName][workerId]['messageBody'] = null
+            sqsUtils._workers[queueName][workerId]['messageBodyJSON'] = null
 
           if not hasCalledBack
             messageCallback error, () ->
@@ -383,7 +398,7 @@ exports._checkWorkers = ( queue, queueName, handleMessage, maxWorkers, workerTim
 
       lastContactTime = workerInfo['lastContactTime']
       elapsedTime = Date.now() - lastContactTime
-      messageBody = workerInfo['messageBody']
+      messageBodyJSON = workerInfo['messageBodyJSON']
 
       if elapsedTime > workerTimeout
         errorData =
@@ -391,7 +406,7 @@ exports._checkWorkers = ( queue, queueName, handleMessage, maxWorkers, workerTim
           workerId: workerId
           elapsedTime: elapsedTime
           workerTimeout: workerTimeout
-          messageBody: messageBody
+          messageBodyJSON: messageBodyJSON
 
         winston.doError 'worker timed out! deleting worker.', errorData
         sqsUtils._deleteWorker queueName, workerId

@@ -1,5 +1,6 @@
-appDir = process.env['REAL_DART_HOME'] + '/app'
-fbHelpers = require appDir + '/lib/fbHelpers'
+commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
+
+fbHelpers = require commonAppDir + '/lib/fbHelpers'
 
 describe "getUpdateJSONForUser", ()->
   it "test generic case", () ->

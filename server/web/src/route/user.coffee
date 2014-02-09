@@ -1,8 +1,9 @@
-userUtils = require '../lib/userUtils'
-routeUtils = require '../lib/routeUtils'
-winston = require('../lib/winstonWrapper').winston
+commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
 
-conf = require '../conf'
+userUtils = require commonAppDir + '/lib/userUtils'
+winston = require(commonAppDir + '/lib/winstonWrapper').winston
+
+routeUtils = require '../lib/routeUtils'
 
 routeUser = this
 

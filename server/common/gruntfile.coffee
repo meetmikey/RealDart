@@ -16,13 +16,6 @@ module.exports = (grunt) ->
         src: ['**/*.coffee']
         dest: 'test/js'
         ext: '.js'
-    handlebars:
-      templates:
-        options:
-          commonjs: true
-          namespace: 'Templates'
-        files:
-          'app/lib/templates.js': ['src/templates/**/*.html']
     watch:
       srcCoffee:
         files: 'src/**/*.coffee'
@@ -30,17 +23,12 @@ module.exports = (grunt) ->
       testCoffee:
         files: 'test/coffee/**/*.coffee'
         tasks: ['coffee:test']
-      templates:
-        files: 'src/templates/**/*.html'
-        tasks: ['handlebars:templates']
 
   grunt.loadNpmTasks 'grunt-contrib-watch'
   grunt.loadNpmTasks 'grunt-contrib-coffee'
-  grunt.loadNpmTasks 'grunt-contrib-handlebars'
 
   # Default task(s).
   grunt.registerTask 'default', [
-    'handlebars'
     'coffee'
     'watch'
   ]

@@ -1,6 +1,8 @@
+commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
+
 jwt = require 'jsonwebtoken'
 
-winston = require('./winstonWrapper').winston
+winston = require(commonAppDir + '/lib/winstonWrapper').winston
 
 conf = require '../conf'
 

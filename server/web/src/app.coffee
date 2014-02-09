@@ -1,4 +1,4 @@
-homeDir = process.env['REAL_DART_HOME']
+commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
 
 express = require 'express'
 expressJwt = require 'express-jwt'
@@ -7,16 +7,15 @@ fs = require 'fs'
 passport = require 'passport'
 ejs = require 'ejs'
 
+appInitUtils = require commonAppDir + '/lib/appInitUtils'
+userUtils = require commonAppDir + '/lib/userUtils'
+winston = require(commonAppDir + '/lib/winstonWrapper').winston
+
 liConnect = require './lib/liConnect'
 fbConnect = require './lib/fbConnect'
-appInitUtils = require './lib/appInitUtils'
 routeUtils = require './lib/routeUtils'
-userUtils = require './lib/userUtils'
-routeUtils = require './lib/routeUtils'
-winston = require('./lib/winstonWrapper').winston
-conf = require './conf'
-
 routeUser = require './route/user'
+conf = require './conf'
 
 initActions = [
   appInitUtils.CONNECT_MONGO
@@ -39,9 +38,9 @@ postInit = () =>
     app.use express.methodOverride()
     app.use express.cookieSession
       secret:conf.express.secret
-    app.use express.static homeDir + '/public'
+    app.use express.static __dirname + '/../public'
     app.use express.compress()
-    app.set 'views', homeDir + '/public/html'
+    app.set 'views', __dirname + '/../public/html'
     app.use passport.initialize()
     app.use passport.session()
     app.use '/api', expressJwt

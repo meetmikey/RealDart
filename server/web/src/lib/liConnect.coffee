@@ -1,17 +1,20 @@
-appDir = process.env['REAL_DART_HOME'] + '/app'
+commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
 
 passport = require 'passport'
 LinkedInStrategy = require('passport-linkedin').Strategy
-winston = require('./winstonWrapper').winston
-LIUserModel = require(appDir + '/schema/liUser').LIUserModel
+commonConf = require commonAppDir + '/conf'
+
+winston = require(commonAppDir + '/lib/winstonWrapper').winston
+LIUserModel = require(commonAppDir + '/schema/liUser').LIUserModel
+
 routeUtils = require './routeUtils'
-conf = require appDir + '/conf'
+
 
 liConnect = this
 
 passport.use new LinkedInStrategy
-  consumerKey: conf.li.apiKey
-  consumerSecret: conf.li.apiSecret
+  consumerKey: commonConf.li.apiKey
+  consumerSecret: commonConf.li.apiSecret
   callbackURL: routeUtils.getProtocolHostAndPort() + '/auth/linkedIn/callback'
   , (token, tokenSecret, profile, done) ->
     liConnect.saveUserData token, tokenSecret, profile, (error, liUser) ->
