@@ -9,25 +9,44 @@ winston.remove winston.transports.Console
 winston.add winston.transports.Console,
   timestamp: true
 
-winston.setErrorType = (winstonError, type) ->
-  if not winstonError
-    return
-
-  if Object.prototype.toString.call( winstonError.extra ) isnt '[object Object]'
-    winstonError.extra = {}
-
-  winstonError.extra.errorType = type
-  winstonError
 
 
-# read into winstonError obj and get the type
+# read into winstonError obj and get whether to delete the msg from queue
+winston.getDeleteFromQueueFlag = (winstonError) ->
+  winston.getFlag winstonError 'deleteFromQueue'
+
+# read into winstonError obj and get whether to delete the msg from queue
+winston.setDeleteFromQueueFlag = (winstonError, value) ->
+  winston.setFlag winstonError 'deleteFromQueue', value
+
+
+winston.getSuppressQueueErrorFlag = (winstonError) ->
+  winston.getFlag winstonError 'suppressError'
+
+winston.setSuppressQueueErrorFlag = (winstonError, value) ->
+  winston.setFlag winstonError 'suppressError', value
+
+
 winston.getErrorType = (winstonError) ->
-  if not winstonError or not winstonError.extra
-    return ''
-  winstonError.extra.errorType
+  winston.getFlag winstonError 'errorType'
+
+winston.setErrorType = (winstonError, type) ->
+  winston.setFlag winstonError 'errorType', type
 
 
-#doInfo, doWarn s
+
+
+winston.setFlag = (winstonError, flagName, value) ->
+  unless winstonError then return
+  winstonError.extra = winstonError.extra || {}
+  winstonError.extra.flag = winstonError.extra.flag || {}
+  winstonError.extra.flag[flagName] = value
+
+winston.getFlag = (winstonError, flagName) ->
+  winstonError?.extra?.flag?[flagName]
+
+
+#doInfo, doWarn
 #----------------------------------
 winston.doInfo = (log, extraInput, forceDisplay) ->
   extra = winston.fixExtra extraInput
@@ -38,7 +57,7 @@ winston.doWarn = (log, extraInput) ->
   extra = winston.fixExtra extraInput
   winston.warn log, extra
 
-#do*Error s
+#do*Error
 #----------------------------------
 
 winston.doError = (log, extraInput, res) ->
@@ -59,7 +78,7 @@ winston.doS3Error = (s3Err, extraInput, res) ->
 winston.doElasticSearchError = (esErr, extraInput, res) ->
   winston.handleError winston.makeElasticSearchError(esErr, extraInput, 5), res
 
-#make*Error s
+#make*Error
 #----------------------------------
 
 winston.makeRequestError = (requestError, extraInput, skipStacktraceLinesInput) ->

@@ -2,9 +2,9 @@ async = require 'async'
 
 mongooseConnect = require './mongooseConnect'
 utils = require './utils'
+sqsUtils = require './sqsUtils'
 winston = require('./winstonWrapper').winston
 
-environment = process.env.NODE_ENV
 appInitUtils = this
 
 exports.CONNECT_MONGO = 'mongoConnect'
@@ -14,6 +14,9 @@ process.on 'uncaughtException', (err) ->
     stack: err.stack
     message: err.message
   process.exit 1
+
+process.on 'SIGUSR2', () ->
+  sqsUtils.stopSignal()
 
 exports.initApp = ( appName, actions, callback ) =>
 

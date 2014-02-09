@@ -4,8 +4,6 @@ graph = require 'fbgraph'
 passport = require 'passport'
 FacebookStrategy = require('passport-facebook').Strategy
 winston = require('./winstonWrapper').winston
-FBUserModel = require(appDir + '/schema/fbUser').FBUserModel
-UserModel = require(appDir + '/schema/user').UserModel
 fbHelpers = require './fbHelpers.js'
 routeUtils = require './routeUtils'
 conf = require appDir + '/conf'
@@ -54,33 +52,36 @@ passport.use new FacebookStrategy {
     ]
   } , (accessToken, refreshToken, profile, done) ->
 
-    fbConnect.saveUserData accessToken, refreshToken, profile, (error) =>
+    fbConnect.saveUserAndQueueImport accessToken, refreshToken, profile, (error) ->
       if error
         winston.handleError error
-        done 'internal error', profile
+        done 'error while handling auth', profile
       else
         done null, profile
 
-exports.saveUserData = (accessToken, refreshToken, profile, callback) =>
+exports.saveUserAndQueueImport = (accessToken, refreshToken, profile, callback) ->
 
   userData = profile._json
   userData._id = userData.id
   userData.accessToken = accessToken
+  userData.refreshToken = refreshToken
+
+  select =
+    _id: userData._id
+
   updateJSON = fbHelpers.getUpdateJSONForUser userData
 
-  # save a user object
-  UserModel.findOneAndUpdate {fbUserId : userData._id}, 
-    {$set : {fbUserId : userData._id, firstName : userData.first_name, lastName : userData.last_name}},
-    {upsert : true},
-    (mongoError, user) ->
+  options =
+    upsert: true
 
-      if mongoError then callback winston.makeMongoError mongoError; return
+  FBUserModel.findOneAndUpdate select, updateJSON, options, (mongoError, user) ->
+    if mongoError then callback winston.makeMongoError mongoError; return
 
-      # save a fb user object
-      FBUserModel.findOneAndUpdate {_id : userData._id}, updateJSON, {upsert : true}, (err, fbUser) ->
-        if err
-          callback winston.makeMongoError(err)
-        else
-          fbHelpers.fetchAndSaveFriendData fbUser, (err, friends) ->
-            #TODO: save friends
-            callback()
+    sqsUtils.addMessageToQueue conf.queue.dataImport,
+      service: constants.service.FACEBOOK
+
+    , (error) ->
+      callback error
+
+
+    #queue job should call fbHelpers.fetchAndSaveFriendData()

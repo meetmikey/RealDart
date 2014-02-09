@@ -5,7 +5,8 @@ winston = require('./winstonWrapper').winston
 
 sesUtils = this
 
-sesClient = aws.createSESClient conf.aws.ses.key, conf.aws.ses.secret
+exports._init = () ->
+  sesUtils._client = aws.createSESClient conf.aws.key, conf.aws.secret
 
 exports.sendEmail = (recipients, sender, text, html, subject, callback) ->
   sendArgs =
@@ -24,8 +25,13 @@ exports.sendEmail = (recipients, sender, text, html, subject, callback) ->
     sendArgs['Message.Body.Html.Data'] = html
     sendArgs['Message.Body.Html.Charset'] = 'UTF-8'
 
-  sesClient.call 'SendEmail', sendArgs, (sesError, result) ->
+  sesUtils._client.call 'SendEmail', sendArgs, (sesError, result) ->
     if sesError
       callback winston.makeError 'sesError: ' + sesError
     else
       callback()
+
+exports.sendInternalNotificationEmail = (text, subject, callback) ->
+  sesUtils.sendEmail [conf.email.itAddress], conf.email.noReplyAddress, text, text, subject + ' on ' + os.hostname(), callback
+
+sesUtils._init()
