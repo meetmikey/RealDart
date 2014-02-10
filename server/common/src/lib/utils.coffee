@@ -3,6 +3,7 @@ dateFormat = require 'dateformat'
 constants = require '../constants'
 
 winston = require('./winstonWrapper').winston
+conf = require '../conf'
 
 utils = this
 
@@ -154,3 +155,35 @@ exports.getRetryWaitTime = ( numFails ) ->
     waitTime = constants.MAX_RETRY_WAIT_TIME_MS
 
   waitTime
+
+# returns {encrypted: <encrypted value>, salt: <salt>}
+exports.encryptSymmetric = (input) ->
+  output =
+    encrypted: null
+    salt: null
+
+  unless input
+    #winston.doInfo 'utils.encryptSymmetric: input missing'
+    return output
+
+  cipher = crypto.createCipher conf.crypto.aes.scheme, conf.crypto.aes.secret
+  salt = crypto.randomBytes(8).toString 'hex'
+  encrypted = cipher.update salt + input, 'utf8', 'hex'
+  encrypted += cipher.final 'hex'
+  output.encrypted = encrypted
+  output.salt = salt
+  output
+
+# returns the decrypted value
+exports.decryptSymmetric = (input, salt) ->
+  unless input 
+    #winston.doInfo 'utils.decryptSymmetric: no input'
+    return null
+  salt = salt || ''
+
+  decipher = crypto.createDecipher conf.crypto.aes.scheme, conf.crypto.aes.secret
+  tokenAndSalt = decipher.update input, 'hex', 'utf8'
+  tokenAndSalt += decipher.final 'utf8'
+  saltLen = salt.length
+  decrypted = tokenAndSalt.substring saltLen, tokenAndSalt.length
+  decrypted

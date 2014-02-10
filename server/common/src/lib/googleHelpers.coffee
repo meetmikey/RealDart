@@ -9,7 +9,6 @@ googleHelpers = this
 exports.getUserJSONFromProfile = (profile) ->
   userJSON = {}
   omitKeys = [
-    '_id'
   ]
   for key, value of profile
     if omitKeys.indexOf( key ) isnt -1

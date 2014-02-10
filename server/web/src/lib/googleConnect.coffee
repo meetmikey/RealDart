@@ -28,20 +28,19 @@ passport.use new GoogleStrategy
 
 exports.saveUserAndQueueImport = (identifierURL, profile, callback) ->
 
+  unless identifierURL then callback winston.makeMissingParamError 'identifierURL'; return
+  unless profile then callback winston.makeMissingParamError 'profile'; return
+
   googleUserId =  googleConnect.getGoogleUserIdFromIdentifierURL identifierURL
-  googleUserJSON = googleHelpers.getUserJSONFromProfile profile
+  unless googleUserId then callback winston.makeMissingParamError 'googleUserId'; return
 
-  select =
-    _id: googleUserId
+  googleUser = new GoogleUserModel googleHelpers.getUserJSONFromProfile profile
+  googleUser._id = googleUserId
 
-  update =
-    $set: googleUserJSON
-
-  options =
-    upsert: true
-
-  GoogleUserModel.findOneAndUpdate select, update, options, (mongoError, googleUser) ->
-    if mongoError then callback winston.makeMongoError mongoError; return
+  googleUser.save (mongoError, googleUserSaved) ->
+    googleUser = googleUserSaved || googleUser
+    if mongoError
+      if mongoError.code isnt 11000 then callback winston.makeMongoError mongoError; return
 
     job =
       service: commonConstants.service.GOOGLE

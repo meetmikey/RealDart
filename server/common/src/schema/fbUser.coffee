@@ -1,6 +1,8 @@
 mongoose = require 'mongoose'
 Schema = mongoose.Schema
 
+utils = require '../lib/utils'
+
 FBLocation =
   id: {type: String}
   name: {type: String}
@@ -13,8 +15,10 @@ FBUserName =
 #TODO: remove mixed types!!
 FBUser = new Schema
   _id: {type: Number, required: true, unique: true}
-  accessToken: {type: String}
-  refreshToken: {type: String}
+  accessTokenEncrypted: {type: String}
+  accessTokenSalt: {type: String}
+  refreshTokenEncrypted: {type: String}
+  refreshTokenSalt: {type: String}
   age_range : {type : String}
   bio : {type : String}
   birthday: {type : String}
@@ -54,6 +58,25 @@ FBUser = new Schema
   timezone: {type: Number}
   updated_time: {type: String}
   friends : {type : [Number], index : true}
+
+FBUser.virtual('accessToken').set (input) ->
+  encryptedInfo = utils.encryptSymmetric input
+  this.accessTokenEncrypted = encryptedInfo.encrypted
+  this.accessTokenSalt = encryptedInfo.salt
+
+FBUser.virtual('accessToken').get () ->
+  decrypted = utils.decryptSymmetric this.accessTokenEncrypted, this.accessTokenSalt
+  decrypted
+
+
+FBUser.virtual('refreshToken').set (input) ->
+  encryptedInfo = utils.encryptSymmetric input
+  this.refreshTokenEncrypted = encryptedInfo.encrypted
+  this.refreshTokenSalt = encryptedInfo.salt
+
+FBUser.virtual('refreshToken').get () ->
+  decrypted = utils.decryptSymmetric this.refreshTokenEncrypted, this.refreshTokenSalt
+  decrypted
 
 mongoose.model 'FBUser', FBUser
 exports.FBUserModel = mongoose.model 'FBUser'

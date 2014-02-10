@@ -64,24 +64,18 @@ passport.use new FacebookStrategy {
         done null, profile
 
 exports.saveUserAndQueueImport = (accessToken, refreshToken, profile, callback) ->
+  unless accessToken then callback winston.makeMissingParamError 'accessToken'; return
+  unless profile then callback winston.makeMissingParamError 'profile'; return
+  unless profile.id then callback winston.makeMissingParamError 'profile.id'; return
 
-  fbUserId = profile.id
-  fbUserJSON = fbHelpers.getUserJSONFromProfile profile
-  fbUserJSON.accessToken = accessToken
-  if refreshToken
-    fbUserJSON.refreshToken = refreshToken
+  fbUser = new FBUserModel fbHelpers.getUserJSONFromProfile profile
+  fbUser.accessToken = accessToken
+  fbUser.refreshToken = refreshToken
 
-  select =
-    _id: fbUserId
-
-  update =
-    $set: fbUserJSON
-
-  options =
-    upsert: true
-
-  FBUserModel.findOneAndUpdate select, update, options, (mongoError, fbUser) ->
-    if mongoError then callback winston.makeMongoError mongoError; return
+  fbUser.save (mongoError, fbUserSaved) ->
+    fbUser = fbUserSaved || fbUser
+    if mongoError
+      if mongoError.code isnt 11000 then callback winston.makeMongoError mongoError; return
 
     job =
       service: commonConstants.service.FACEBOOK

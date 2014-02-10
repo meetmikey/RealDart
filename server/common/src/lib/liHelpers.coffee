@@ -9,12 +9,13 @@ liHelpers = this
 exports.getUserJSONFromProfile = (profile) ->
   userJSON = {}
   omitKeys = [
-    '_id'
     '_json'
   ]
   for key, value of profile
     if omitKeys.indexOf( key ) isnt -1
       continue
+    if key is 'id'
+      userJSON['_id'] = value
     else
       userJSON[key] = value
   userJSON

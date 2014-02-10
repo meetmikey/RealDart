@@ -28,23 +28,19 @@ passport.use new LinkedInStrategy
         done null, profile
 
 exports.saveUserAndQueueImport = (token, tokenSecret, profile, callback) ->
+  unless token then callback winston.makeMissingParamError 'token'; return
+  unless tokenSecret then callback winston.makeMissingParamError 'tokenSecret'; return
+  unless profile then callback winston.makeMissingParamError 'profile'; return
+  unless profile.id then callback winston.makeMissingParamError 'profile.id'; return
 
-  liUserId =  profile.id
-  liUserJSON = liHelpers.getUserJSONFromProfile profile
-  liUserJSON.token = token
-  liUserJSON.tokenSecret = tokenSecret
+  liUser = new LIUserModel liHelpers.getUserJSONFromProfile profile
+  liUser.token = token
+  liUser.tokenSecret = tokenSecret
 
-  select =
-    _id: liUserId
-
-  update =
-    $set: liUserJSON
-
-  options =
-    upsert: true
-
-  LIUserModel.findOneAndUpdate select, update, options, (mongoError, liUser) ->
-    if mongoError then callback winston.makeMongoError mongoError; return
+  liUser.save (mongoError, liUserSaved) ->
+    liUser = liUserSaved || liUser
+    if mongoError
+      if mongoError.code isnt 11000 then callback winston.makeMongoError mongoError; return
 
     job =
       service: commonConstants.service.LINKED_IN
