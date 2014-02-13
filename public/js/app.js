@@ -1012,7 +1012,7 @@
     };
 
     Account.prototype.authLinkClicked = function(event) {
-      var element, service, url;
+      var element, service, tokenLocalStorageKey, url;
       element = $(event != null ? event.currentTarget : void 0);
       if (!element) {
         rdError('authLinkClicked: no element');
@@ -1023,7 +1023,8 @@
         rdError('authLinkClicked: no service');
         return;
       }
-      url = '/auth/' + service + '?token=' + RD.Helper.api.getAuthToken();
+      tokenLocalStorageKey = RD.Helper.localStorage.getKey(RD.Helper.api.tokenLocalStorageKey);
+      url = 'html/preAuth.html?tokenLocalStorageKey=' + tokenLocalStorageKey + '&service=' + service;
       return window.open(url);
     };
 

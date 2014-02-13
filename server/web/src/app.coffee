@@ -57,6 +57,9 @@ postInit = () =>
   app.get '/', (req, res) ->
     res.sendfile publicDir + '/html/home.html'
 
+  app.get '/preAuth', (req, res) ->
+    res.sendfile publicDir + '/html/preAuth.html'
+
   #Authentication
   app.post '/login', routeUser.login
   app.post '/register', routeUser.register
@@ -77,8 +80,8 @@ postInit = () =>
 addAuth = (app, service) ->
   passportName = service.toLowerCase()
 
-  app.get '/auth/' + service, (req, res, next) ->
-    token = req?.query?.token
+  app.post '/auth/' + service, (req, res, next) ->
+    token = req?.body?.token
 
     jwt.verify token, routeUtils.getJWTSecret(), (err, user) ->
       if err

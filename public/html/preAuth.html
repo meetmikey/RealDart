@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang='en'>
+
+  <head>
+    <meta charset='utf-8'>
+  </head>
+
+  <body>
+
+    <script type='text/javascript'>
+      var run = function() {
+        var queryString = getQueryString();
+        console.log( 'queryString', queryString );
+
+        var service = queryString['service'];
+        var tokenLocalStorageKey = queryString['tokenLocalStorageKey'];
+
+        if ( ! service ) {
+          console.error( 'missing service!');
+          return;
+        }
+        if ( ! tokenLocalStorageKey ) {
+          console.error( 'missing tokenLocalStorageKey!');
+          return;
+        }
+
+        console.log( 'service: ' + service );
+        console.log( 'tokenLocalStorageKey: ' + tokenLocalStorageKey );
+
+        var tokenString = window.localStorage.getItem( tokenLocalStorageKey );
+        var token = '';
+        try {
+          token = JSON.parse( tokenString );
+        } catch ( err ) {
+          console.error('token parse error', err);
+          return;
+        }
+        console.log( 'token: ' + token );
+
+        var url = '/auth/' + service;
+        //http://local.realdart.com:3000/preAuth?service=facebook&tokenLocalStorageKey=RD-local-token
+        postToURL( url, {token: token} );
+      }
+
+      // From http://stackoverflow.com/questions/133925/javascript-post-request-like-a-form-submit
+      var postToURL = function(path, params, method) {
+        method = method || "post"; // Set method to post by default if not specified.
+
+        // The rest of this code assumes you are not using a library.
+        // It can be made less wordy if you use one.
+        var form = document.createElement("form");
+        form.setAttribute("method", method);
+        form.setAttribute("action", path);
+
+        for(var key in params) {
+            if(params.hasOwnProperty(key)) {
+                var hiddenField = document.createElement("input");
+                hiddenField.setAttribute("type", "hidden");
+                hiddenField.setAttribute("name", key);
+                hiddenField.setAttribute("value", params[key]);
+
+                form.appendChild(hiddenField);
+             }
+        }
+
+        document.body.appendChild(form);
+        form.submit();
+      }
+
+      // From http://stackoverflow.com/questions/979975/how-to-get-the-value-from-url-parameter
+      var getQueryString = function() {
+        // This function is anonymous, is executed immediately and 
+        // the return value is assigned to QueryString!
+        var query_string = {};
+        var query = window.location.search.substring(1);
+        var vars = query.split("&");
+        for (var i=0;i<vars.length;i++) {
+          var pair = vars[i].split("=");
+            // If first entry with this name
+          if (typeof query_string[pair[0]] === "undefined") {
+            query_string[pair[0]] = pair[1];
+            // If second entry with this name
+          } else if (typeof query_string[pair[0]] === "string") {
+            var arr = [ query_string[pair[0]], pair[1] ];
+            query_string[pair[0]] = arr;
+            // If third or later entry with this name
+          } else {
+            query_string[pair[0]].push(pair[1]);
+          }
+        } 
+          return query_string;
+      };
+
+      run();
+    </script>
+
+  </body>
+
+</html>
