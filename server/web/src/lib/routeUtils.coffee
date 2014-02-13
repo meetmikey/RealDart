@@ -61,3 +61,23 @@ exports.getProtocolHostAndPort = () ->
   if conf.server.listenPort
     result += ':' + conf.server.listenPort
   result
+
+exports.getUserIdFromAuthRequest  = (req) ->
+  dataVar = 'state'
+  dataString = req?.query?[dataVar]
+  data = null
+  try
+    data = JSON.parse dataString
+  catch exception
+    winston.doError 'data string parse exception',
+      exception: exception
+      datatString: dataString
+
+  userId = data?.userId
+
+  winston.doInfo 'HERE',
+    userId: userId
+    data: data
+    reqQuery: req.query
+
+  userId

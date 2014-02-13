@@ -3,45 +3,44 @@ this["RDTemplates"] = this["RDTemplates"] || {};
 this["RDTemplates"]["template/account.html"] = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
   this.compilerInfo = [4,'>= 1.0.0'];
 helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
-  var buffer = "", stack1, stack2, options, functionType="function", escapeExpression=this.escapeExpression, self=this, helperMissing=helpers.helperMissing;
+  var buffer = "", stack1, stack2, functionType="function", escapeExpression=this.escapeExpression, self=this, helperMissing=helpers.helperMissing;
 
 function program1(depth0,data) {
   
+  var buffer = "", stack1, stack2, options;
+  buffer += "\n  <br/>\n\n  <a class='authLink' data-service='"
+    + escapeExpression(((stack1 = ((stack1 = data),stack1 == null || stack1 === false ? stack1 : stack1.key)),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
+    + "'>\n    <img src='img/";
+  if (stack2 = helpers.imageName) { stack2 = stack2.call(depth0, {hash:{},data:data}); }
+  else { stack2 = (depth0 && depth0.imageName); stack2 = typeof stack2 === functionType ? stack2.call(depth0, {hash:{},data:data}) : stack2; }
+  buffer += escapeExpression(stack2)
+    + ".png' />\n  </a>\n  ";
+  options = {hash:{},inverse:self.noop,fn:self.program(2, program2, data),data:data};
+  stack2 = ((stack1 = helpers.ifCond || (depth0 && depth0.ifCond)),stack1 ? stack1.call(depth0, (depth0 && depth0.status), "==", "success", options) : helperMissing.call(depth0, "ifCond", (depth0 && depth0.status), "==", "success", options));
+  if(stack2 || stack2 === 0) { buffer += stack2; }
+  buffer += "\n  ";
+  options = {hash:{},inverse:self.noop,fn:self.program(4, program4, data),data:data};
+  stack2 = ((stack1 = helpers.ifCond || (depth0 && depth0.ifCond)),stack1 ? stack1.call(depth0, (depth0 && depth0.status), "==", "fail", options) : helperMissing.call(depth0, "ifCond", (depth0 && depth0.status), "==", "fail", options));
+  if(stack2 || stack2 === 0) { buffer += stack2; }
+  buffer += "\n\n  <br/>\n";
+  return buffer;
+  }
+function program2(depth0,data) {
   
-  return "\n  <span class='success'>ok!</span>\n";
+  
+  return "\n    <span class='success'>ok!</span>\n  ";
   }
 
-function program3(depth0,data) {
+function program4(depth0,data) {
   
   
-  return "\n  <span class='error'>fail!</span>\n";
+  return "\n    <span class='error'>fail!</span>\n  ";
   }
 
   buffer += "<h2>"
     + escapeExpression(((stack1 = ((stack1 = (depth0 && depth0.user)),stack1 == null || stack1 === false ? stack1 : stack1.fullName)),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
-    + "</h2>\n\n<h3>Setup your account.  3 easy steps.</h3>\n\n<p>\n  Connect your accounts so that we can remind you to keep in touch with the people you know.\n</p>\n\n<a href = 'auth/google' target='_blank'>\n  <img src='img/connectEmail.png' />\n</a>\n";
-  options = {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data};
-  stack2 = ((stack1 = helpers.ifCond || (depth0 && depth0.ifCond)),stack1 ? stack1.call(depth0, (depth0 && depth0.googleStatus), "==", "success", options) : helperMissing.call(depth0, "ifCond", (depth0 && depth0.googleStatus), "==", "success", options));
-  if(stack2 || stack2 === 0) { buffer += stack2; }
-  buffer += "\n";
-  options = {hash:{},inverse:self.noop,fn:self.program(3, program3, data),data:data};
-  stack2 = ((stack1 = helpers.ifCond || (depth0 && depth0.ifCond)),stack1 ? stack1.call(depth0, (depth0 && depth0.googleStatus), "==", "fail", options) : helperMissing.call(depth0, "ifCond", (depth0 && depth0.googleStatus), "==", "fail", options));
-  if(stack2 || stack2 === 0) { buffer += stack2; }
-  buffer += "\n\n<br/><br/>\n\n<a href = 'auth/facebook' target='_blank'>\n  <img src='img/connectFacebook.png' />\n</a>\n";
-  options = {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data};
-  stack2 = ((stack1 = helpers.ifCond || (depth0 && depth0.ifCond)),stack1 ? stack1.call(depth0, (depth0 && depth0.facebookStatus), "==", "success", options) : helperMissing.call(depth0, "ifCond", (depth0 && depth0.facebookStatus), "==", "success", options));
-  if(stack2 || stack2 === 0) { buffer += stack2; }
-  buffer += "\n";
-  options = {hash:{},inverse:self.noop,fn:self.program(3, program3, data),data:data};
-  stack2 = ((stack1 = helpers.ifCond || (depth0 && depth0.ifCond)),stack1 ? stack1.call(depth0, (depth0 && depth0.facebookStatus), "==", "fail", options) : helperMissing.call(depth0, "ifCond", (depth0 && depth0.facebookStatus), "==", "fail", options));
-  if(stack2 || stack2 === 0) { buffer += stack2; }
-  buffer += "\n\n<br/><br/>\n\n<a href = 'auth/linkedIn' target='_blank'>\n  <img src='img/connectLinkedIn.png' />\n</a>\n";
-  options = {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data};
-  stack2 = ((stack1 = helpers.ifCond || (depth0 && depth0.ifCond)),stack1 ? stack1.call(depth0, (depth0 && depth0.linkedInStatus), "==", "success", options) : helperMissing.call(depth0, "ifCond", (depth0 && depth0.linkedInStatus), "==", "success", options));
-  if(stack2 || stack2 === 0) { buffer += stack2; }
-  buffer += "\n";
-  options = {hash:{},inverse:self.noop,fn:self.program(3, program3, data),data:data};
-  stack2 = ((stack1 = helpers.ifCond || (depth0 && depth0.ifCond)),stack1 ? stack1.call(depth0, (depth0 && depth0.linkedInStatus), "==", "fail", options) : helperMissing.call(depth0, "ifCond", (depth0 && depth0.linkedInStatus), "==", "fail", options));
+    + "</h2>\n\n<h3>Setup your account.  3 easy steps.</h3>\n\n<p>\n  Connect your accounts so that we can remind you to keep in touch with the people you know.\n</p>\n\n<br/>\n\n";
+  stack2 = helpers.each.call(depth0, (depth0 && depth0.serviceAuth), {hash:{},inverse:self.noop,fn:self.program(1, program1, data),data:data});
   if(stack2 || stack2 === 0) { buffer += stack2; }
   return buffer;
   });

@@ -15,9 +15,10 @@ routeUtils = require './routeUtils'
 fbConnect = this
 
 passport.use new FacebookStrategy {
-    clientID: commonConf.fb.app_id
-    clientSecret: commonConf.fb.app_secret
+    clientID: commonConf.auth.facebook.app_id
+    clientSecret: commonConf.auth.facebook.app_secret
     callbackURL: routeUtils.getProtocolHostAndPort() + '/auth/facebook/callback'
+    passReqToCallback: true
     scope: [
       "user_about_me"
       "user_birthday"
@@ -54,16 +55,24 @@ passport.use new FacebookStrategy {
       "friends_work_history"
       "email"
     ]
-  } , (accessToken, refreshToken, profile, done) ->
+  }
+  , (req, accessToken, refreshToken, profile, done) ->
 
-    fbConnect.saveUserAndQueueImport accessToken, refreshToken, profile, (error) ->
+    userId = routeUtils.getUserIdFromAuthRequest req
+    unless userId
+      winston.doError 'no userId in auth req'
+      done 'server error', profile
+      return
+
+    fbConnect.saveUserAndQueueImport userId, accessToken, refreshToken, profile, (error) ->
       if error
         winston.handleError error
         done 'server error', profile
       else
         done null, profile
 
-exports.saveUserAndQueueImport = (accessToken, refreshToken, profile, callback) ->
+exports.saveUserAndQueueImport = (userId, accessToken, refreshToken, profile, callback) ->
+  unless userId then callback winston.makeMissingParamError 'userId'; return
   unless accessToken then callback winston.makeMissingParamError 'accessToken'; return
   unless profile then callback winston.makeMissingParamError 'profile'; return
   unless profile.id then callback winston.makeMissingParamError 'profile.id'; return
@@ -78,6 +87,7 @@ exports.saveUserAndQueueImport = (accessToken, refreshToken, profile, callback) 
       if mongoError.code isnt 11000 then callback winston.makeMongoError mongoError; return
 
     job =
+      userId: userId
       service: commonConstants.service.FACEBOOK
       fbUserId: fbUser._id
 

@@ -135,12 +135,12 @@
   RDHelperAPI = (function() {
     function RDHelperAPI() {
       this._storeAuthToken = __bind(this._storeAuthToken, this);
-      this._getAuthToken = __bind(this._getAuthToken, this);
       this._handleAjaxResponse = __bind(this._handleAjaxResponse, this);
       this._call = __bind(this._call, this);
       this.deleteAuthToken = __bind(this.deleteAuthToken, this);
       this.getJSONFromText = __bind(this.getJSONFromText, this);
-      this.buildURL = __bind(this.buildURL, this);
+      this._buildURL = __bind(this._buildURL, this);
+      this.getAuthToken = __bind(this.getAuthToken, this);
       this.get = __bind(this.get, this);
       this.post = __bind(this.post, this);
       this.postAuth = __bind(this.postAuth, this);
@@ -161,6 +161,12 @@
       return this._call('get', path, data, false, callback);
     };
 
+    RDHelperAPI.prototype.getAuthToken = function() {
+      var token;
+      token = RD.Helper.localStorage.get(this.tokenLocalStorageKey);
+      return token;
+    };
+
     RDHelperAPI.prototype.getProtocolHostAndPort = function() {
       var apiConfig, result;
       apiConfig = RD.config.api;
@@ -176,10 +182,10 @@
       return result;
     };
 
-    RDHelperAPI.prototype.buildURL = function(path, isAuth) {
+    RDHelperAPI.prototype._buildURL = function(path, isAuth) {
       var url;
       if (!path) {
-        rdWarn('Helper.api:buildURL: path missing');
+        rdWarn('Helper.api:_buildURL: path missing');
         return '';
       }
       url = this.getProtocolHostAndPort();
@@ -213,7 +219,7 @@
 
     RDHelperAPI.prototype._call = function(type, path, data, isAuth, callback) {
       var ajaxOptions, token, url;
-      url = this.buildURL(path, isAuth);
+      url = this._buildURL(path, isAuth);
       ajaxOptions = {
         data: data,
         type: type,
@@ -223,7 +229,7 @@
           };
         })(this)
       };
-      token = this._getAuthToken();
+      token = this.getAuthToken();
       if (token) {
         ajaxOptions.beforeSend = (function(_this) {
           return function(xhr, settings) {
@@ -253,12 +259,6 @@
           return callback(errorCode, responseJSON);
         }
       }
-    };
-
-    RDHelperAPI.prototype._getAuthToken = function() {
-      var token;
-      token = RD.Helper.localStorage.get(this.tokenLocalStorageKey);
-      return token;
     };
 
     RDHelperAPI.prototype._storeAuthToken = function(responseJSON) {
@@ -912,6 +912,7 @@
     __extends(Account, _super);
 
     function Account() {
+      this.authLinkClicked = __bind(this.authLinkClicked, this);
       this.receiveMessage = __bind(this.receiveMessage, this);
       this.removeMessageListener = __bind(this.removeMessageListener, this);
       this.addMessageListener = __bind(this.addMessageListener, this);
@@ -925,11 +926,24 @@
 
     Account.prototype.user = null;
 
-    Account.prototype.googleStatus = null;
+    Account.prototype.serviceAuth = {
+      google: {
+        status: null,
+        imageName: 'connectEmail'
+      },
+      facebook: {
+        status: null,
+        imageName: 'connectFacebook'
+      },
+      linkedIn: {
+        status: null,
+        imageName: 'connectLinkedIn'
+      }
+    };
 
-    Account.prototype.linkedInStatus = null;
-
-    Account.prototype.facebookStatus = null;
+    Account.prototype.events = {
+      'click .authLink': 'authLinkClicked'
+    };
 
     Account.prototype.preInitialize = function() {
       return this.addMessageListener();
@@ -953,13 +967,13 @@
           }
           _this.user = user;
           if (_this.user.googleUserId) {
-            _this.googleStatus = 'success';
+            _this.serviceAuth.google.status = 'success';
           }
           if (_this.user.fbUserId) {
-            _this.facebookStatus = 'success';
+            _this.serviceAuth.facebook.status = 'success';
           }
           if (_this.user.liUserId) {
-            _this.linkedInStatus = 'success';
+            _this.serviceAuth.linkedIn.status = 'success';
           }
           return callback();
         };
@@ -970,9 +984,7 @@
       var _ref;
       return {
         user: (_ref = this.user) != null ? _ref.decorate() : void 0,
-        googleStatus: this.googleStatus,
-        facebookStatus: this.facebookStatus,
-        linkedInStatus: this.linkedInStatus
+        serviceAuth: this.serviceAuth
       };
     };
 
@@ -992,17 +1004,27 @@
       responseJSON = RD.Helper.api.getJSONFromText(event.data);
       service = responseJSON != null ? responseJSON.service : void 0;
       status = responseJSON != null ? responseJSON.status : void 0;
-      if (!(status && service)) {
+      if (!(status && service && this.serviceAuth[service])) {
         return;
       }
-      if (service === 'google') {
-        this.googleStatus = status;
-      } else if (service === 'facebook') {
-        this.facebookStatus = status;
-      } else if (service === 'linkedIn') {
-        this.linkedInStatus = status;
-      }
+      this.serviceAuth[service].status = status;
       return this.renderTemplate();
+    };
+
+    Account.prototype.authLinkClicked = function(event) {
+      var element, service, url;
+      element = $(event != null ? event.currentTarget : void 0);
+      if (!element) {
+        rdError('authLinkClicked: no element');
+        return;
+      }
+      service = element.attr('data-service');
+      if (!service) {
+        rdError('authLinkClicked: no service');
+        return;
+      }
+      url = '/auth/' + service + '?token=' + RD.Helper.api.getAuthToken();
+      return window.open(url);
     };
 
     return Account;

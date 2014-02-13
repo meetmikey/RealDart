@@ -14,6 +14,9 @@ class RDHelperAPI
   get: (path, data, callback) =>
     @_call 'get', path, data, false, callback
 
+  getAuthToken: =>
+    token = RD.Helper.localStorage.get @tokenLocalStorageKey
+    token
 
   getProtocolHostAndPort: () ->
     apiConfig = RD.config.api
@@ -26,9 +29,9 @@ class RDHelperAPI
       result += ':' + apiConfig.port
     result
 
-  buildURL: (path, isAuth) =>
+  _buildURL: (path, isAuth) =>
     unless path
-      rdWarn 'Helper.api:buildURL: path missing'
+      rdWarn 'Helper.api:_buildURL: path missing'
       return ''
 
     url = @getProtocolHostAndPort()
@@ -51,9 +54,13 @@ class RDHelperAPI
   deleteAuthToken: =>
     RD.Helper.localStorage.remove @tokenLocalStorageKey
 
+
+  # Private
+  # --------------------------------
+
   _call: (type, path, data, isAuth, callback) =>
 
-    url = @buildURL path, isAuth
+    url = @_buildURL path, isAuth
 
     ajaxOptions =
       data: data
@@ -61,7 +68,7 @@ class RDHelperAPI
       complete: ( jqXHR, successOrError ) =>
         @_handleAjaxResponse jqXHR, successOrError, isAuth, callback
 
-    token = @_getAuthToken()
+    token = @getAuthToken()
     if token
       ajaxOptions.beforeSend = (xhr, settings) =>
         xhr.setRequestHeader 'Authorization', 'Bearer ' + token
@@ -87,10 +94,6 @@ class RDHelperAPI
           callback errorCode, responseJSON
       else
         callback errorCode, responseJSON
-
-  _getAuthToken: =>
-    token = RD.Helper.localStorage.get @tokenLocalStorageKey
-    token
 
   _storeAuthToken: (responseJSON) =>
     unless responseJSON and responseJSON.token

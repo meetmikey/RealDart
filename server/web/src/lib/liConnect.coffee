@@ -1,7 +1,7 @@
 commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
 
 passport = require 'passport'
-LinkedInStrategy = require('passport-linkedin').Strategy
+LinkedInStrategy = require('passport-linkedin-oauth2').Strategy
 sqsUtils = require commonAppDir + '/lib/sqsUtils'
 commonConf = require commonAppDir + '/conf'
 commonConstants = require commonAppDir + '/constants'
@@ -16,26 +16,34 @@ routeUtils = require './routeUtils'
 liConnect = this
 
 passport.use new LinkedInStrategy
-  consumerKey: commonConf.li.apiKey
-  consumerSecret: commonConf.li.apiSecret
+  clientID: commonConf.auth.linkedIn.apiKey
+  clientSecret: commonConf.auth.linkedIn.apiSecret
   callbackURL: routeUtils.getProtocolHostAndPort() + '/auth/linkedIn/callback'
-  , (token, tokenSecret, profile, done) ->
-    liConnect.saveUserAndQueueImport token, tokenSecret, profile, (error) ->
+  passReqToCallback: true
+  , (req, token, tokenSecret, profile, done) ->
+
+    userId = routeUtils.getUserIdFromAuthRequest req
+    unless userId
+      winston.doError 'no userId in auth req'
+      done 'server error', profile
+      return
+
+    liConnect.saveUserAndQueueImport userId, token, tokenSecret, profile, (error) ->
       if error
         winston.handleError error
         done 'server error', profile
       else
         done null, profile
 
-exports.saveUserAndQueueImport = (token, tokenSecret, profile, callback) ->
-  unless token then callback winston.makeMissingParamError 'token'; return
-  unless tokenSecret then callback winston.makeMissingParamError 'tokenSecret'; return
+exports.saveUserAndQueueImport = (userId, accessToken, refreshToken, profile, callback) ->
+  unless userId then callback winston.makeMissingParamError 'userId'; return
+  unless accessToken then callback winston.makeMissingParamError 'accessToken'; return
   unless profile then callback winston.makeMissingParamError 'profile'; return
   unless profile.id then callback winston.makeMissingParamError 'profile.id'; return
 
   liUser = new LIUserModel liHelpers.getUserJSONFromProfile profile
-  liUser.token = token
-  liUser.tokenSecret = tokenSecret
+  liUser.accessToken = accessToken
+  liUser.refreshToken = refreshToken
 
   liUser.save (mongoError, liUserSaved) ->
     liUser = liUserSaved || liUser
@@ -43,6 +51,7 @@ exports.saveUserAndQueueImport = (token, tokenSecret, profile, callback) ->
       if mongoError.code isnt 11000 then callback winston.makeMongoError mongoError; return
 
     job =
+      userId: userId
       service: commonConstants.service.LINKED_IN
       liUserId: liUser._id
 

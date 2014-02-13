@@ -21,3 +21,6 @@ body {
   color: #006633;
   font-weight: bold;
 }
+.authLink {
+  cursor: pointer;
+}

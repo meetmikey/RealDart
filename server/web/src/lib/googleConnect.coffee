@@ -1,7 +1,7 @@
 commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
 
 passport = require 'passport'
-GoogleStrategy = require('passport-google').Strategy
+GoogleStrategy = require('passport-google-oauth').OAuth2Strategy
 sqsUtils = require commonAppDir + '/lib/sqsUtils'
 commonConf = require commonAppDir + '/conf'
 commonConstants = require commonAppDir + '/constants'
@@ -16,26 +16,33 @@ routeUtils = require './routeUtils'
 googleConnect = this
 
 passport.use new GoogleStrategy
-  returnURL: routeUtils.getProtocolHostAndPort() + '/auth/google/callback'
-  realm: routeUtils.getProtocolHostAndPort()
-  , (identifierURL, profile, done) ->
-      googleConnect.saveUserAndQueueImport identifierURL, profile, (error) ->
-        if error
-          winston.handleError error
-          done 'server error', profile
-        else
-          done null, profile
+  clientID: commonConf.auth.google.clientId
+  clientSecret: commonConf.auth.google.clientSecret
+  callbackURL: routeUtils.getProtocolHostAndPort() + '/auth/google/callback'
+  passReqToCallback: true
+  , (req, accessToken, refreshToken, profile, done) ->
 
-exports.saveUserAndQueueImport = (identifierURL, profile, callback) ->
+    userId = routeUtils.getUserIdFromAuthRequest req
+    unless userId
+      winston.doError 'no userId in auth req'
+      done 'server error', profile
+      return
 
-  unless identifierURL then callback winston.makeMissingParamError 'identifierURL'; return
+    googleConnect.saveUserAndQueueImport userId, accessToken, refreshToken, profile, (error) ->
+      if error
+        winston.handleError error
+        done 'server error', profile
+      else
+        done null, profile
+
+exports.saveUserAndQueueImport = (userId, accessToken, refreshToken, profile, callback) ->
+  unless userId then callback winston.makeMissingParamError 'userId'; return
+  unless accessToken then callback winston.makeMissingParamError 'accessToken'; return
   unless profile then callback winston.makeMissingParamError 'profile'; return
 
-  googleUserId =  googleConnect.getGoogleUserIdFromIdentifierURL identifierURL
-  unless googleUserId then callback winston.makeMissingParamError 'googleUserId'; return
-
   googleUser = new GoogleUserModel googleHelpers.getUserJSONFromProfile profile
-  googleUser._id = googleUserId
+  googleUser.accessToken = accessToken
+  googleUser.refreshToken = refreshToken
 
   googleUser.save (mongoError, googleUserSaved) ->
     googleUser = googleUserSaved || googleUser
@@ -43,21 +50,8 @@ exports.saveUserAndQueueImport = (identifierURL, profile, callback) ->
       if mongoError.code isnt 11000 then callback winston.makeMongoError mongoError; return
 
     job =
+      userId: userId
       service: commonConstants.service.GOOGLE
       googleUserId: googleUser._id
 
     sqsUtils.addJobToQueue commonConf.queue.dataImport, job, callback
-
-exports.getGoogleUserIdFromIdentifierURL = (identifierURL) ->
-  unless identifierURL then return null
-
-  #Example identifierURL:
-  #"https://www.google.com/accounts/o8/id?id=AItOawn6EEiSsZRqLT1kEMQ8XeHgL2wMsbk5MLo"
-
-  indicator = 'id='
-  indicatorIndex = identifierURL.indexOf indicator
-  if indicator is -1
-    return null
-
-  googleUserId = identifierURL.substring indicatorIndex + indicator.length
-  googleUserId

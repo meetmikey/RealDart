@@ -7,8 +7,6 @@ eventTypes = []
 for key, eventType of constants.EVENT_TYPE
   eventTypes.push eventType
 
-console.log 'EVENT TYPES: ', eventTypes
-
 Event = new Schema
   userId: {type: Schema.ObjectId, required: true}
   fbUserId: {type: Number}

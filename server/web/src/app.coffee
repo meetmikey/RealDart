@@ -1,10 +1,8 @@
 commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
 publicDir = __dirname + '/public'
 
-console.log '__dirname: ' + __dirname
-console.log 'publicDir: ' + publicDir
-
 express = require 'express'
+jwt = require 'jsonwebtoken'
 expressJwt = require 'express-jwt'
 https = require 'https'
 fs = require 'fs'
@@ -16,6 +14,7 @@ userUtils = require commonAppDir + '/lib/userUtils'
 winston = require(commonAppDir + '/lib/winstonWrapper').winston
 
 commonConstants = require commonAppDir + '/constants'
+commonConf = require commonAppDir + '/conf'
 
 liConnect = require './lib/liConnect'
 fbConnect = require './lib/fbConnect'
@@ -54,7 +53,6 @@ postInit = () =>
       secret: routeUtils.getJWTSecret()
 
 
-
   #The home page (with the full backbone app)
   app.get '/', (req, res) ->
     res.sendfile publicDir + '/html/home.html'
@@ -68,42 +66,47 @@ postInit = () =>
   # Note: All authenticated routes should be '/api/...' to use express-jwt authentication
   app.get '/api/user', routeUser.getUser
 
-
-  #Google
-  app.get '/auth/google', passport.authenticate 'google'
-  app.get '/auth/google/callback'
-    , passport.authenticate( 'google', {session: false, failureRedirect: '/auth/google/callbackFail'} )
-    , (req, res) ->
-        routeUtils.sendCallbackHTML res, commonConstants.service.GOOGLE, true
-  app.get '/auth/google/callbackFail'
-    , (req, res) ->
-        routeUtils.sendCallbackHTML res, commonConstants.service.GOOGLE, false
-
-
-  #Facebook
-  app.get '/auth/facebook', passport.authenticate 'facebook'
-  app.get '/auth/facebook/callback'
-    , passport.authenticate( 'facebook', {session: false, failureRedirect: '/auth/facebook/callbackFail'} )
-    , (req, res) ->
-        routeUtils.sendCallbackHTML res, commonConstants.service.FACEBOOK, true
-  app.get '/auth/facebook/callbackFail'
-    , (req, res) ->
-        routeUtils.sendCallbackHTML res, commonConstants.service.FACEBOOK, false
-
-
-  #LinkedIn
-  app.get '/auth/linkedIn', passport.authenticate 'linkedin'
-  app.get '/auth/linkedIn/callback'
-    , passport.authenticate( 'linkedin', {session: false, failureRedirect: '/auth/linkedIn/callbackFail'} )
-    , (req, res) ->
-        routeUtils.sendCallbackHTML res, commonConstants.service.LINKED_IN, true
-  app.get '/auth/linkedIn/callbackFail'
-    , (req, res) ->
-        routeUtils.sendCallbackHTML res, commonConstants.service.LINKED_IN, false
-
+  addAuth app, commonConstants.service.GOOGLE
+  addAuth app, commonConstants.service.LINKED_IN
+  addAuth app, commonConstants.service.FACEBOOK
 
   #Start 'er up
   app.listen conf.server.listenPort
+
+
+addAuth = (app, service) ->
+  passportName = service.toLowerCase()
+
+  app.get '/auth/' + service, (req, res, next) ->
+    token = req?.query?.token
+
+    jwt.verify token, routeUtils.getJWTSecret(), (err, user) ->
+      if err
+        winston.doError 'invalid token',
+          err: err
+          token: token
+          secret: routeUtils.getJWTSecret()
+        res.redirect '/#login'
+        return
+
+      options =
+        state: JSON.stringify
+          userId: user._id
+
+      if service is commonConstants.service.GOOGLE
+        options.accessType = commonConf.auth.google.accessType
+        options.scope = commonConf.auth.google.scope
+
+      passport.authenticate( passportName, options )(req, res, next)
+
+  app.get '/auth/' + service + '/callback'
+    , passport.authenticate( passportName, {session: false, failureRedirect: '/auth/' + service + '/callbackFail'} )
+    , (req, res) ->
+        routeUtils.sendCallbackHTML res, service, true
+
+  app.get '/auth/' + service + '/callbackFail'
+    , (req, res) ->
+        routeUtils.sendCallbackHTML res, service, false
 
 
 #initApp() will not callback an error.

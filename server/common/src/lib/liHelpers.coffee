@@ -14,8 +14,16 @@ exports.getUserJSONFromProfile = (profile) ->
   for key, value of profile
     if omitKeys.indexOf( key ) isnt -1
       continue
+      
     if key is 'id'
       userJSON['_id'] = value
     else
       userJSON[key] = value
   userJSON
+
+exports.doDataImportJob = (job, callback) ->
+  unless job then callback winston.makeMissingParamError 'job'; return
+  unless job.liUserId then callback winston.makeMissingParamError 'job.liUserId'; return
+
+  #TODO: write this...
+  callback()

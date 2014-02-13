@@ -4,6 +4,7 @@ winston = require(commonAppDir + '/lib/winstonWrapper').winston
 mongooseConnect = require commonAppDir + '/lib/mongooseConnect'
 appInitUtils = require commonAppDir + '/lib/appInitUtils'
 FBUserModel = require(commonAppDir + '/schema/fbUser').FBUserModel
+fbHelpers = require commonAppDir + '/lib/fbHelpers'
 commonConstants = require commonAppDir + '/constants'
 
 initActions = [
@@ -38,12 +39,14 @@ run = (callback) ->
       winston.doInfo 'no fbUser found',
         fbUserId: fbUserId
     else
-      console.log 'fbUser',
-        fbUser: fbUser
-        accessToken: fbUser.accessToken
-        refreshToken: fbUser.refreshToken
+      #winston.doInfo 'fbUser',
+      #  fbUser: fbUser
+      #  accessToken: fbUser.accessToken
+      #  refreshToken: fbUser.refreshToken
 
-    callback()
+      fbHelpers.addFriendsToContacts fbUser, callback
+
+    #callback()
 
 #initApp() will not callback an error.
 #If something fails, it will just exit the process.

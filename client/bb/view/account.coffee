@@ -1,9 +1,19 @@
 class RD.View.Account extends RD.View.Base
 
   user: null
-  googleStatus: null
-  linkedInStatus: null
-  facebookStatus: null
+  serviceAuth:
+    google:
+      status: null
+      imageName: 'connectEmail'
+    facebook:
+      status: null
+      imageName: 'connectFacebook'
+    linkedIn:
+      status: null
+      imageName: 'connectLinkedIn'
+
+  events:
+    'click .authLink': 'authLinkClicked'
 
   preInitialize: =>
     @addMessageListener()
@@ -20,18 +30,16 @@ class RD.View.Account extends RD.View.Base
 
       @user = user
       if @user.googleUserId
-        @googleStatus = 'success'
+        @serviceAuth.google.status = 'success'
       if @user.fbUserId
-        @facebookStatus = 'success'
+        @serviceAuth.facebook.status = 'success'
       if @user.liUserId
-        @linkedInStatus = 'success'
+        @serviceAuth.linkedIn.status = 'success'
       callback()
 
   getTemplateData: =>
     user: @user?.decorate()
-    googleStatus: @googleStatus
-    facebookStatus: @facebookStatus
-    linkedInStatus: @linkedInStatus
+    serviceAuth: @serviceAuth
 
   addMessageListener: =>
     window.addEventListener 'message', @receiveMessage, false
@@ -47,14 +55,17 @@ class RD.View.Account extends RD.View.Base
     service = responseJSON?.service
     status = responseJSON?.status
 
-    unless status and service
+    unless status and service and @serviceAuth[service]
       return
 
-    if service is 'google'
-      @googleStatus = status
-    else if service is 'facebook'
-      @facebookStatus = status
-    else if service is 'linkedIn'
-      @linkedInStatus = status
-
+    @serviceAuth[service].status = status
     @renderTemplate()
+
+  authLinkClicked: (event) =>
+    element = $ event?.currentTarget
+    unless element then rdError 'authLinkClicked: no element'; return
+    service = element.attr 'data-service'
+    unless service then rdError 'authLinkClicked: no service'; return
+
+    url = '/auth/' + service + '?token=' + RD.Helper.api.getAuthToken()
+    window.open url

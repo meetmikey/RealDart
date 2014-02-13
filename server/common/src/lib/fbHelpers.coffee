@@ -6,53 +6,102 @@ _ = require 'underscore'
 
 winston = require(commonAppDir + '/lib/winstonWrapper').winston
 FBUserModel = require(commonAppDir + '/schema/fbUser').FBUserModel
+ContactModel = require(commonAppDir + '/schema/contact').ContactModel
 commonConf = require commonAppDir + '/conf'
 
 fbHelpers = this
 
-# parse the raw fql response and extract friend data
-exports.getFriendsFromFQLResponse = (fqlResponse) ->
-  friends = []
-  if fqlResponse?.length
-    fqlResponse.forEach (responseItem) ->
-      if responseItem.name == 'friends'
-        friends = responseItem.fql_result_set
-        friends.forEach (friend) ->
-          friend._id = friend.uid
-          delete friend['uid']
-
-  friends
-
 exports.getUserJSONFromProfile = (profile) ->
+  profileJSON = profile?._json || {}
+
   userJSON = {}
   omitKeys = [
-    '_raw'
-    '_json'
   ]
-  for key, value of profile
+  for key, value of profileJSON
     if omitKeys.indexOf( key ) isnt -1
       continue
+      
     if key is 'id'
       userJSON['_id'] = value
     else
       userJSON[key] = value
   userJSON
 
+exports.doDataImportJob = (job, callback) ->
+  unless job then callback winston.makeMissingParamError 'job'; return
+  unless job.fbUserId then callback winston.makeMissingParamError 'job.fbUserId'; return
+
+  fbUserId = job.fbUserId
+
+  FBUserModel.findById fbUserId, (mongoError, fbUser) ->
+    if mongoError then callback winston.makeMongoError mongoError; return
+
+    unless fbUser
+      callback winston.makeError 'fbUser not found',
+        fbUserId: fbUserId
+      return
+
+    fbHelpers.fetchAndSaveFriendData fbUser, (error) ->
+      if error then callback error; return
+
+      fbHelpers.addFriendsToContacts fbUser, callback
+
+exports.addFriendsToContacts = (fbUser, callback) ->
+  unless fbUser then callback winston.makeMissingParamError 'fbUser'; return
+
+  fields =
+    friends: 1
+
+  FBUserModel.findById fbUser._id, fields, (mongoError, result) ->
+    if mongoError then callback winston.makeMongoError mongoError; return
+
+    friendIds = result?.friends
+    unless friendIds then callback(); return
+
+    async.each friendIds (friendId, asyncCallback) ->
+      fbHelpers.addContact fbUser, friendId, asyncCallback
+    , (error) ->
+      callback error
+
+    callback()
+
+exports.addContact = (fbUser, friendId, callback) ->
+  unless fbUser then callback winston.makeMissingParamError 'fbUser'; return
+  unless friendId then callback winston.makeMissingParamError 'friendId'; return
+
+  contact = new ContactModel
+    #userId: 
+
+# parse the raw fql response and extract friend data
+exports.getFriendsFromFQLResponse = (fqlResponse) ->
+  friends = []
+  unless fqlResponse?.length then return friends
+
+  fqlResponse.forEach (responseItem) ->
+    if responseItem.name is 'friends'
+      friends = responseItem.fql_result_set
+      friends.forEach (friend) ->
+        friend._id = friend.uid
+        delete friend['uid']
+
+  friends
 
 # exchange short-lived access token for long-lived (60 day) token
 exports.extendToken = (accessToken, cb) ->
-  graph.extendAccessToken {
-    "access_token" : accessToken
-    "client_id" : commonConf.fb.app_id
-    "client_secret" : commonConf.fb.app_secret
-  }, (err, facebookRes) ->
+  graph.extendAccessToken
+    access_token: accessToken
+    client_id: commonConf.fb.app_id
+    client_secret: commonConf.fb.app_secret
+  , (err, facebookRes) ->
       if err
-        cb winston.makeError(err)
+        cb winston.makeError err
       else
         cb null, facebookRes
 
 # get data on a user's friends and save it to the database
 exports.fetchAndSaveFriendData = (fbUser, callback) ->
+  unless fbUser then callback winston.makeMissingParamError 'fbUser'; return
+
   winston.doInfo 'fetchAndSaveFriendData'
 
   query =
@@ -93,8 +142,8 @@ exports.fetchAndSaveFriendData = (fbUser, callback) ->
   graph.fql query, (err, res) ->
     if err then callback winston.makeError err; return
 
-    friends = fbHelpers.getFriendsFromFQLResponse (res.data)
-    fbHelpers.saveFriendData(fbUser, friends, callback)
+    friends = fbHelpers.getFriendsFromFQLResponse res.data
+    fbHelpers.saveFriendData fbUser, friends, callback
 
 
 exports.fetchFQLDataForSelf = (fbUser, callback) ->
@@ -213,6 +262,8 @@ exports.getFacebookFriends = (user, callback) ->
         callback null, fbFriends
 
 exports.getPrintableName = (fbUser) ->
+  unless fbUser then return ''
+
   if fbUser.first_name and fbUser.last_name
     return fbUser.first_name + ' ' + fbUser.last_name
   if fbUser.first_name

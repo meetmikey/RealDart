@@ -6,36 +6,20 @@
   Connect your accounts so that we can remind you to keep in touch with the people you know.
 </p>
 
-<a href = 'auth/google' target='_blank'>
-  <img src='img/connectEmail.png' />
-</a>
-{{#ifCond googleStatus '==' 'success'}}
-  <span class='success'>ok!</span>
-{{/ifCond}}
-{{#ifCond googleStatus '==' 'fail'}}
-  <span class='error'>fail!</span>
-{{/ifCond}}
+<br/>
 
-<br/><br/>
+{{#each serviceAuth}}
+  <br/>
 
-<a href = 'auth/facebook' target='_blank'>
-  <img src='img/connectFacebook.png' />
-</a>
-{{#ifCond facebookStatus '==' 'success'}}
-  <span class='success'>ok!</span>
-{{/ifCond}}
-{{#ifCond facebookStatus '==' 'fail'}}
-  <span class='error'>fail!</span>
-{{/ifCond}}
+  <a class='authLink' data-service='{{@key}}'>
+    <img src='img/{{imageName}}.png' />
+  </a>
+  {{#ifCond status '==' 'success'}}
+    <span class='success'>ok!</span>
+  {{/ifCond}}
+  {{#ifCond status '==' 'fail'}}
+    <span class='error'>fail!</span>
+  {{/ifCond}}
 
-<br/><br/>
-
-<a href = 'auth/linkedIn' target='_blank'>
-  <img src='img/connectLinkedIn.png' />
-</a>
-{{#ifCond linkedInStatus '==' 'success'}}
-  <span class='success'>ok!</span>
-{{/ifCond}}
-{{#ifCond linkedInStatus '==' 'fail'}}
-  <span class='error'>fail!</span>
-{{/ifCond}}
+  <br/>
+{{/each}}

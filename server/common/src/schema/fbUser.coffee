@@ -15,10 +15,13 @@ FBUserName =
 #TODO: remove mixed types!!
 FBUser = new Schema
   _id: {type: Number, required: true, unique: true}
+  
+  #tokens
   accessTokenEncrypted: {type: String}
   accessTokenSalt: {type: String}
   refreshTokenEncrypted: {type: String}
   refreshTokenSalt: {type: String}
+
   age_range : {type : String}
   bio : {type : String}
   birthday: {type : String}
