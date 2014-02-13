@@ -13,25 +13,25 @@ winston.add winston.transports.Console,
 
 # read into winstonError obj and get whether to delete the msg from queue
 winston.getDeleteFromQueueFlag = (winstonError) ->
-  winston.getFlag winstonError 'deleteFromQueue'
+  winston.getFlag winstonError, 'deleteFromQueue'
 
 # read into winstonError obj and get whether to delete the msg from queue
 winston.setDeleteFromQueueFlag = (winstonError, value) ->
-  winston.setFlag winstonError 'deleteFromQueue', value
+  winston.setFlag winstonError, 'deleteFromQueue', value
 
 
 winston.getSuppressQueueErrorFlag = (winstonError) ->
-  winston.getFlag winstonError 'suppressError'
+  winston.getFlag winstonError, 'suppressError'
 
 winston.setSuppressQueueErrorFlag = (winstonError, value) ->
-  winston.setFlag winstonError 'suppressError', value
+  winston.setFlag winstonError, 'suppressError', value
 
 
 winston.getErrorType = (winstonError) ->
-  winston.getFlag winstonError 'errorType'
+  winston.getFlag winstonError, 'errorType'
 
 winston.setErrorType = (winstonError, type) ->
-  winston.setFlag winstonError 'errorType', type
+  winston.setFlag winstonError, 'errorType', type
 
 
 

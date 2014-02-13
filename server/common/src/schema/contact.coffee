@@ -2,14 +2,15 @@ mongoose = require 'mongoose'
 Schema = mongoose.Schema
 
 Contact = new Schema
+  #This is the userId of the person whose contact this is.
   userId: {type: Schema.ObjectId}
-  fbUserId: {type: Schema.ObjectId}
-  liUserId: {type: Schema.ObjectId}
+
+  #All other fields relate to the contact himself/herself
+  fbUserId: {type: Number}
+  liUserId: {type: Number}
   timestamp: {type: Date, default: Date.now}
 
 Contact.index {userId: 1}, {background: 1}
-Contact.index {userId: 1, fbUserId: 1}, {unique: true, sparse: true}
-Contact.index {userId: 1, liUserId: 1}, {unique: true, sparse: true}
 
 mongoose.model 'Contact', Contact
 exports.ContactModel = mongoose.model 'Contact'

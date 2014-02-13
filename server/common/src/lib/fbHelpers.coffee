@@ -29,8 +29,10 @@ exports.getUserJSONFromProfile = (profile) ->
 
 exports.doDataImportJob = (job, callback) ->
   unless job then callback winston.makeMissingParamError 'job'; return
+  unless job.userId then callback winston.makeMissingParamError 'job.userId'; return
   unless job.fbUserId then callback winston.makeMissingParamError 'job.fbUserId'; return
 
+  userId = job.userId
   fbUserId = job.fbUserId
 
   FBUserModel.findById fbUserId, (mongoError, fbUser) ->
@@ -44,9 +46,10 @@ exports.doDataImportJob = (job, callback) ->
     fbHelpers.fetchAndSaveFriendData fbUser, (error) ->
       if error then callback error; return
 
-      fbHelpers.addFriendsToContacts fbUser, callback
+      fbHelpers.addFriendsToContacts userId, fbUser, callback
 
-exports.addFriendsToContacts = (fbUser, callback) ->
+exports.addFriendsToContacts = (userId, fbUser, callback) ->
+  unless userId then callback winston.makeMissingParamError 'userId'; return
   unless fbUser then callback winston.makeMissingParamError 'fbUser'; return
 
   fields =
@@ -56,21 +59,30 @@ exports.addFriendsToContacts = (fbUser, callback) ->
     if mongoError then callback winston.makeMongoError mongoError; return
 
     friendIds = result?.friends
-    unless friendIds then callback(); return
 
-    async.each friendIds (friendId, asyncCallback) ->
-      fbHelpers.addContact fbUser, friendId, asyncCallback
+    winston.doInfo 'friendIds',
+      friendIds: friendIds
+
+    unless friendIds and friendIds.length then callback(); return
+
+    async.each friendIds, (friendId, asyncCallback) ->
+      fbHelpers.addContact userId, fbUser, friendId, asyncCallback
     , (error) ->
       callback error
 
-    callback()
-
-exports.addContact = (fbUser, friendId, callback) ->
+exports.addContact = (userId, fbUser, friendId, callback) ->
+  unless userId then callback winston.makeMissingParamError 'userId'; return
   unless fbUser then callback winston.makeMissingParamError 'fbUser'; return
   unless friendId then callback winston.makeMissingParamError 'friendId'; return
 
   contact = new ContactModel
-    #userId: 
+    userId: userId
+    fbUserId: friendId
+
+  contact.save (mongoError) ->
+    if mongoError then callback winston.makeMongoError mongoError; return
+
+    callback()
 
 # parse the raw fql response and extract friend data
 exports.getFriendsFromFQLResponse = (fqlResponse) ->
