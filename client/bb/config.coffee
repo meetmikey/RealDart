@@ -1,5 +1,4 @@
 RD.config =
-  environment: 'local'
   debugMode: true
   api:
     host: 'local.realdart.com'

@@ -57,8 +57,10 @@ postInit = () =>
   app.get '/', (req, res) ->
     res.sendfile publicDir + '/html/home.html'
 
-  app.get '/preAuth', (req, res) ->
-    res.sendfile publicDir + '/html/preAuth.html'
+  app.get '/preAuth/:service', (req, res) ->
+    service = req?.params?.service
+    res.render 'preAuth.html',
+      service: service
 
   #Authentication
   app.post '/login', routeUser.login

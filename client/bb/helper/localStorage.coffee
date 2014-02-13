@@ -7,11 +7,7 @@ class RDHelperLocalStorage
     typeof window.localStorage isnt 'undefined'
 
   getKey: (key) =>
-    environment = RD.config.environment
-    fullKey = 'RD'
-    if environment
-      fullKey += '-' + environment
-    fullKey += '-' + key
+    fullKey = 'RD-' + key
     fullKey
 
   get: (key) =>

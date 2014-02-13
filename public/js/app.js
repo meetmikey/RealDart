@@ -23,7 +23,6 @@
 
 (function() {
   RD.config = {
-    environment: 'local',
     debugMode: true,
     api: {
       host: 'local.realdart.com',
@@ -324,13 +323,8 @@
     };
 
     RDHelperLocalStorage.prototype.getKey = function(key) {
-      var environment, fullKey;
-      environment = RD.config.environment;
-      fullKey = 'RD';
-      if (environment) {
-        fullKey += '-' + environment;
-      }
-      fullKey += '-' + key;
+      var fullKey;
+      fullKey = 'RD-' + key;
       return fullKey;
     };
 
@@ -1024,7 +1018,7 @@
         return;
       }
       tokenLocalStorageKey = RD.Helper.localStorage.getKey(RD.Helper.api.tokenLocalStorageKey);
-      url = 'html/preAuth.html?tokenLocalStorageKey=' + tokenLocalStorageKey + '&service=' + service;
+      url = '/preAuth/' + service;
       return window.open(url);
     };
 

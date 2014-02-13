@@ -68,5 +68,5 @@ class RD.View.Account extends RD.View.Base
     unless service then rdError 'authLinkClicked: no service'; return
 
     tokenLocalStorageKey = RD.Helper.localStorage.getKey RD.Helper.api.tokenLocalStorageKey
-    url = 'html/preAuth.html?tokenLocalStorageKey=' + tokenLocalStorageKey + '&service=' + service
+    url = '/preAuth/' + service
     window.open url
