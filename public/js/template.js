@@ -86,7 +86,7 @@ helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
   
 
 
-  return "<div class='container'>\n  <p>Sidekick Labs.</p>\n</div>";
+  return "<div class='container footerTag'>\n  <p>Sidekick Labs</p>\n</div>";
   });
 
 this["RDTemplates"]["template/mainLayout/header.html"] = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {

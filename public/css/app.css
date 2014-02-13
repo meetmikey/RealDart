@@ -21,6 +21,10 @@ body {
   color: #006633;
   font-weight: bold;
 }
+.footerTag {
+  margin-top: 20px;
+  text-align: right;
+}
 .authLink {
   cursor: pointer;
 }
