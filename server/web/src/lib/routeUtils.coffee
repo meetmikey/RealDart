@@ -74,10 +74,4 @@ exports.getUserIdFromAuthRequest  = (req) ->
       datatString: dataString
 
   userId = data?.userId
-
-  winston.doInfo 'HERE',
-    userId: userId
-    data: data
-    reqQuery: req.query
-
   userId
