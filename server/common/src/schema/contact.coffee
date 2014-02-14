@@ -8,9 +8,14 @@ Contact = new Schema
   #All other fields relate to the contact himself/herself
   fbUserId: {type: Number}
   liUserId: {type: String}
+  firstName: {type: String}
+  lastName: {type: String}
+  picURL: {type: String}
+
   timestamp: {type: Date, default: Date.now}
 
 Contact.index {userId: 1}, {background: 1}
+Contact.index {lastName: 1}, {background: 1, sparse: true}
 
 mongoose.model 'Contact', Contact
 exports.ContactModel = mongoose.model 'Contact'

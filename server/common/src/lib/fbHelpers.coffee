@@ -1,13 +1,13 @@
-commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
-
 async = require 'async'
 fbgraph = require 'fbgraph'
 _ = require 'underscore'
 
-winston = require(commonAppDir + '/lib/winstonWrapper').winston
-FBUserModel = require(commonAppDir + '/schema/fbUser').FBUserModel
-ContactModel = require(commonAppDir + '/schema/contact').ContactModel
-commonConf = require commonAppDir + '/conf'
+winston = require('./winstonWrapper').winston
+FBUserModel = require('../schema/fbUser').FBUserModel
+contactHelpers = require './contactHelpers'
+
+conf = require '../conf'
+constants = require '../constants'
 
 fbHelpers = this
 
@@ -43,72 +43,11 @@ exports.doDataImportJob = (job, callback) ->
         fbUserId: fbUserId
       return
 
-    fbHelpers.fetchAndSaveFriendData fbUser, (error) ->
-      if error then callback error; return
-
-      fbHelpers.addFriendsToContacts userId, fbUser, callback
-
-exports.addFriendsToContacts = (userId, fbUser, callback) ->
-  unless userId then callback winston.makeMissingParamError 'userId'; return
-  unless fbUser then callback winston.makeMissingParamError 'fbUser'; return
-
-  fields =
-    friends: 1
-
-  FBUserModel.findById fbUser._id, fields, (mongoError, result) ->
-    if mongoError then callback winston.makeMongoError mongoError; return
-
-    friendIds = result?.friends
-
-    unless friendIds and friendIds.length then callback(); return
-
-    async.each friendIds, (friendId, asyncCallback) ->
-      fbHelpers.addContact userId, fbUser, friendId, asyncCallback
-    , (error) ->
-      callback error
-
-exports.addContact = (userId, fbUser, friendId, callback) ->
-  unless userId then callback winston.makeMissingParamError 'userId'; return
-  unless fbUser then callback winston.makeMissingParamError 'fbUser'; return
-  unless friendId then callback winston.makeMissingParamError 'friendId'; return
-
-  contact = new ContactModel
-    userId: userId
-    fbUserId: friendId
-
-  contact.save (mongoError) ->
-    if mongoError then callback winston.makeMongoError mongoError; return
-
-    callback()
-
-# parse the raw fql response and extract friend data
-exports.getFriendsFromFQLResponse = (fqlResponse) ->
-  friends = []
-  unless fqlResponse?.length then return friends
-
-  fqlResponse.forEach (responseItem) ->
-    if responseItem.name is 'friends'
-      friends = responseItem.fql_result_set
-      friends.forEach (friend) ->
-        friend._id = friend.uid
-        delete friend['uid']
-
-  friends
-
-# exchange short-lived access token for long-lived (60 day) token
-exports.extendToken = (accessToken, cb) ->
-  fbgraph.extendAccessToken
-    access_token: accessToken
-    client_id: commonConf.fb.app_id
-    client_secret: commonConf.fb.app_secret
-  , (err, facebookRes) ->
-      if err
-        cb winston.makeError err
-      else
-        cb null, facebookRes
+    fbHelpers.fetchAndSaveFriendData userId, fbUser, callback
 
 # get data on a user's friends and save it to the database
-exports.fetchAndSaveFriendData = (fbUser, callback) ->
+exports.fetchAndSaveFriendData = (userId, fbUser, callback) ->
+  unless userId then callback winston.makeMissingParamError 'userId'; return
   unless fbUser then callback winston.makeMissingParamError 'fbUser'; return
 
   winston.doInfo 'fetchAndSaveFriendData'
@@ -152,76 +91,52 @@ exports.fetchAndSaveFriendData = (fbUser, callback) ->
     if err then callback winston.makeError err; return
 
     friends = fbHelpers.getFriendsFromFQLResponse res.data
-    fbHelpers.saveFriendData fbUser, friends, callback
+    fbHelpers.saveFriendData userId, fbUser, friends, callback
 
 
-exports.fetchFQLDataForSelf = (fbUser, callback) ->
-  winston.doInfo 'fetchAndSaveFriendData'
+# parse the raw fql response and extract friend data
+exports.getFriendsFromFQLResponse = (fqlResponse) ->
+  friends = []
+  unless fqlResponse?.length then return friends
 
-  query =
-    me: 'SELECT 
-      about_me, 
-      activities, 
-      age_range, 
-      birthday_date,
-      birthday,
-      current_location,
-      education,
-      email,
-      favorite_athletes,
-      favorite_teams,
-      first_name,
-      hometown_location,
-      last_name,
-      middle_name,
-      name,
-      pic,
-      political,
-      profile_update_time,
-      profile_url,
-      relationship_status,
-      religion,
-      sex,
-      significant_other_id,
-      sports,
-      tv,
-      uid, 
-      wall_count,
-      website,
-      quotes,
-      work FROM user WHERE uid me()'
+  fqlResponse.forEach (responseItem) ->
+    if responseItem.name is 'friends'
+      friends = responseItem.fql_result_set
+      friends.forEach (friend) ->
+        friend._id = friend.uid
+        delete friend['uid']
 
-  fbgraph.setAccessToken fbUser.accessToken
-
-  fbgraph.fql query, (err, res) ->
-    if err then callback winston.makeError err; return
-
-    #TODO: do something with the data
-    console.log res
-    callback null, res
+  friends
 
 # save data in two places...
 # _id's saved on original user, full data stored in individual fbUser objects
-exports.saveFriendData = (fbUser, friends, callback) ->
+exports.saveFriendData = (userId, fbUser, friends, callback) ->
+  unless userId then callback winston.makeMissingParamError 'userId'; return
+
   winston.doInfo 'saveFriendData'
   friendsClean = fbHelpers.removeNullFields friends
 
   async.series([
-    (asyncCb) ->
+    (seriesCallback) ->
       FBUserModel.collection.insert friendsClean, (err) ->
         if err?.code is constants.MONGO_ERROR_CODE_DUPLICATE
-          asyncCb()
+          seriesCallback()
         else if err
-          asyncCb winston.makeMongoError(err)
+          seriesCallback winston.makeMongoError(err)
         else
-          asyncCb()
-    (asyncCb) ->
+          seriesCallback()
+    (seriesCallback) ->
       fbUser.friends = _.pluck friends, '_id'
       fbUser.save (err)->
         if err
-          asyncCb winston.makeMongoError(err)
+          seriesCallback winston.makeMongoError(err)
         else
-          asyncCb()
+          seriesCallback()
+    (seriesCallback) ->
+      async.each friends, (friend, eachCallback) ->
+        contactHelpers.addContact userId, constants.service.FACEBOOK, friend, eachCallback
+      , (error) ->
+        seriesCallback error
     ]
     (err) ->
       callback err
@@ -267,6 +182,11 @@ exports.getFacebookFriends = (user, callback) ->
 
         callback null, fbFriends
 
+exports.getPicURL = (fbUserId) ->
+  unless fbUserId then return ''
+  url = 'http://graph.facebook.com/' + fbUserId + '/picture?type=large'
+  url
+
 exports.getPrintableName = (fbUser) ->
   unless fbUser then return ''
 
@@ -277,3 +197,15 @@ exports.getPrintableName = (fbUser) ->
   if fbUser.last_name
     return 'M. ' + fbUser.last_name
   return ''
+
+# exchange short-lived access token for long-lived (60 day) token
+exports.extendToken = (accessToken, cb) ->
+  fbgraph.extendAccessToken
+    access_token: accessToken
+    client_id: conf.fb.app_id
+    client_secret: conf.fb.app_secret
+  , (err, facebookRes) ->
+      if err
+        cb winston.makeError err
+      else
+        cb null, facebookRes

@@ -1,13 +1,13 @@
-commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
-
 async = require 'async'
 https = require 'https'
 
-winston = require(commonAppDir + '/lib/winstonWrapper').winston
-LIUserModel = require(commonAppDir + '/schema/liUser').LIUserModel
-ContactModel = require(commonAppDir + '/schema/contact').ContactModel
+winston = require('./winstonWrapper').winston
+LIUserModel = require('../schema/liUser').LIUserModel
+contactHelpers = require './contactHelpers'
 webUtils = require './webUtils'
+
 conf = require '../conf'
+constants = require '../constants'
 
 liHelpers = this
 
@@ -64,27 +64,13 @@ exports.getConnections = (userId, liUser, callback) ->
         return
 
       connectionLIUser.save (mongoError) ->
-        if mongoError and mongoError.code isnt commonConstants.MONGO_ERROR_CODE_DUPLICATE
+        if mongoError and mongoError.code isnt constants.MONGO_ERROR_CODE_DUPLICATE
           eachCallback winston.makeMongoError mongoError
           return
 
-        liHelpers.addContact userId, liUser, connectionLIUser._id, eachCallback
+        contactHelpers.addContact userId, constants.service.LINKED_IN, connectionLIUser, eachCallback
 
     , callback
-
-exports.addContact = (userId, liUser, connectionId, callback) ->
-  unless userId then callback winston.makeMissingParamError 'userId'; return
-  unless liUser then callback winston.makeMissingParamError 'liUser'; return
-  unless connectionId then callback winston.makeMissingParamError 'connectionId'; return
-
-  contact = new ContactModel
-    userId: userId
-    liUserId: connectionId
-
-  contact.save (mongoError) ->
-    if mongoError then callback winston.makeMongoError mongoError; return
-
-    callback()
 
 exports.doAPIGet = (liUser, path, callback) ->
   unless liUser then callback winston.doMissingParamError 'liUser'; return

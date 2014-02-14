@@ -34,12 +34,12 @@ FBUser = new Schema
   favorite_athletes: Schema.Types.Mixed
   favorite_teams : Schema.Types.Mixed
   first_name: {type: String}
+  last_name: {type: String}
   gender: {type: String, enum: ['male', 'female']}
   hometown: {type: FBLocation}
   inspirational_people : Schema.Types.Mixed
   is_verified: {type : Boolean}
   languages : Schema.Types.Mixed
-  last_name: {type: String}
   link: {type: String}
   locale: {type: String}
   location: {type: FBLocation}
