@@ -12,14 +12,13 @@ webUtils = this
 # This is here as a convenience  since most of the time we'll want to use the
 #  default number of redirects, but don't want to specify a "null" value in the params.
 exports.webGet = ( url, asBuffer, callback ) ->
-  winston.doInfo 'webGet',
-    url : url
+  #winston.doInfo 'webGet', {url : url}
+
   #Pass null, so we use the default
   webUtils.webGetWithRedirects url, asBuffer, null, callback
 
 exports.webGetWithoutRedirects = ( url, asBuffer, callback ) ->
-  winston.doInfo 'webGetWithoutRedirects',
-    url: url
+  #winston.doInfo 'webGetWithoutRedirects', {url: url}
 
   webUtils.webGetWithRedirects url, asBuffer, 0, callback
 
@@ -28,8 +27,7 @@ exports.webGetWithoutRedirects = ( url, asBuffer, callback ) ->
 exports.webGetWithRedirects = ( url, asBuffer, numRedirectsToFollow, callback ) ->
   unless url then callback winston.makeMissingParamError 'url'; return
 
-  winston.doInfo 'webGetWithRedirects',
-    url : url
+  #winston.doInfo 'webGetWithRedirects', {url : url}
 
   remainingRedirectsToFollow = constants.DEFAULT_NUM_REDIRECTS_TO_FOLLOW
 
@@ -42,8 +40,7 @@ exports.webGetWithRedirects = ( url, asBuffer, numRedirectsToFollow, callback ) 
 exports.webGetAttempt = ( url, asBuffer, remainingRedirectsToFollow, originalURL, callback ) ->
   unless url then callback winston.makeMissingParamError 'url'; return
 
-  winston.doInfo 'webGetAttempt',
-    url : url
+  #winston.doInfo 'webGetAttempt', {url : url}
 
   # check protocol - only http, https can be processed
   unless urlUtils.hasValidProtocol url
@@ -134,10 +131,12 @@ exports.handleWebGetResponse = ( response, asBuffer, remainingRedirectsToFollow,
     else
       redirectURL = response.headers.location
       remainingRedirectsToFollow = remainingRedirectsToFollow - 1
+      ###
       winston.doInfo 'redirecting',
         originalURL: originalURL
         redirectURL: redirectURL
         remainingRedirectsToFollow: remainingRedirectsToFollow
+      ###
       webUtils.webGetAttempt redirectURL, asBuffer, remainingRedirectsToFollow, originalURL, callback
 
     return

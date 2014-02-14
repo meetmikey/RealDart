@@ -23,9 +23,6 @@ passport.use new LinkedInStrategy
   scope: commonConf.auth.linkedIn.scope
   , (req, token, tokenSecret, profile, done) ->
 
-    winston.doInfo 'liUserProfile',
-      profile: profile
-
     userId = routeUtils.getUserIdFromAuthRequest req
     unless userId
       winston.doError 'no userId in auth req'
