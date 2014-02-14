@@ -83,8 +83,10 @@ exports.saveUserAndQueueImport = (userId, accessToken, refreshToken, profile, ca
 
   fbUser.save (mongoError, fbUserSaved) ->
     fbUser = fbUserSaved || fbUser
-    if mongoError
-      if mongoError.code isnt 11000 then callback winston.makeMongoError mongoError; return
+
+    if mongoError and mongoError.code isnt commonConstants.MONGO_ERROR_CODE_DUPLICATE
+      callback winston.makeMongoError mongoError
+      return
 
     job =
       userId: userId

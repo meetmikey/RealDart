@@ -57,9 +57,16 @@ exports.getConnections = (userId, liUser, callback) ->
 
     async.each connections, (connection, eachCallback) ->
       connectionLIUser = new LIUserModel liHelpers.getUserJSONFromConnection connection
-      
+
+      #Some connections are private.  Skip them.
+      if connectionLIUser._id is 'private'
+        eachCallback()
+        return
+
       connectionLIUser.save (mongoError) ->
-        if mongoError then eachCallback winston.makeMongoError mongoError; return
+        if mongoError and mongoError.code isnt commonConstants.MONGO_ERROR_CODE_DUPLICATE
+          eachCallback winston.makeMongoError mongoError
+          return
 
         liHelpers.addContact userId, liUser, connectionLIUser._id, eachCallback
 

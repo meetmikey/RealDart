@@ -209,7 +209,7 @@ exports.saveFriendData = (fbUser, friends, callback) ->
   async.series([
     (asyncCb) ->
       FBUserModel.collection.insert friendsClean, (err) ->
-        if err?.code ==11000
+        if err?.code is constants.MONGO_ERROR_CODE_DUPLICATE
           asyncCb()
         else if err
           asyncCb winston.makeMongoError(err)

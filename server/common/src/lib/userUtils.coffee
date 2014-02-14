@@ -62,7 +62,7 @@ exports.register = (firstName, lastName, email, password, callback) ->
 
       user.save (mongoError, savedUser) ->
         if mongoError
-          if mongoError.code is 11000
+          if mongoError.code is constants.MONGO_ERROR_CODE_DUPLICATE
             callback()
           else
             callback winston.makeMongoError mongoError
