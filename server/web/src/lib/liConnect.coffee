@@ -46,15 +46,7 @@ exports.saveUserAndQueueImport = (userId, accessToken, refreshToken, profile, ca
   liUser.accessToken = accessToken
   liUser.refreshToken = refreshToken
 
-
-  winston.doInfo 'li accessToken',
-    accessToken: accessToken
-
   liUser.save (mongoError, liUserSaved, numAffected) ->
-    
-    winston.doInfo 'liUserSaved',
-      liUserSaved: liUserSaved
-      numAffected: numAffected
 
     liUser = liUserSaved || liUser
     if mongoError and mongoError.code isnt commonConstants.MONGO_ERROR_CODE_DUPLICATE

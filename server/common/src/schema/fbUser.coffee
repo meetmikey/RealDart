@@ -22,45 +22,45 @@ FBUser = new Schema
   refreshTokenEncrypted: {type: String}
   refreshTokenSalt: {type: String}
 
-  age_range : {type : String}
-  bio : {type : String}
-  birthday: {type : String}
-  birthday_date : {type : String}
-  books : {type : String}
-  cover : Schema.Types.Mixed
-  current_address : Schema.Types.Mixed
-  education : Schema.Types.Mixed
-  email : {type : String}
+  age_range : {type: String}
+  bio: {type: String}
+  birthday: {type: String}
+  birthday_date: {type: String}
+  books: {type: String}
+  cover: Schema.Types.Mixed
+  current_address: Schema.Types.Mixed
+  education: Schema.Types.Mixed
+  email: {type: String}
   favorite_athletes: Schema.Types.Mixed
-  favorite_teams : Schema.Types.Mixed
+  favorite_teams: Schema.Types.Mixed
   first_name: {type: String}
   last_name: {type: String}
   gender: {type: String, enum: ['male', 'female']}
   hometown: {type: FBLocation}
-  inspirational_people : Schema.Types.Mixed
-  is_verified: {type : Boolean}
-  languages : Schema.Types.Mixed
+  inspirational_people: Schema.Types.Mixed
+  is_verified: {type: Boolean}
+  languages: Schema.Types.Mixed
   link: {type: String}
   locale: {type: String}
   location: {type: FBLocation}
-  current_location : {type: FBLocation}
-  hometown_location : {type: FBLocation}
-  middle_name : {type : String}
+  current_location: {type: FBLocation}
+  hometown_location: {type: FBLocation}
+  middle_name: {type: String}
   name: {type: FBUserName}
-  name_format : {type : String}
-  political : {type : String}
-  quotes : {type : String}
-  relationship_status : {type : String}
-  religion : {type : String}
-  significant_other : Schema.Types.Mixed
-  third_party_id : {type : String}
+  name_format: {type: String}
+  political: {type: String}
+  quotes: {type: String}
+  relationship_status: {type: String}
+  religion: {type: String}
+  significant_other: Schema.Types.Mixed
+  third_party_id: {type: String}
   username: {type: String}
-  verified: {type : Boolean}
-  website : {type : String}
-  work : Schema.Types.Mixed
+  verified: {type: Boolean}
+  website: {type: String}
+  work: Schema.Types.Mixed
   timezone: {type: Number}
   updated_time: {type: String}
-  friends : {type : [Number], index : true}
+  friends: {type: [Number], index: true}
 
 FBUser.virtual('accessToken').set (input) ->
   encryptedInfo = utils.encryptSymmetric input
