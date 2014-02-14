@@ -1,7 +1,7 @@
 commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
 
 async = require 'async'
-graph = require 'fbgraph'
+fbgraph = require 'fbgraph'
 _ = require 'underscore'
 
 winston = require(commonAppDir + '/lib/winstonWrapper').winston
@@ -60,9 +60,6 @@ exports.addFriendsToContacts = (userId, fbUser, callback) ->
 
     friendIds = result?.friends
 
-    winston.doInfo 'friendIds',
-      friendIds: friendIds
-
     unless friendIds and friendIds.length then callback(); return
 
     async.each friendIds, (friendId, asyncCallback) ->
@@ -100,7 +97,7 @@ exports.getFriendsFromFQLResponse = (fqlResponse) ->
 
 # exchange short-lived access token for long-lived (60 day) token
 exports.extendToken = (accessToken, cb) ->
-  graph.extendAccessToken
+  fbgraph.extendAccessToken
     access_token: accessToken
     client_id: commonConf.fb.app_id
     client_secret: commonConf.fb.app_secret
@@ -149,9 +146,9 @@ exports.fetchAndSaveFriendData = (fbUser, callback) ->
       quotes,
       work FROM user WHERE uid IN (SELECT uid2 FROM friend WHERE uid1 = me())'
 
-  graph.setAccessToken fbUser.accessToken
+  fbgraph.setAccessToken fbUser.accessToken
 
-  graph.fql query, (err, res) ->
+  fbgraph.fql query, (err, res) ->
     if err then callback winston.makeError err; return
 
     friends = fbHelpers.getFriendsFromFQLResponse res.data
@@ -194,9 +191,9 @@ exports.fetchFQLDataForSelf = (fbUser, callback) ->
       quotes,
       work FROM user WHERE uid me()'
 
-  graph.setAccessToken fbUser.accessToken
+  fbgraph.setAccessToken fbUser.accessToken
 
-  graph.fql query, (err, res) ->
+  fbgraph.fql query, (err, res) ->
     if err then callback winston.makeError err; return
 
     #TODO: do something with the data
@@ -264,9 +261,6 @@ exports.getFacebookFriends = (user, callback) ->
       friendsSelect =
         _id:
           $in: fbUser.friends
-
-      #winston.doInfo 'friendsSelect',
-      #  friendsSelect: friendsSelect
 
       FBUserModel.find friendsSelect, (mongoError, fbFriends) ->
         if mongoError then callback winston.makeMongoError mongoError; return

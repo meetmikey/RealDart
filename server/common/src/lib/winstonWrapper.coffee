@@ -20,10 +20,10 @@ winston.setDeleteFromQueueFlag = (winstonError, value) ->
   winston.setFlag winstonError, 'deleteFromQueue', value
 
 
-winston.getSuppressQueueErrorFlag = (winstonError) ->
+winston.getSuppressErrorFlag = (winstonError) ->
   winston.getFlag winstonError, 'suppressError'
 
-winston.setSuppressQueueErrorFlag = (winstonError, value) ->
+winston.setSuppressErrorFlag = (winstonError, value) ->
   winston.setFlag winstonError, 'suppressError', value
 
 

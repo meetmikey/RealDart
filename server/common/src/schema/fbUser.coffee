@@ -12,7 +12,7 @@ FBUserName =
   givenName: {type: String}
 
 
-#TODO: remove mixed types!!
+#TODO: remove mixed types!
 FBUser = new Schema
   _id: {type: Number, required: true, unique: true}
   

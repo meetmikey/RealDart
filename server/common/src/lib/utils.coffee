@@ -21,6 +21,15 @@ exports.isObject = ( input ) ->
     return true
   return false
 
+exports.convertToInt = (strNumber) ->
+  if typeof strNumber is 'string'
+    return Number strNumber
+  
+  if typeof strNumber is 'number'
+    return strNumber
+    
+  return null
+
 exports.capitalize = (input) ->
   unless input and ( input.length > 0 ) then return ''
   capitalized = input[0].toUpperCase() + input.slice 1
@@ -187,3 +196,76 @@ exports.decryptSymmetric = (input, salt) ->
   saltLen = salt.length
   decrypted = tokenAndSalt.substring saltLen, tokenAndSalt.length
   decrypted
+
+# callback (err, buffer, isAborted)
+exports.streamToBuffer = ( stream, capBuffer, callback ) ->
+  unless stream then callback winston.makeMissingParamError 'stream'; return
+
+  buffers = []
+  hasCalledBack = false
+  totalSize = 0
+
+  stream.on 'data', (chunk) ->
+    unless buffers
+      if hasCalledBack
+        winston.doWarn 'streamToBuffer error, buffer is null, but has already called back'
+      else
+        callback winston.makeError 'streamToBuffer error, buffer is null'
+        hasCalledBack = true
+      return
+
+    buffers.push new Buffer( chunk, 'binary' )
+
+    unless capBuffer
+      return
+
+    # cap the size of the response to avoid memory problems with large files...
+    totalSize += chunk.length
+    if totalSize > constants.MAX_STREAM_TO_BUFFER
+      winston.doWarn 'streamToBuffer: MAX_STREAM_TO_BUFFER exceeded',
+        size: totalSize
+      buffer = Buffer.concat buffers
+      buffers = null
+
+      # last argument indicates that the buffer is truncated
+      callback null, buffer, true
+      hasCalledBack = true       
+
+  stream.on 'end', () ->
+    if hasCalledBack
+      winston.doWarn 'streamToBuffer end, but has already called back'
+      return
+
+    try
+      buffer = null
+      buffer = Buffer.concat buffers
+      buffers = null
+      hasCalledBack = true
+      callback null, buffer
+    catch exception
+      if exception.message is 'spawn ENOMEM'
+        # TODO: this is catching the wrong thing, just error for now
+        winston.doError 'spawn ENOMEM error'
+
+      if hasCalledBack
+        winston.doWarn 'streamToBuffer exception, but has already called back',
+          message: exception.message
+          stack: exception.stack
+        return
+
+      buffers = null
+      hasCalledBack = true
+      callback winston.makeError 'caught error concatenating buffer',
+        message: exception.message
+        stack: exception.stack
+
+  stream.on 'error', (err) ->
+    if hasCalledBack
+      winston.doWarn 'streamToBuffer error, but has already called back',
+        err: err
+      return
+
+    buffers = null
+    hasCalledBack = true
+    callback winston.makeError 'streamToBuffer error',
+        err: err

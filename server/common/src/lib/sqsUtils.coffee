@@ -212,7 +212,7 @@ exports._shouldDeleteFromQueue = (error) ->
 
   # if this flag is set we want to suppress the error
   # from the logs (i.e. we dont want to handleError)
-  unless winston.getSuppressQueueErrorFlag error
+  unless winston.getSuppressErrorFlag error
     winston.handleError error
 
   # if this flag is set we can delete from queue despite

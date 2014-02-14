@@ -20,7 +20,11 @@ passport.use new LinkedInStrategy
   clientSecret: commonConf.auth.linkedIn.apiSecret
   callbackURL: routeUtils.getProtocolHostAndPort() + '/auth/linkedIn/callback'
   passReqToCallback: true
+  scope: commonConf.auth.linkedIn.scope
   , (req, token, tokenSecret, profile, done) ->
+
+    winston.doInfo 'liUserProfile',
+      profile: profile
 
     userId = routeUtils.getUserIdFromAuthRequest req
     unless userId
@@ -45,10 +49,21 @@ exports.saveUserAndQueueImport = (userId, accessToken, refreshToken, profile, ca
   liUser.accessToken = accessToken
   liUser.refreshToken = refreshToken
 
-  liUser.save (mongoError, liUserSaved) ->
+
+  winston.doInfo 'li accessToken',
+    accessToken: accessToken
+
+  liUser.save (mongoError, liUserSaved, numAffected) ->
+    
+    winston.doInfo 'liUserSaved',
+      liUserSaved: liUserSaved
+      numAffected: numAffected
+
+
     liUser = liUserSaved || liUser
     if mongoError
       if mongoError.code isnt 11000 then callback winston.makeMongoError mongoError; return
+
 
     job =
       userId: userId
