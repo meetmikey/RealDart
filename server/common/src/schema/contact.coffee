@@ -6,6 +6,7 @@ Contact = new Schema
   userId: {type: Schema.ObjectId}
 
   #All other fields relate to the contact himself/herself
+  googleContactId: {type: Schema.ObjectId}
   fbUserId: {type: Number}
   liUserId: {type: String}
   email: {type: String}

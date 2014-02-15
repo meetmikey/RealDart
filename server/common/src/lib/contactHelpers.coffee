@@ -115,6 +115,7 @@ exports.buildContact = (userId, service, contactServiceUser) ->
     contactData.picURL = contactServiceUser.pictureUrl
 
   else if service is constants.service.GOOGLE
+    contactData.googleContactId = contactServiceUser._id
     contactData.email = contactServiceUser.primaryEmail
     contactData.firstName = contactServiceUser.firstName
     contactData.lastName = contactServiceUser.lastName
@@ -126,6 +127,7 @@ exports.mergeContacts = (existingContact, newContact) ->
   unless newContact then return existingContact
 
   mergeFields = [
+    'googleContactId'
     'fbUserId'
     'liUserId'
     'email'

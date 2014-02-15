@@ -78,6 +78,7 @@ exports.getContacts = (userId, googleUser, callback) ->
   unless googleUser then callback winston.makeMissingParamError 'googleUser'; return
 
   path = 'contacts/' + googleUser.email + '/full'
+  #TODO: does this only get the first 25?  need to check...
   googleHelpers.doAPIGet googleUser, path, (error, apiResonseData) ->
     if error then callback error; return
 
@@ -93,8 +94,7 @@ exports.getContacts = (userId, googleUser, callback) ->
           eachCallback winston.makeMongoError mongoError
           return
 
-        eachCallback()
-        #contactHelpers.addContact userId, constants.service.GOOGLE, googleContact, eachCallback
+        contactHelpers.addContact userId, constants.service.GOOGLE, googleContact, eachCallback
 
     , callback
 

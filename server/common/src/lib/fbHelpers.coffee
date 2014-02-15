@@ -121,18 +121,18 @@ exports.saveFriendData = (userId, fbUser, friends, callback) ->
 
   async.series([
     (seriesCallback) ->
-      FBUserModel.collection.insert friendsClean, (err) ->
-        if err?.code is constants.MONGO_ERROR_CODE_DUPLICATE
+      FBUserModel.collection.insert friends, (mongoError) ->
+        if mongoError?.code is constants.MONGO_ERROR_CODE_DUPLICATE
           seriesCallback()
-        else if err
-          seriesCallback winston.makeMongoError(err)
+        else if mongoError
+          seriesCallback winston.makeMongoError mongoError
         else
           seriesCallback()
     (seriesCallback) ->
       fbUser.friends = _.pluck friends, '_id'
-      fbUser.save (err)->
-        if err
-          seriesCallback winston.makeMongoError(err)
+      fbUser.save (mongoError)->
+        if mongoError
+          seriesCallback winston.makeMongoError mongoError
         else
           seriesCallback()
     (seriesCallback) ->
@@ -141,8 +141,8 @@ exports.saveFriendData = (userId, fbUser, friends, callback) ->
       , (error) ->
         seriesCallback error
     ]
-    (err) ->
-      callback err
+    (error) ->
+      callback error
   )
 
 exports.getFacebookFriends = (user, callback) ->
