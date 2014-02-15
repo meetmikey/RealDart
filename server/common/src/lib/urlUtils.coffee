@@ -70,3 +70,15 @@ exports.isHTTPS = (url) ->
     return true
 
   return false
+
+exports.getQueryStringFromData = (data) ->
+  unless data then return ''
+
+  queryString = '?'
+  first = true
+  for key, value of data
+    if not first
+      queryString += '&'
+    queryString += key + '=' + value
+    first = false
+  queryString

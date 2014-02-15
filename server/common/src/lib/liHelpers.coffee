@@ -5,6 +5,7 @@ winston = require('./winstonWrapper').winston
 LIUserModel = require('../schema/liUser').LIUserModel
 contactHelpers = require './contactHelpers'
 webUtils = require './webUtils'
+urlUtils = require './urlUtils'
 
 conf = require '../conf'
 constants = require '../constants'
@@ -82,13 +83,7 @@ exports.doAPIGet = (liUser, path, callback) ->
     format: 'json'
     oauth2_access_token: accessToken
 
-  queryString = '?'
-  first = true
-  for key, value of data
-    if not first
-      queryString += '&'
-    queryString += key + '=' + value
-    first = false
+  queryString = urlUtils.getQueryStringFromData data
   url = 'https://api.linkedin.com/v1'
   unless path.substring( 0, 1 ) is '/'
     url += '/'

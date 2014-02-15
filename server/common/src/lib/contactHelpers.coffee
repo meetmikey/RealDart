@@ -1,6 +1,8 @@
 fbHelpers = require './fbHelpers'
 ContactModel = require( '../schema/contact').ContactModel
 winston = require('./winstonWrapper').winston
+basicUtils = require './basicUtils'
+
 constants = require '../constants'
 
 contactHelpers = this
@@ -101,6 +103,7 @@ exports.buildContact = (userId, service, contactServiceUser) ->
     contactData.fbUserId = contactServiceUser._id
     contactData.email = contactServiceUser.email
     contactData.firstName = contactServiceUser.first_name
+    contactData.middleName = contactServiceUser.middle_name
     contactData.lastName = contactServiceUser.last_name
     contactData.picURL = fbHelpers.getPicURL contactServiceUser._id
 
@@ -110,6 +113,11 @@ exports.buildContact = (userId, service, contactServiceUser) ->
     contactData.firstName = contactServiceUser.firstName
     contactData.lastName = contactServiceUser.lastName
     contactData.picURL = contactServiceUser.pictureUrl
+
+  else if service is constants.service.GOOGLE
+    contactData.email = contactServiceUser.primaryEmail
+    contactData.firstName = contactServiceUser.firstName
+    contactData.lastName = contactServiceUser.lastName
 
   contact = new ContactModel contactData
   contact
@@ -122,6 +130,7 @@ exports.mergeContacts = (existingContact, newContact) ->
     'liUserId'
     'email'
     'firstName'
+    'middleName'
     'lastName'
     'picURL'
   ]
@@ -131,3 +140,149 @@ exports.mergeContacts = (existingContact, newContact) ->
       existingContact[mergeField] = newContact[mergeField]
 
   existingContact
+
+
+exports.parseFullName = (fullName) ->
+  result =
+    firstName: null
+    middleName: null
+    lastName: null
+
+  fullName = contactHelpers.cleanFullName fullName
+  unless fullName then return result
+
+  #ordering matters here
+  clearNamePrefixResult = contactHelpers.clearNamePrefix fullName
+  fullName = clearNamePrefixResult.fullName
+  foundPrefix = clearNamePrefixResult.foundPrefix
+  fullName = contactHelpers.clearNameSuffixes fullName
+  fullName = contactHelpers.flipAroundComma fullName
+  fullNameSplit = contactHelpers.fixLastNamePrefix fullName
+
+  if fullNameSplit.length is 0
+    return result
+
+  if fullNameSplit.length is 1
+    if foundPrefix
+      result.lastName = fullNameSplit[0]
+    else
+      result.firstName = fullNameSplit[0]
+    return result
+
+  if fullNameSplit.length is 2
+    result.firstName = fullNameSplit[0]
+    result.lastName = fullNameSplit[1]
+    return result
+
+  result.firstName = fullNameSplit[0]
+  middleNameSplit = fullNameSplit.slice 1, ( fullNameSplit.length - 1 )
+  result.middleName = middleNameSplit.join ' '
+  result.lastName = fullNameSplit[ fullNameSplit.length - 1 ]
+  return result
+
+exports.clearNamePrefix = (fullName) ->
+  fullName = contactHelpers.cleanFullName fullName
+  result =
+    fullName: fullName
+    foundPrefix: false
+  unless fullName then return result
+
+  prefixes = constants.NAME_PREFIXES
+  fullNameSplit = fullName.split ' '
+
+  unless fullNameSplit.length > 0
+    return result
+
+  firstLowerCase = fullNameSplit[0].toLowerCase()
+  firstLowerCase = firstLowerCase.replace /\./g, ''
+
+  if prefixes.indexOf( firstLowerCase ) isnt -1
+    fullNameSplit.splice 0, 1
+    result.foundPrefix = true
+
+  fullName = fullNameSplit.join ' '
+  result.fullName = fullName
+  result
+
+exports.clearNameSuffixes = (fullName) ->
+  fullName = contactHelpers.cleanFullName fullName
+  unless fullName then return fullName
+
+  suffixes = constants.NAME_SUFFIXES
+
+  fullNameNoCommas = fullName.replace /,/g, ' '
+  fullNameNoCommas = contactHelpers.cleanFullName fullNameNoCommas
+  fullNameSplit = fullNameNoCommas.split ' '
+
+  while true
+    unless fullNameSplit.length > 0
+      break
+    lastLowerCase = fullNameSplit[ fullNameSplit.length - 1 ].toLowerCase()
+    lastLowerCase = lastLowerCase.replace /\./g, ''
+    if suffixes.indexOf( lastLowerCase ) isnt -1
+      fullNameSplit.splice ( fullNameSplit.length - 1 ), 1
+    else
+      break
+
+  #Now put everything back in place up to the new last piece
+  #  (replaces any existing, meaningful commas)
+  newLast = fullNameSplit[ fullNameSplit.length - 1 ]
+  newLastIndex = fullName.indexOf newLast
+  if newLastIndex is -1
+    winston.doError 'cleraNameSuffixes: lost the last piece, somehow'
+    return fullName
+  fullName = fullName.substring 0, newLastIndex + newLast.length
+  fullName
+
+exports.flipAroundComma = (fullName) ->
+  fullName = contactHelpers.cleanFullName fullName
+  unless fullName then return fullName
+
+  commaIndex = fullName.indexOf ','
+  if commaIndex is '-1' then return fullName
+
+  newFirstPart = fullName.substring( commaIndex + 1 )
+  newLastPart = fullName.substring( 0, commaIndex )
+
+  fullName = newFirstPart + ' ' + newLastPart
+  fullName = fullName.trim()
+  fullName
+
+exports.fixLastNamePrefix = (fullName) ->
+  fullName = contactHelpers.cleanFullName fullName
+  fullNameSplit = fullName.split ' '
+
+  unless fullNameSplit.length > 2
+    return fullNameSplit
+
+  lastNamePrefixes = constants.LAST_NAME_PREFIXES
+
+  secondToLast = fullNameSplit[ fullNameSplit.length - 2 ]
+  secondToLastLowerCase = secondToLast.toLowerCase()
+
+  if constants.LAST_NAME_PREFIXES.indexOf( secondToLastLowerCase ) isnt -1
+    fullNameSplit.splice ( fullNameSplit.length - 2 ), 1
+    fullNameSplit[ fullNameSplit.length - 1 ] = secondToLast + ' ' + fullNameSplit[ fullNameSplit.length - 1 ]
+
+  fullNameSplit
+
+exports.cleanFullName = (fullName) ->
+  unless fullName then return ''
+
+  fullName = fullName.trim()
+  unless fullName then return fullName
+
+  fullNameSplit = fullName.split ' '
+
+  for value, index in fullNameSplit
+    value = value.trim()
+    fullNameSplit[index] = value
+
+  fullNameSplitNoEmpties = []
+  for value, index in fullNameSplit
+    if value isnt ''
+      fullNameSplitNoEmpties.push value
+  fullNameSplit = fullNameSplitNoEmpties
+
+  fullName = fullNameSplit.join ' '
+  fullName

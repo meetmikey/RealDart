@@ -3,6 +3,7 @@ async = require 'async'
 mongooseConnect = require './mongooseConnect'
 utils = require './utils'
 sqsUtils = require './sqsUtils'
+basicUtils = require './basicUtils'
 winston = require('./winstonWrapper').winston
 
 constants = require '../constants'

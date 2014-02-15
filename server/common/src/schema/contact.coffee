@@ -10,6 +10,7 @@ Contact = new Schema
   liUserId: {type: String}
   email: {type: String}
   firstName: {type: String}
+  middleName: {type: String}
   lastName: {type: String}
   picURL: {type: String}
 
