@@ -1,3 +1,5 @@
+_ = require 'underscore'
+
 crypto = require 'crypto'
 dateFormat = require 'dateformat'
 constants = require '../constants'
@@ -8,22 +10,25 @@ conf = require '../conf'
 utils = this
 
 exports.isArray = ( input ) ->
-  if input == null || input == undefined
+  if input is null or input is undefined
     return false
-  if Object.prototype.toString.call( input ) == '[object Array]'
+  if Object.prototype.toString.call( input ) is '[object Array]'
     return true
   return false
 
 exports.isObject = ( input ) ->
-  if input == null || input == undefined
+  if input is null or input is undefined
     return false
-  if Object.prototype.toString.call( input ) == '[object Object]'
+  if Object.prototype.toString.call( input ) is '[object Object]'
     return true
   return false
 
 exports.convertToInt = (strNumber) ->
   if typeof strNumber is 'string'
-    return Number strNumber
+    number = Number strNumber
+    if _.isNaN number
+      return null
+    return number
   
   if typeof strNumber is 'number'
     return strNumber
@@ -236,28 +241,27 @@ exports.streamToBuffer = ( stream, capBuffer, callback ) ->
       winston.doWarn 'streamToBuffer end, but has already called back'
       return
 
+    buffer = null
+    winstonError = null
     try
-      buffer = null
       buffer = Buffer.concat buffers
       buffers = null
-      hasCalledBack = true
-      callback null, buffer
     catch exception
       if exception.message is 'spawn ENOMEM'
         # TODO: this is catching the wrong thing, just error for now
         winston.doError 'spawn ENOMEM error'
 
-      if hasCalledBack
-        winston.doWarn 'streamToBuffer exception, but has already called back',
-          message: exception.message
-          stack: exception.stack
-        return
-
       buffers = null
-      hasCalledBack = true
-      callback winston.makeError 'caught error concatenating buffer',
+      winstonError = winston.makeError 'caught error concatenating buffer',
         message: exception.message
         stack: exception.stack
+
+    if hasCalledBack
+      winston.doWarn 'streamToBuffer has already called back'
+      return
+
+    hasCalledBack = true
+    callback winstonError, buffer
 
   stream.on 'error', (err) ->
     if hasCalledBack
@@ -269,3 +273,22 @@ exports.streamToBuffer = ( stream, capBuffer, callback ) ->
     hasCalledBack = true
     callback winston.makeError 'streamToBuffer error',
         err: err
+
+exports.removeNullFields = (object, removeEmptyStrings, removeEmptyArrays) ->
+  unless object then return object
+
+  for key, value of object
+
+    if value is null
+      delete object[key]
+      continue
+
+    if removeEmptyStrings and utils.isString value and value is ''
+      delete object[key]
+      continue
+
+    if removeEmptyArrays and utils.isArray( value ) and ( value.length is 0 )
+      delete object[key]
+      continue
+
+  object

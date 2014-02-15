@@ -3,10 +3,6 @@ Schema = mongoose.Schema
 
 utils = require '../lib/utils'
 
-GoogleUserName =
-  familyName: {type: String}
-  givenName: {type: String}
-
 GoogleUser = new Schema
   _id: {type: String, required: true, unique: true}
 
@@ -16,9 +12,14 @@ GoogleUser = new Schema
   refreshTokenEncrypted: {type: String}
   refreshTokenSalt: {type: String}
 
-  displayName: {type: String}
-  name: {type: GoogleUserName}
-  emails: {type: [String]}
+  email: {type: String}
+  verified_email: {type: Boolean}
+  name: {type: String}
+  given_name: {type: String}
+  family_name: {type: String}
+  picture: {type: String}
+  locale: {type: String}
+  hd: {type: String}
 
 
 GoogleUser.virtual('accessToken').set (input) ->

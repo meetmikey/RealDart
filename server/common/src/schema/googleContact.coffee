@@ -5,13 +5,15 @@ utils = require '../lib/utils'
 
 
 GoogleContact = new Schema
-  _id: {type: String, required: true, unique: true}
-
+  userId: Schema.ObjectId
   primaryEmail: {type: String}
   emails: {type: [String]}
   title: {type: String} # Straight from the google contact title field.
   firstName: {type: String}
+  middleName: {type: String}
   lastName: {type: String}
+
+GoogleContact.index {userId: 1, primaryEmail: 1}, {background: 1, unique: true, sparse: true}
 
 mongoose.model 'GoogleContact', GoogleContact
 exports.GoogleContactModel = mongoose.model 'GoogleContact'

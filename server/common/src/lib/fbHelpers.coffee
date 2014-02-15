@@ -5,6 +5,7 @@ _ = require 'underscore'
 winston = require('./winstonWrapper').winston
 FBUserModel = require('../schema/fbUser').FBUserModel
 contactHelpers = require './contactHelpers'
+utils = require './utils'
 
 conf = require '../conf'
 constants = require '../constants'
@@ -114,7 +115,9 @@ exports.saveFriendData = (userId, fbUser, friends, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
 
   winston.doInfo 'saveFriendData'
-  friendsClean = fbHelpers.removeNullFields friends
+
+  for friend in friends
+    utils.removeNullFields friend, true, true
 
   async.series([
     (seriesCallback) ->
@@ -141,19 +144,6 @@ exports.saveFriendData = (userId, fbUser, friends, callback) ->
     (err) ->
       callback err
   )
-
-
-exports.removeNullFields = (friends) =>
-  friends?.forEach (friend) ->
-    for key, val of friend
-      #remove null keys
-      if val == null
-        delete friend[key]
-      #remove empty strings or arrays
-      else if val?.length == 0
-        delete friend[key]
-
-  friends
 
 exports.getFacebookFriends = (user, callback) ->
   unless user then callback winston.makeMissingParamError 'user'; return

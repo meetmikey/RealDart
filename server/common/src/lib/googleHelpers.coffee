@@ -2,7 +2,9 @@ async = require 'async'
 
 winston = require('../lib/winstonWrapper').winston
 GoogleUserModel = require('../schema/googleUser').GoogleUserModel
+GoogleContactModel = require('../schema/googleContact').GoogleContactModel
 urlUtils = require './urlUtils'
+webUtils = require './webUtils'
 contactHelpers = require './contactHelpers'
 
 conf = require '../conf'
@@ -11,29 +13,25 @@ constants = require '../constants'
 googleHelpers = this
 
 exports.getUserJSONFromProfile = (profile) ->
+  profileJSON = profile?._json || {}
+
   userJSON = {}
   omitKeys = [
   ]
-  for key, value of profile
+  for key, value of profileJSON
     if omitKeys.indexOf( key ) isnt -1
       continue
       
     if key is 'id'
       userJSON['_id'] = value
-    else if key is 'emails'
-      emails = []
-      for emailObject in value
-        email = emailObject['value']
-        emails.push email
-      userJSON[key] = emails
     else
       userJSON[key] = value
   userJSON
 
 exports.getContactsJSONFromAPIData = (contactsAPIData) ->
-  unless apiData then return {}
+  unless contactsAPIData then return {}
 
-  contacts = {}
+  contacts = []
   for contactAPIData in contactsAPIData
     contact = {}
     
@@ -54,59 +52,13 @@ exports.getContactsJSONFromAPIData = (contactsAPIData) ->
         unless emailAddress then continue
         if emailData?.primary is 'true'
           contact.primaryEmail = emailAddress
-        contact.emails.push email
+        contact.emails.push emailAddress
 
     #email is critical here, so only allow contacts with primaryEmail
     if contact.primaryEmail
       contacts.push contact
 
   contacts
-
-
-###
-{
-  "id":{
-     "$t":"http://www.google.com/m8/feeds/contacts/justin%40mikeyteam.com/base/7c9bbb409153a40"
-  },
-  "updated":{
-     "$t":"2013-05-10T17:35:45.749Z"
-  },
-  "category":[
-     {
-        "scheme":"http://schemas.google.com/g/2005#kind",
-        "term":"http://schemas.google.com/contact/2008#contact"
-     }
-  ],
-  "title":{
-     "type":"text",
-     "$t":"Andrew Lockhart"
-  },
-  "link":[
-     {
-        "rel":"http://schemas.google.com/contacts/2008/rel#edit-photo",
-        "type":"image/*",
-        "href":"https://www.google.com/m8/feeds/photos/media/justin%40mikeyteam.com/7c9bbb409153a40/1B2M2Y8AsgTpgAmY7PhCfg"
-     },
-     {
-        "rel":"self",
-        "type":"application/atom+xml",
-        "href":"https://www.google.com/m8/feeds/contacts/justin%40mikeyteam.com/full/7c9bbb409153a40"
-     },
-     {
-        "rel":"edit",
-        "type":"application/atom+xml",
-        "href":"https://www.google.com/m8/feeds/contacts/justin%40mikeyteam.com/full/7c9bbb409153a40/1368207345749001"
-     }
-  ],
-  "gd$email":[
-     {
-        "rel":"http://schemas.google.com/g/2005#other",
-        "address":"andrew@mikeyteam.com",
-        "primary":"true"
-     }
-  ]
-}
-###
 
 exports.doDataImportJob = (job, callback) ->
   unless job then callback winston.makeMissingParamError 'job'; return
@@ -122,23 +74,34 @@ exports.doDataImportJob = (job, callback) ->
 
 
 exports.getContacts = (userId, googleUser, callback) ->
+  unless userId then callback winston.makeMissingParamError 'userId'; return
+  unless googleUser then callback winston.makeMissingParamError 'googleUser'; return
 
   path = 'contacts/' + googleUser.email + '/full'
-  #https://www.google.com/m8/feeds/contacts/justin@mikeyteam.com/full?access_token=<...>
-
   googleHelpers.doAPIGet googleUser, path, (error, apiResonseData) ->
     if error then callback error; return
 
     contactsData = googleHelpers.getContactsJSONFromAPIData apiResonseData?.feed?.entry
 
     async.each contactsData, (contactData, eachCallback) ->
-      contactHelpers.addContact userId, constants.service.GOOGLE, contact, eachCallback
+      
+      googleContact = new GoogleContactModel contactData
+      googleContact.userId = userId
+
+      googleContact.save (mongoError) ->
+        if mongoError and mongoError.code isnt constants.MONGO_ERROR_CODE_DUPLICATE
+          eachCallback winston.makeMongoError mongoError
+          return
+
+        eachCallback()
+        #contactHelpers.addContact userId, constants.service.GOOGLE, googleContact, eachCallback
+
     , callback
 
 
 exports.doAPIGet = (googleUser, path, callback) ->
   unless googleUser then callback winston.doMissingParamError 'googleUser'; return
-  accessToken = liUser.accessToken
+  accessToken = googleUser.accessToken
   unless accessToken then callback winston.doMissingParamError 'accessToken'; return
   unless path then callback winston.doMissingParamError 'path'; return
 
@@ -151,6 +114,9 @@ exports.doAPIGet = (googleUser, path, callback) ->
   unless path.substring( 0, 1 ) is '/'
     url += '/'
   url += path + queryString
+
+  winston.doInfo 'doAPIGet',
+    url: url
 
   webUtils.webGet url, true, (error, buffer) ->
     if error then callback error; return
