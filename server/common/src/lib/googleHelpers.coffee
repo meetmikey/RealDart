@@ -77,47 +77,64 @@ exports.getContacts = (userId, googleUser, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
   unless googleUser then callback winston.makeMissingParamError 'googleUser'; return
 
+  startIndex = 1
   path = 'contacts/' + googleUser.email + '/full'
-  #TODO: does this only get the first 25?  need to check...
-  googleHelpers.doAPIGet googleUser, path, (error, apiResonseData) ->
-    if error then callback error; return
+  done = false
 
-    contactsData = googleHelpers.getContactsJSONFromAPIData apiResonseData?.feed?.entry
+  async.whilst () ->
+    not done
+  , (whilstCallback) ->
 
-    async.each contactsData, (contactData, eachCallback) ->
-      
-      googleContact = new GoogleContactModel contactData
-      googleContact.userId = userId
-      googleContact.googleUserId = googleUser._id
+    queryParams =
+      'start-index': startIndex
+      'max-results': conf.auth.google.maxContactResultsPerQuery
 
-      googleContact.save (mongoError) ->
-        if mongoError and mongoError.code isnt constants.MONGO_ERROR_CODE_DUPLICATE
-          eachCallback winston.makeMongoError mongoError
-          return
+    googleHelpers.doAPIGet googleUser, path, queryParams, (error, apiResonseData) ->
+      if error then whilstCallback error; return
 
-        contactHelpers.addContact userId, constants.service.GOOGLE, googleContact, eachCallback
+      rawContactsFromResponse = apiResonseData?.feed?.entry
 
-    , callback
+      contactsData = googleHelpers.getContactsJSONFromAPIData rawContactsFromResponse
+
+      async.each contactsData, (contactData, eachCallback) ->
+        
+        googleContact = new GoogleContactModel contactData
+        googleContact.userId = userId
+        googleContact.googleUserId = googleUser._id
+
+        googleContact.save (mongoError) ->
+          if mongoError and mongoError.code isnt constants.MONGO_ERROR_CODE_DUPLICATE
+            eachCallback winston.makeMongoError mongoError
+            return
+
+          contactHelpers.addContact userId, constants.service.GOOGLE, googleContact, eachCallback
+
+      , (error) ->
+        if rawContactsFromResponse and rawContactsFromResponse.length
+          startIndex += rawContactsFromResponse.length
+        else
+          done = true
+
+        whilstCallback error
+
+  , callback
 
 
-exports.doAPIGet = (googleUser, path, callback) ->
+exports.doAPIGet = (googleUser, path, extraData, callback) ->
   unless googleUser then callback winston.doMissingParamError 'googleUser'; return
   accessToken = googleUser.accessToken
   unless accessToken then callback winston.doMissingParamError 'accessToken'; return
   unless path then callback winston.doMissingParamError 'path'; return
 
-  data = 
-    alt: 'json'
-    access_token: accessToken
+  data = extraData || {}
+  data.alt = 'json'
+  data.access_token = accessToken
 
   queryString = urlUtils.getQueryStringFromData data
   url = 'https://www.google.com/m8/feeds'
   unless path.substring( 0, 1 ) is '/'
     url += '/'
   url += path + queryString
-
-  #winston.doInfo 'doAPIGet',
-    #url: url
 
   webUtils.webGet url, true, (error, buffer) ->
     if error then callback error; return
