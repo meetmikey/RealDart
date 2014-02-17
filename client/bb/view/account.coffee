@@ -29,11 +29,11 @@ class RD.View.Account extends RD.View.Base
       if error or not user then callback('fail'); @bail(); return
 
       @user = user
-      if @user.googleUserId
+      if @user.get('googleUserId') and @user.get('googleUserId').length
         @serviceAuth.google.status = 'success'
-      if @user.fbUserId
+      if @user.get 'fbUserId'
         @serviceAuth.facebook.status = 'success'
-      if @user.liUserId
+      if @user.get 'liUserId'
         @serviceAuth.linkedIn.status = 'success'
       callback()
 

@@ -960,13 +960,13 @@
             return;
           }
           _this.user = user;
-          if (_this.user.googleUserId) {
+          if (_this.user.get('googleUserId') && _this.user.get('googleUserId').length) {
             _this.serviceAuth.google.status = 'success';
           }
-          if (_this.user.fbUserId) {
+          if (_this.user.get('fbUserId')) {
             _this.serviceAuth.facebook.status = 'success';
           }
-          if (_this.user.liUserId) {
+          if (_this.user.get('liUserId')) {
             _this.serviceAuth.linkedIn.status = 'success';
           }
           return callback();
