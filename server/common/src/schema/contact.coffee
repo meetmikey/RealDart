@@ -4,6 +4,7 @@ Schema = mongoose.Schema
 Contact = new Schema
   #This is the userId of the person whose contact this is.
   userId: {type: Schema.ObjectId}
+  googleUserId: {type: String} #Optional: if it's a google contact, let's also save the googleUserId
 
   #All other fields relate to the contact himself/herself
   googleContactId: {type: Schema.ObjectId}

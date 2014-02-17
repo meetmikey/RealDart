@@ -7,7 +7,7 @@ User = new Schema
   email: {type: String}
   passwordHash: {type: String}
   passwordResetCode: {type: String}
-  personId: {type: Schema.ObjectId}
+  googleUserIds : {type: [String]}
   fbUserId : {type: Number}
   liUserId : {type: String}
   timestamp: {type: Date, default: Date.now}

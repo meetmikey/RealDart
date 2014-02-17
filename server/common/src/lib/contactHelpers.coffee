@@ -116,6 +116,7 @@ exports.buildContact = (userId, service, contactServiceUser) ->
 
   else if service is constants.service.GOOGLE
     contactData.googleContactId = contactServiceUser._id
+    contactData.googleUserId = contactServiceUser.googleUserId
     contactData.email = contactServiceUser.primaryEmail
     contactData.firstName = contactServiceUser.firstName
     contactData.lastName = contactServiceUser.lastName

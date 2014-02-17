@@ -7,6 +7,7 @@ winston = require(commonAppDir + '/lib/winstonWrapper').winston
 fbHelpers = require commonAppDir + '/lib/fbHelpers.js'
 sqsUtils = require commonAppDir + '/lib/sqsUtils.js'
 FBUserModel = require(commonAppDir + '/schema/fbUser').FBUserModel
+UserModel = require(commonAppDir + '/schema/user').UserModel
 commonConf = require commonAppDir + '/conf'
 commonConstants = require commonAppDir + '/constants'
 
@@ -88,9 +89,19 @@ exports.saveUserAndQueueImport = (userId, accessToken, refreshToken, profile, ca
       callback winston.makeMongoError mongoError
       return
 
-    job =
-      userId: userId
-      service: commonConstants.service.FACEBOOK
-      fbUserId: fbUser._id
+    select =
+      _id: userId
 
-    sqsUtils.addJobToQueue commonConf.queue.dataImport, job, callback
+    update =
+      $set:
+        fbUserId: fbUser._id
+
+    UserModel.findOneAndUpdate select, update, (error, updatedUser) ->
+      if error then callback winston.makeMongoError error; return
+
+      job =
+        userId: userId
+        service: commonConstants.service.FACEBOOK
+        fbUserId: fbUser._id
+
+      sqsUtils.addJobToQueue commonConf.queue.dataImport, job, callback

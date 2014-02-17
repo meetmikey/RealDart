@@ -8,6 +8,7 @@ commonConstants = require commonAppDir + '/constants'
 
 winston = require(commonAppDir + '/lib/winstonWrapper').winston
 LIUserModel = require(commonAppDir + '/schema/liUser').LIUserModel
+UserModel = require(commonAppDir + '/schema/user').UserModel
 liHelpers = require commonAppDir + '/lib/liHelpers'
 
 routeUtils = require './routeUtils'
@@ -53,9 +54,19 @@ exports.saveUserAndQueueImport = (userId, accessToken, refreshToken, profile, ca
       callback winston.makeMongoError mongoError
       return
 
-    job =
-      userId: userId
-      service: commonConstants.service.LINKED_IN
-      liUserId: liUser._id
+    select =
+      _id: userId
 
-    sqsUtils.addJobToQueue commonConf.queue.dataImport, job, callback
+    update =
+      $set:
+        liUserId: liUser._id
+
+    UserModel.findOneAndUpdate select, update, (error, updatedUser) ->
+      if error then callback winston.makeMongoError error; return
+
+      job =
+        userId: userId
+        service: commonConstants.service.LINKED_IN
+        liUserId: liUser._id
+
+      sqsUtils.addJobToQueue commonConf.queue.dataImport, job, callback

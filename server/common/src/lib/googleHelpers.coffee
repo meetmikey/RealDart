@@ -88,6 +88,7 @@ exports.getContacts = (userId, googleUser, callback) ->
       
       googleContact = new GoogleContactModel contactData
       googleContact.userId = userId
+      googleContact.googleUserId = googleUser._id
 
       googleContact.save (mongoError) ->
         if mongoError and mongoError.code isnt constants.MONGO_ERROR_CODE_DUPLICATE
@@ -115,8 +116,8 @@ exports.doAPIGet = (googleUser, path, callback) ->
     url += '/'
   url += path + queryString
 
-  winston.doInfo 'doAPIGet',
-    url: url
+  #winston.doInfo 'doAPIGet',
+    #url: url
 
   webUtils.webGet url, true, (error, buffer) ->
     if error then callback error; return

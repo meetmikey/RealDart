@@ -8,6 +8,7 @@ commonConstants = require commonAppDir + '/constants'
 
 winston = require(commonAppDir + '/lib/winstonWrapper').winston
 GoogleUserModel = require(commonAppDir + '/schema/googleUser').GoogleUserModel
+UserModel = require(commonAppDir + '/schema/user').UserModel
 googleHelpers = require commonAppDir + '/lib/googleHelpers'
 
 routeUtils = require './routeUtils'
@@ -51,9 +52,19 @@ exports.saveUserAndQueueImport = (userId, accessToken, refreshToken, profile, ca
       callback winston.makeMongoError mongoError
       return
 
-    job =
-      userId: userId
-      service: commonConstants.service.GOOGLE
-      googleUserId: googleUser._id
+    select =
+      _id: userId
 
-    sqsUtils.addJobToQueue commonConf.queue.dataImport, job, callback
+    update =
+      $addToSet:
+        googleUserIds: googleUser._id
+
+    UserModel.findOneAndUpdate select, update, (error, updatedUser) ->
+      if error then callback winston.makeMongoError error; return
+
+      job =
+        userId: userId
+        service: commonConstants.service.GOOGLE
+        googleUserId: googleUser._id
+
+      sqsUtils.addJobToQueue commonConf.queue.dataImport, job, callback
