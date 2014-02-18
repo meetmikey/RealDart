@@ -280,14 +280,17 @@ exports.removeNullFields = (object, removeEmptyStrings, removeEmptyArrays) ->
   for key, value of object
 
     if value is null
+      object[key] = undefined
       delete object[key]
       continue
 
     if removeEmptyStrings and utils.isString value and value is ''
+      object[key] = undefined
       delete object[key]
       continue
 
     if removeEmptyArrays and utils.isArray( value ) and ( value.length is 0 )
+      object[key] = undefined
       delete object[key]
       continue
 

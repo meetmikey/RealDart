@@ -2,6 +2,7 @@ fbHelpers = require './fbHelpers'
 ContactModel = require( '../schema/contact').ContactModel
 winston = require('./winstonWrapper').winston
 basicUtils = require './basicUtils'
+utils = require './utils'
 
 constants = require '../constants'
 
@@ -28,8 +29,15 @@ exports.addContact = (userId, service, contactServiceUser, callback) ->
       contactHelpers.mergeContacts existingContact, newContact
       contactToSave = existingContact
 
+    utils.removeNullFields contactToSave, true, true
+
     contactToSave.save (mongoError) ->
-      if mongoError then callback winston.makeMongoError mongoError; return
+      #if mongoError then callback winston.makeMongoError mongoError; return
+      if mongoError
+        callback winston.makeMongoError mongoError,
+          contactToSave: contactToSave
+          contactToSaveEmails: contactToSave?.emails
+        return
 
       callback()
 
@@ -37,8 +45,8 @@ exports.addContact = (userId, service, contactServiceUser, callback) ->
 exports.matchExistingContact = (contact, callback) ->
   unless contact then callback winston.makeMissingParamError 'contact'; return
 
-  unless contact.email or contact.lastName
-    winston.doWarn 'contactHelpers.matchExistingContact: no email or lastName to match on',
+  unless ( contact.emails and contact.emails.length ) or contact.lastName
+    winston.doWarn 'contactHelpers.matchExistingContact: no emails or lastName to match on',
       contact: contact
     callback()
     return
@@ -46,9 +54,10 @@ exports.matchExistingContact = (contact, callback) ->
   select =
     '$or': []
 
-  if contact.email
+  if contact.emails and contact.emails.length
     select['$or'].push
-      email: contact.email
+      emails:
+        '$in': contact.emails
 
   if contact.lastName
     selectNameMatch =
@@ -69,9 +78,15 @@ exports.matchExistingContact = (contact, callback) ->
     numEmailMatches = 0
     emailMatch = null
     for matchedContact in matchedContacts
-      if contact.email and ( matchedContact.email is contact.email )
-        numEmailMatches++
-        emailMatch = matchedContact
+      unless contact.emails and contact.emails.length and matchedContact.emails and matchedContact.emails.length
+        continue
+
+      for contactEmail in contact.emails
+        contactEmailIndex = matchedContact.emails.indexOf contactEmail
+        if contactEmailIndex isnt -1
+          numEmailMatches++
+          emailMatch = matchedContact
+          break
 
     #Email is a strong match, so if there's only one email match, use it.
     # (even if there are other non-email matches)
@@ -99,9 +114,19 @@ exports.buildContact = (userId, service, contactServiceUser) ->
   contactData =
     userId: userId
 
-  if service is constants.service.FACEBOOK
+  if service is constants.service.GOOGLE
+    contactData.googleContactId = contactServiceUser._id
+    contactData.googleUserId = contactServiceUser.googleUserId
+    contactData.primaryEmail = contactServiceUser.primaryEmail
+    contactData.emails = contactServiceUser.emails
+    contactData.firstName = contactServiceUser.firstName
+    contactData.lastName = contactServiceUser.lastName
+
+  else if service is constants.service.FACEBOOK
     contactData.fbUserId = contactServiceUser._id
-    contactData.email = contactServiceUser.email
+    if contactServiceUser.email
+      contactData.primaryEmail = contactServiceUser.email
+      contactData.emails = [contactServiceUser.email]
     contactData.firstName = contactServiceUser.first_name
     contactData.middleName = contactServiceUser.middle_name
     contactData.lastName = contactServiceUser.last_name
@@ -109,19 +134,15 @@ exports.buildContact = (userId, service, contactServiceUser) ->
 
   else if service is constants.service.LINKED_IN
     contactData.liUserId = contactServiceUser._id
-    contactData.email = contactServiceUser.emailAddress
+    if contactServiceUser.emailAddress
+      contactData.primaryEmail = contactServiceUser.emailAddress
+      contactData.emails = [contactServiceUser.emailAddress]
     contactData.firstName = contactServiceUser.firstName
     contactData.lastName = contactServiceUser.lastName
     contactData.picURL = contactServiceUser.pictureUrl
 
-  else if service is constants.service.GOOGLE
-    contactData.googleContactId = contactServiceUser._id
-    contactData.googleUserId = contactServiceUser.googleUserId
-    contactData.email = contactServiceUser.primaryEmail
-    contactData.firstName = contactServiceUser.firstName
-    contactData.lastName = contactServiceUser.lastName
-
   contact = new ContactModel contactData
+  utils.removeNullFields contact, true, true
   contact
 
 exports.mergeContacts = (existingContact, newContact) ->
@@ -131,7 +152,7 @@ exports.mergeContacts = (existingContact, newContact) ->
     'googleContactId'
     'fbUserId'
     'liUserId'
-    'email'
+    'primaryEmail'
     'firstName'
     'middleName'
     'lastName'
@@ -141,6 +162,22 @@ exports.mergeContacts = (existingContact, newContact) ->
   for mergeField in mergeFields
     if newContact[mergeField]
       existingContact[mergeField] = newContact[mergeField]
+
+  arrayMergeFields = [
+    'emails'
+  ]
+
+  for arrayMergeField in arrayMergeFields
+
+    existingContact[arrayMergeField] = existingContact[arrayMergeField] || []
+
+    unless newContact[arrayMergeField] and newContact[arrayMergeField].length
+      continue
+
+    for value in newContact[arrayMergeField]
+      existingContactArrayMergeFieldIndex = existingContact[arrayMergeField].indexOf value
+      if existingContactArrayMergeFieldIndex is -1
+        existingContact[arrayMergeField].push value
 
   existingContact
 

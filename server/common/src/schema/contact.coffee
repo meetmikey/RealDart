@@ -10,7 +10,8 @@ Contact = new Schema
   googleContactId: {type: Schema.ObjectId}
   fbUserId: {type: Number}
   liUserId: {type: String}
-  email: {type: String}
+  primaryEmail: {type: String}
+  emails: {type: [String]}
   firstName: {type: String}
   middleName: {type: String}
   lastName: {type: String}
@@ -19,7 +20,7 @@ Contact = new Schema
   timestamp: {type: Date, default: Date.now}
 
 Contact.index {userId: 1}, {background: 1}
-Contact.index {email: 1}, {background: 1, sparse: true}
+Contact.index {primaryEmail: 1}, {background: 1, sparse: true}
 Contact.index {lastName: 1}, {background: 1, sparse: true}
 
 mongoose.model 'Contact', Contact
