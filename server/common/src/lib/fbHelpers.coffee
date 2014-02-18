@@ -136,8 +136,12 @@ exports.saveFriendData = (userId, fbUser, friends, callback) ->
         else
           seriesCallback()
     (seriesCallback) ->
-      async.each friends, (friend, eachCallback) ->
-        contactHelpers.addContact userId, constants.service.FACEBOOK, friend, eachCallback
+      # async.eachSeries is slower but helps solve a document versioning problem I encountered.
+      # Google "versionerror: mongoose no matching document found" for more info.
+      # There's probably a better solution using better error handling
+      #   especially since this doesn't even guarantee safety with multiple workers.
+      async.eachSeries friends, (friend, eachSeriesCallback) ->
+        contactHelpers.addContact userId, constants.service.FACEBOOK, friend, eachSeriesCallback
       , (error) ->
         seriesCallback error
     ]

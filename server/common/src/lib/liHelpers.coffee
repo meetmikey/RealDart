@@ -56,20 +56,24 @@ exports.getConnections = (userId, liUser, callback) ->
     connections = responseData?.values
     unless connections then callback(); return
 
-    async.each connections, (connection, eachCallback) ->
+    # async.eachSeries is slower but helps solve a document versioning problem I encountered.
+      # Google "versionerror: mongoose no matching document found" for more info.
+      # There's probably a better solution using better error handling
+      #   especially since this doesn't even guarantee safety with multiple workers.
+    async.eachSeries connections, (connection, eachSeriesCallback) ->
       connectionLIUser = new LIUserModel liHelpers.getUserJSONFromConnection connection
 
       #Some connections are private.  Skip them.
       if connectionLIUser._id is 'private'
-        eachCallback()
+        eachSeriesCallback()
         return
 
       connectionLIUser.save (mongoError) ->
         if mongoError and mongoError.code isnt constants.MONGO_ERROR_CODE_DUPLICATE
-          eachCallback winston.makeMongoError mongoError
+          eachSeriesCallback winston.makeMongoError mongoError
           return
 
-        contactHelpers.addContact userId, constants.service.LINKED_IN, connectionLIUser, eachCallback
+        contactHelpers.addContact userId, constants.service.LINKED_IN, connectionLIUser, eachSeriesCallback
 
     , callback
 
