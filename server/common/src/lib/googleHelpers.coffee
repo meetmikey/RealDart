@@ -96,6 +96,10 @@ exports.getContacts = (userId, googleUser, callback) ->
 
       contactsData = googleHelpers.getContactsJSONFromAPIData rawContactsFromResponse
 
+      # async.eachSeries is slower but helps solve a document versioning problem I encountered.
+      # Google "versionerror: mongoose no matching document found" for more info.
+      # There's probably a better solution using better error handling
+      #   especially since this doesn't even guarantee safety with multiple workers.
       async.eachSeries contactsData, (contactData, eachSeriesCallback) ->
         
         googleContact = new GoogleContactModel contactData
