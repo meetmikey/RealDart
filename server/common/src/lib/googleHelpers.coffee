@@ -96,7 +96,7 @@ exports.getContacts = (userId, googleUser, callback) ->
 
       contactsData = googleHelpers.getContactsJSONFromAPIData rawContactsFromResponse
 
-      async.each contactsData, (contactData, eachCallback) ->
+      async.eachSeries contactsData, (contactData, eachSeriesCallback) ->
         
         googleContact = new GoogleContactModel contactData
         googleContact.userId = userId
@@ -104,10 +104,10 @@ exports.getContacts = (userId, googleUser, callback) ->
 
         googleContact.save (mongoError) ->
           if mongoError and mongoError.code isnt constants.MONGO_ERROR_CODE_DUPLICATE
-            eachCallback winston.makeMongoError mongoError
+            eachSeriesCallback winston.makeMongoError mongoError
             return
 
-          contactHelpers.addContact userId, constants.service.GOOGLE, googleContact, eachCallback
+          contactHelpers.addContact userId, constants.service.GOOGLE, googleContact, eachSeriesCallback
 
       , (error) ->
         if rawContactsFromResponse and rawContactsFromResponse.length
