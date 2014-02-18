@@ -69,6 +69,11 @@ exports.doDataImportJob = (job, callback) ->
   googleUserId = job.googleUserId
   GoogleUserModel.findById googleUserId, (mongoError, googleUser) ->
     if mongoError then callback winston.makeMongoError mongoError; return
+
+    unless googleUser
+      callback winston.makeError 'google user missing',
+        googleUserId: googleUserId
+      return
     
     googleHelpers.getContacts userId, googleUser, callback
 

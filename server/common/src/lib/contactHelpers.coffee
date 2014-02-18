@@ -1,3 +1,5 @@
+async = require 'async'
+
 fbHelpers = require './fbHelpers'
 ContactModel = require( '../schema/contact').ContactModel
 winston = require('./winstonWrapper').winston
@@ -15,22 +17,31 @@ exports.addContact = (userId, service, contactServiceUser, callback) ->
 
   newContact = contactHelpers.buildContact userId, service, contactServiceUser
 
-  contactHelpers.matchExistingContact newContact, (error, existingContact) ->
+  contactHelpers.matchExistingContacts newContact, (error, existingContacts) ->
     if error then callback error; return
 
+    contactsToDelete = []
     contactToSave = newContact
-    if existingContact
+    if existingContacts and existingContacts.length
+
       ###
-      winston.doInfo 'found match',
-        existingContact: existingContact
+      winston.doInfo 'found match(es)',
+        existingContacts: existingContacts
         newContact: newContact
       ###
 
-      contactHelpers.mergeContacts existingContact, newContact
-      contactToSave = existingContact
+      contactToSave = existingContacts[0]
+
+      #check for multi-merge (and delete) situation
+      if existingContacts.length > 1
+        for i in [1...existingContacts.length]
+          existingContact = existingContacts[i]
+          contactHelpers.mergeContacts contactToSave, existingContact
+          contactsToDelete.push existingContact
+
+      contactHelpers.mergeContacts contactToSave, newContact
 
     utils.removeNullFields contactToSave, true, true
-
     contactToSave.save (mongoError) ->
       #if mongoError then callback winston.makeMongoError mongoError; return
       if mongoError
@@ -39,14 +50,20 @@ exports.addContact = (userId, service, contactServiceUser, callback) ->
           contactToSaveEmails: contactToSave?.emails
         return
 
-      callback()
+      #delete any others...
+      async.each contactsToDelete, (contactToDelete, eachCallback) ->
+        contactToDelete.remove (error) ->
+          if error then eachCallback winston.makeMongoError error; return
+          eachCallback()
+
+      , callback
 
 
-exports.matchExistingContact = (contact, callback) ->
+exports.matchExistingContacts = (contact, callback) ->
   unless contact then callback winston.makeMissingParamError 'contact'; return
 
   unless ( contact.emails and contact.emails.length ) or contact.lastName
-    winston.doWarn 'contactHelpers.matchExistingContact: no emails or lastName to match on',
+    winston.doWarn 'contactHelpers.matchExistingContacts: no emails or lastName to match on',
       contact: contact
     callback()
     return
@@ -68,45 +85,46 @@ exports.matchExistingContact = (contact, callback) ->
 
     select['$or'].push selectNameMatch
 
-  ContactModel.find select, (mongoError, matchedContacts) ->
+  ContactModel.find select, (mongoError, dbMatchedContacts) ->
     if mongoError then callback winston.makeMongoError mongoError; return
 
-    unless matchedContacts and matchedContacts.length
+    unless dbMatchedContacts and dbMatchedContacts.length
       callback()
       return
 
-    numEmailMatches = 0
-    emailMatch = null
-    for matchedContact in matchedContacts
-      unless contact.emails and contact.emails.length and matchedContact.emails and matchedContact.emails.length
+    foundEmailMatch = false
+    matchedContacts = []
+    for dbMatchedContact in dbMatchedContacts
+      unless contact.emails and contact.emails.length and dbMatchedContact.emails and dbMatchedContact.emails.length
         continue
 
       for contactEmail in contact.emails
-        contactEmailIndex = matchedContact.emails.indexOf contactEmail
+        contactEmailIndex = dbMatchedContact.emails.indexOf contactEmail
         if contactEmailIndex isnt -1
-          numEmailMatches++
-          emailMatch = matchedContact
+          foundEmailMatch = true
+          matchedContacts.push dbMatchedContact
           break
 
-    #Email is a strong match, so if there's only one email match, use it.
-    # (even if there are other non-email matches)
-    if numEmailMatches is 1
-      callback null, emailMatch
+
+    #Email is a strong match, so if we found any of those, return them all
+    # (they will all be merged together)
+    if foundEmailMatch
+      callback null, matchedContacts
       return
 
-    if matchedContacts.length > 1
+    if dbMatchedContacts.length > 1
       #Multiple matches, without a 'strong' match (e.g. email).
       # Not enough confidence to pick one, so don't do a match.
       winston.doWarn 'multiple matching contacts!',
-        numMatches: matchedContacts.length
+        numMatches: dbMatchedContacts.length
         contact: contact
-        matchedContacts: matchedContacts
+        dbMatchedContacts: dbMatchedContacts
       callback()
       return
 
     #There's only one, so that's our match
-    matchedContact = matchedContacts[0]
-    callback null, matchedContact
+    matchedContacts.push dbMatchedContacts[0]
+    callback null, matchedContacts
 
 
 exports.buildContact = (userId, service, contactServiceUser) ->
