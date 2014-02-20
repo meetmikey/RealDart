@@ -1,4 +1,6 @@
 Imap = require 'imap'
+xoauth2 = require 'xoauth2'
+
 winston = require('./winstonWrapper').winston
 
 conf = require '../conf'
@@ -6,16 +8,38 @@ constants = require '../constants'
 
 imapConnect = this
 
-exports.createImapConnection = (email, accessToken) ->
+exports.createImapConnection = (email, accessToken, callback) ->
   unless email then winston.doMissingParamError 'email'; return null
   unless accessToken then winston.doMissingParamError 'accessToken'; return null
 
-  imapParams = conf.gmailImapParams
-  imapParams.user = email
-  imapParams.xoauth2 = accessToken
+  xoauthParams = imapConnect.getXOauthParams email, accessToken
+  xoauth2gen = xoauth2.createXOAuth2Generator xoauthParams
 
-  imapConnection = new Imap imapParams
-  imapConnection
+  xoauth2gen.getToken (err, xoauth2Token) ->
+    if err
+      callback winston.makeError 'xoauth2gen error',
+        err: err
+      return
+
+    imapParams = conf.gmailImapParams
+    imapParams.user = email
+    imapParams.xoauth2 = xoauth2Token
+
+    winston.doInfo 'imapParams',
+      imapParams: imapParams
+
+    imapConnection = new Imap imapParams
+    callback null, imapConnection
+
+exports.getXOauthParams = (email, accessToken) ->
+  xoauthParams =
+    user: email
+    clientId: conf.auth.google.clientId
+    clientSecret: conf.auth.google.clientSecret
+    accessToken : accessToken
+    #refreshToken: refreshToken
+
+  xoauthParams
 
 exports.openSentMailBox = (imapConnection, email, callback) ->
   unless imapConnection then winston.doMissingParamError 'imapConnection'; return null
@@ -43,12 +67,12 @@ exports.openSentMailBox = (imapConnection, email, callback) ->
 
   imapConnection.once 'end', ->
     winston.doInfo 'Connection ended for user',
-      email: userEmail
+      email: email
 
   imapConnection.on 'alert', (msg) ->
     winston.doWarn 'Imap alert',
       msg: msg
-      email: userEmail
+      email: email
       
 
 exports.handleOpenSentMailBoxReady = (imapConnection, email, callback) ->
@@ -103,7 +127,8 @@ exports.findSentMailBox = (boxes, callback) ->
     return
 
   sentMailBox = undefined
-  
+  folderNames = {}
+
   # corner case - both Gmail and Google Mail folders are present
   if hasGmail and hasGoogleMail
     childrenGmail = boxes['[Gmail]'].children
@@ -138,7 +163,7 @@ exports.findSentMailBox = (boxes, callback) ->
     callback winstonError
     return
 
-  fullBoxName = boxToOpen + sentMailBox
+  fullBoxName = boxToOpen + '/' + sentMailBox
   winston.doInfo 'Successfully connected to imap, now opening mailBox',
     fullBoxName: fullBoxName
 

@@ -26,21 +26,24 @@ run = (callback) ->
     accessToken = googleUser.accessToken
     email = googleUser.email
 
-    imapConnection = imapConnect.createImapConnection email, accessToken
-    imapConnect.openSentMailBox imapConnection, email, (error, sentMailBox) ->
+    imapConnect.createImapConnection email, accessToken, (error, imapConnection) ->
       if error then callback error; return
+      unless imapConnection then callback winston.makeError 'no imapConnection'; return
 
-      winston.doInfo 'sentMailBox opened!',
-        sentMailBox: sentMailBox
-
-      imapConnect.closeMailBox imapConnection, (error) ->
+      imapConnect.openSentMailBox imapConnection, email, (error, sentMailBox) ->
         if error then callback error; return
 
-        imapConnect.logout imapConnection, () ->
+        winston.doInfo 'sentMailBox opened!',
+          sentMailBox: sentMailBox
+
+        imapConnect.closeMailBox imapConnection, (error) ->
           if error then callback error; return
 
-          winston.doInfo 'Success!'
-          callback()
+          imapConnect.logout imapConnection, () ->
+            if error then callback error; return
+
+            winston.doInfo 'Success!'
+            callback()
 
 
 getUserAndGoogleUser = (userId, googleUserIdIndex, callback) ->
