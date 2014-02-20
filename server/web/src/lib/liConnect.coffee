@@ -3,6 +3,7 @@ commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
 passport = require 'passport'
 LinkedInStrategy = require('passport-linkedin-oauth2').Strategy
 sqsUtils = require commonAppDir + '/lib/sqsUtils'
+utils = require commonAppDir + '/lib/utils'
 commonConf = require commonAppDir + '/conf'
 commonConstants = require commonAppDir + '/constants'
 
@@ -43,13 +44,26 @@ exports.saveUserAndQueueImport = (userId, accessToken, refreshToken, profile, ca
   unless profile then callback winston.makeMissingParamError 'profile'; return
   unless profile.id then callback winston.makeMissingParamError 'profile.id'; return
 
-  liUser = new LIUserModel liHelpers.getUserJSONFromProfile profile
-  liUser.accessToken = accessToken
-  liUser.refreshToken = refreshToken
+  liUserJSON = liHelpers.getUserJSONFromProfile profile
 
-  liUser.save (mongoError, liUserSaved, numAffected) ->
+  accessTokenEncryptedInfo = utils.encryptSymmetric accessToken
+  liUserJSON.accessTokenEncrypted = accessTokenEncryptedInfo.encrypted
+  liUserJSON.accessTokenSalt = accessTokenEncryptedInfo.salt
+  if refreshToken
+    refreshTokenEncryptedInfo = utils.encryptSymmetric refreshToken
+    liUserJSON.refreshTokenEncrypted = refreshTokenEncryptedInfo.encrypted
+    liUserJSON.refreshTokenSalt = refreshTokenEncryptedInfo.salt
 
-    liUser = liUserSaved || liUser
+  liUserId = liUserJSON._id
+  delete liUserJSON._id
+
+  update =
+    $set: liUserJSON
+
+  options =
+    upsert: true
+
+  LIUserModel.findByIdAndUpdate liUserId, update, options, (mongoError, liUser) ->
     if mongoError and mongoError.code isnt commonConstants.MONGO_ERROR_CODE_DUPLICATE
       callback winston.makeMongoError mongoError
       return

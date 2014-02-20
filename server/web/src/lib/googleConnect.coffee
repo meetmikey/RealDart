@@ -3,6 +3,7 @@ commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
 passport = require 'passport'
 GoogleStrategy = require('passport-google-oauth').OAuth2Strategy
 sqsUtils = require commonAppDir + '/lib/sqsUtils'
+utils = require commonAppDir + '/lib/utils'
 commonConf = require commonAppDir + '/conf'
 commonConstants = require commonAppDir + '/constants'
 
@@ -23,6 +24,10 @@ passport.use new GoogleStrategy
   passReqToCallback: true
   , (req, accessToken, refreshToken, profile, done) ->
 
+    winston.doInfo 'googleConnect',
+      accessToken: accessToken
+      refreshToken: refreshToken
+
     userId = routeUtils.getUserIdFromAuthRequest req
     unless userId
       winston.doError 'no userId in auth req'
@@ -41,12 +46,26 @@ exports.saveUserAndQueueImport = (userId, accessToken, refreshToken, profile, ca
   unless accessToken then callback winston.makeMissingParamError 'accessToken'; return
   unless profile then callback winston.makeMissingParamError 'profile'; return
 
-  googleUser = new GoogleUserModel googleHelpers.getUserJSONFromProfile profile
-  googleUser.accessToken = accessToken
-  googleUser.refreshToken = refreshToken
+  googleUserJSON = googleHelpers.getUserJSONFromProfile profile
 
-  googleUser.save (mongoError, googleUserSaved) ->
-    googleUser = googleUserSaved || googleUser
+  accessTokenEncryptedInfo = utils.encryptSymmetric accessToken
+  googleUserJSON.accessTokenEncrypted = accessTokenEncryptedInfo.encrypted
+  googleUserJSON.accessTokenSalt = accessTokenEncryptedInfo.salt
+  if refreshToken
+    refreshTokenEncryptedInfo = utils.encryptSymmetric refreshToken
+    googleUserJSON.refreshTokenEncrypted = refreshTokenEncryptedInfo.encrypted
+    googleUserJSON.refreshTokenSalt = refreshTokenEncryptedInfo.salt
+
+  googleUserId = googleUserJSON._id
+  delete googleUserJSON._id
+
+  update =
+    $set: googleUserJSON
+
+  options =
+    upsert: true
+
+  GoogleUserModel.findByIdAndUpdate googleUserId, update, options, (mongoError, googleUser) ->
     
     if mongoError and mongoError.code isnt commonConstants.MONGO_ERROR_CODE_DUPLICATE
       callback winston.makeMongoError mongoError

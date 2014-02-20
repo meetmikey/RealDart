@@ -6,6 +6,7 @@ FacebookStrategy = require('passport-facebook').Strategy
 winston = require(commonAppDir + '/lib/winstonWrapper').winston
 fbHelpers = require commonAppDir + '/lib/fbHelpers.js'
 sqsUtils = require commonAppDir + '/lib/sqsUtils.js'
+utils = require commonAppDir + '/lib/utils.js'
 FBUserModel = require(commonAppDir + '/schema/fbUser').FBUserModel
 UserModel = require(commonAppDir + '/schema/user').UserModel
 commonConf = require commonAppDir + '/conf'
@@ -78,13 +79,26 @@ exports.saveUserAndQueueImport = (userId, accessToken, refreshToken, profile, ca
   unless profile then callback winston.makeMissingParamError 'profile'; return
   unless profile.id then callback winston.makeMissingParamError 'profile.id'; return
 
-  fbUser = new FBUserModel fbHelpers.getUserJSONFromProfile profile
-  fbUser.accessToken = accessToken
-  fbUser.refreshToken = refreshToken
+  fbUserJSON = fbHelpers.getUserJSONFromProfile profile
 
-  fbUser.save (mongoError, fbUserSaved) ->
-    fbUser = fbUserSaved || fbUser
+  accessTokenEncryptedInfo = utils.encryptSymmetric accessToken
+  fbUserJSON.accessTokenEncrypted = accessTokenEncryptedInfo.encrypted
+  fbUserJSON.accessTokenSalt = accessTokenEncryptedInfo.salt
+  if refreshToken
+    refreshTokenEncryptedInfo = utils.encryptSymmetric refreshToken
+    fbUserJSON.refreshTokenEncrypted = refreshTokenEncryptedInfo.encrypted
+    fbUserJSON.refreshTokenSalt = refreshTokenEncryptedInfo.salt
 
+  fbUserId = fbUserJSON._id
+  delete fbUserJSON._id
+
+  update =
+    $set: fbUserJSON
+
+  options =
+    upsert: true
+
+  FBUserModel.findByIdAndUpdate fbUserId, update, options, (mongoError, fbUser) ->
     if mongoError and mongoError.code isnt commonConstants.MONGO_ERROR_CODE_DUPLICATE
       callback winston.makeMongoError mongoError
       return
