@@ -27,6 +27,10 @@ module.exports =
 
   RADIX_DECIMAL: 10
 
+  gmail:
+    mailBoxType:
+      SENT: 'sent'
+
   service:
     FACEBOOK: 'facebook'
     LINKED_IN: 'linkedIn'
@@ -43,7 +47,7 @@ module.exports =
     imap:
       DOMAIN_ERROR: 'domainError'
       NO_BOX_TO_OPEN: 'noBoxToOpen'
-      SENT_MAIL_DOESNT_EXIST: 'sendMailDoesntExist'
+      MAIL_BOX_DOES_NOT_EXIST: 'mailBoxDoesNotExist'
 
   # Modified version of http://notes.ericwillis.com/2009/11/common-name-prefixes-titles-and-honorifics/
   # NOTE: must be lower case, and exclude any periods ("."s)

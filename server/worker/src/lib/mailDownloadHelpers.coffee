@@ -38,6 +38,7 @@ exports.getHeaderUIDs = (userId, googleUser, callback) ->
   headerUIDs = []
 
   #TODO: write this...
+  imapConection = imapConnect.
 
   callback null, headerUIDs
 

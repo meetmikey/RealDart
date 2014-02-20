@@ -24,7 +24,7 @@ exports.createImapConnection = (email, accessToken, callback) ->
         err: err
       return
 
-    imapParams = conf.gmailImapParams
+    imapParams = conf.gmail.imapParams
     imapParams.user = email
     imapParams.xoauth2 = xoauth2Token
 
@@ -32,6 +32,7 @@ exports.createImapConnection = (email, accessToken, callback) ->
       imapParams: imapParams
 
     imapConnection = new Imap imapParams
+    imapConnection.email = email
     callback null, imapConnection
 
 exports.getXOauthParams = (email, accessToken) ->
@@ -44,68 +45,88 @@ exports.getXOauthParams = (email, accessToken) ->
 
   xoauthParams
 
-exports.openSentMailBox = (imapConnection, email, callback) ->
+exports.openMailBox = (imapConnection, mailBoxType, callback) ->
   unless imapConnection then winston.doMissingParamError 'imapConnection'; return null
-  unless email then winston.doMissingParamError 'email'; return null
 
   callbackCalled = false
-  callbackWrapper = (error, sentMailBox) ->
+  callbackWrapper = (error, mailBox) ->
     if callbackCalled
-      winston.doWarn 'imapConnect.openSentMailBox double callback'
+      winston.doWarn 'imapConnect.openMailBox double callback'
       if error
         winston.handleError error
     else
       callbackCalled = true
-      callback error, sentMailBox
+      callback error, mailBox
 
   imapConnection.connect()
   imapConnection.once 'ready', (err) ->
     if err
-      imapConnect.handleOpenSentMailBoxReadyError err, email, callbackWrapper
+      imapConnect.handleOpenMailBoxReadyError err, imapConnection, callbackWrapper
     else
-      imapConnect.handleOpenSentMailBoxReady imapConnection, email, callbackWrapper
+      imapConnect.handleOpenMailBoxReady imapConnection, mailBoxType, callbackWrapper
 
   imapConnection.once 'error', (err) ->
-    imapConnect.handleOpenSentMailBoxError err, email, callbackWrapper
+    imapConnect.handleOpenMailBoxError err, imapConnection, callbackWrapper
 
   imapConnection.once 'end', ->
     winston.doInfo 'Connection ended for user',
-      email: email
+      email: imapConnection.email
 
   imapConnection.on 'alert', (msg) ->
     winston.doWarn 'Imap alert',
       msg: msg
-      email: email
-      
+      email: imapConnection.email
 
-exports.handleOpenSentMailBoxReady = (imapConnection, email, callback) ->
+
+
+exports.handleOpenMailBoxReadyError = (err, imapConnection, callback ) ->
+  winstonError = winston.makeError 'imap connect error',
+    err: err
+    email: imapConnection?.email
+
+  if err and err.level
+    winston.setErrorType winstonError, err.level
+
+  else if err and err.source
+    winston.setErrorType winstonError, err.source
+
+  if err.source is 'timeout'
+    winston.setSuppressErrorFlag winstonError, true
+    winston.doWarn 'imap connect error timeout',
+      err: err
+      email: imapConnection?.email
+
+  if callback
+    callback winstonError
+
+
+exports.handleOpenMailBoxReady = (imapConnection, mailBoxType, callback) ->
   unless imapConnection then winston.doMissingParamError 'imapConnection'; return null
-  unless email then winston.doMissingParamError 'email'; return null
 
   # check whether they are "Google Mail" or "GMail"
   imapConnection.getBoxes '', (getBoxesErr, boxes) ->
     if getBoxesErr then callback winston.makeError 'Could not get boxes', {err: getBoxesErr}; return
     unless boxes then callback winston.makeError 'No mailBoxes found'; return
 
-    imapConnect.findSentMailBox boxes, (error, fullSentMailBoxName, folderNames) ->
+    imapConnect.findMailBox mailBoxType, boxes, (error, fullMailBoxName, folderNames) ->
       if error then callback error; return
-      unless fullSentMailBoxName then callback winston.makeError 'no fullSentMailBoxName, but no error!'; return
+      unless fullMailBoxName then callback winston.makeError 'no fullMailBoxName, but no error!'; return
 
-      imapConnection.openBox fullSentMailBoxName, true, (openBoxErr, sentMailBox) ->
+      imapConnection.openBox fullMailBoxName, true, (openBoxErr, mailBox) ->
         if openBoxErr
-          callback winston.makeError 'Could not open sentMailBox',
+          callback winston.makeError 'Could not open mailBox',
             err: openBoxErr
           return
 
-        unless sentMailBox
-          callback winston.makeError 'no sentMailBox', {email: email}; return
+        unless mailBox
+          callback winston.makeError 'no mailBox', {email: imapConnection.email}; return
 
-        # add dictionary of relevant folders to the sentMailBox
-        sentMailBox.folderNames = folderNames
-        callback null, sentMailBox
+        # add dictionary of relevant folders to the mailBox
+        mailBox.folderNames = folderNames
+        callback null, mailBox
 
 
-exports.findSentMailBox = (boxes, callback) ->
+exports.findMailBox = (mailBoxType, boxes, callback) ->
 
   boxToOpen = undefined
   hasGmail = false
@@ -129,24 +150,33 @@ exports.findSentMailBox = (boxes, callback) ->
     callback winstonError
     return
 
-  sentMailBox = undefined
+  mailBox = undefined
   folderNames = {}
+
+  mailBoxNames = conf.gmail.mailBoxNames?[mailBoxType]
+  unless mailBoxNames
+    callback winston.makeError 'no such mailBoxNames in conf',
+      mailBoxType: mailBoxType
+    return
+
+  capitalizedMailBoxName = mailBoxNames.capitalizedMailBoxName
+  slashedMailBoxName = mailBoxNames.slashedMailBoxName
 
   # corner case - both Gmail and Google Mail folders are present
   if hasGmail and hasGoogleMail
     childrenGmail = boxes['[Gmail]'].children
     for key of childrenGmail
       childrenGmail[key].attribs.forEach (attrib) ->
-        if attrib is 'SENTMAIL' or attrib is "\\Sent"
-          sentMailBox = key
+        if attrib is capitalizedMailBoxName or attrib is slashedMailBoxName
+          mailBox = key
           boxToOpen = '[Gmail]'
         folderNames[attrib] = key
 
     childrenGoogleMail = boxes["[Google Mail]"].children
     for key of childrenGoogleMail
       childrenGoogleMail[key].attribs.forEach (attrib) ->
-        if attrib is 'SENTMAIL' or attrib is "\\Sent"
-          sentMailBox = key
+        if attrib is capitalizedMailBoxName or attrib is slashedMailBoxName
+          mailBox = key
           boxToOpen = '[Google Mail]'
         folderNames[attrib] = key
 
@@ -156,29 +186,29 @@ exports.findSentMailBox = (boxes, callback) ->
       for key of children
         children[key].attribs.forEach (attrib) ->
           folderNames[attrib] = key
-          if attrib is 'SENTMAIL' or attrib is "\\Sent"
-            sentMailBox = key  
+          if attrib is capitalizedMailBoxName or attrib is slashedMailBoxName
+            mailBox = key  
 
-  unless sentMailBox
-    winstonError = winston.makeError 'Error: Could not find SENTMAIL folder',
+  unless mailBox
+    winstonError = winston.makeError 'Error: Could not find folder',
       folderNames: folderNames
-    winston.setErrorType winstonError, constants.errorType.imap.SENT_MAIL_DOESNT_EXIST
+    winston.setErrorType winstonError, constants.errorType.imap.MAIL_BOX_DOES_NOT_EXIST
     callback winstonError
     return
 
-  fullBoxName = boxToOpen + '/' + sentMailBox
+  fullBoxName = boxToOpen + '/' + mailBox
   winston.doInfo 'Successfully connected to imap, now opening mailBox',
     fullBoxName: fullBoxName
 
   callback null, fullBoxName, folderNames
 
 
-exports.handleOpenSentMailBoxError = (err, email, callback) ->
+exports.handleOpenMailBoxError = (err, imapConnection, callback) ->
   unless err then callback()
 
   winstonError = winston.makeError 'imap connect error',
     err: err
-    email: email
+    email: imapConnection?.email
 
   if err.message and err.message.indexOf('IMAP access is disabled for your domain') isnt -1
     winston.doWarn 'imap access disabled for domain'
@@ -193,34 +223,27 @@ exports.handleOpenSentMailBoxError = (err, email, callback) ->
       winston.setSuppressErrorFlag winstonError, true
       winston.doWarn 'imap connect error timeout',
         err: err
-        email: email
+        email: imapConnection?.email
 
   callback winstonError
 
-exports.handleOpenSentMailBoxReadyError = (err, email, callback ) ->
-  winstonError = winston.makeError 'imap connect error',
-    err: err
-    email: email
-
-  if err and err.level
-    winston.setErrorType winstonError, err.level
-
-  else if err and err.source
-    winston.setErrorType winstonError, err.source
-
-  if err.source is 'timeout'
-    winston.setSuppressErrorFlag winstonError, true
-    winston.doWarn 'imap connect error timeout',
-      err: err
-      email: email
-
-  if callback
-    callback winstonError
 
 exports.closeMailBox = (imapConnection, callback) ->
+  unless imapConnection then callback winston.makeMissingParamError 'imapConnection'; return
   imapConnection.closeBox callback
 
 exports.logout = (imapConnection, callback) ->
-  winston.doInfo 'imapConnect.logout: logging out'
+  unless imapConnection then callback winston.makeMissingParamError 'imapConnection'; return
   imapConnection.end()
   callback()
+
+exports.closeMailBoxAndLogout = (imapConnection, callback) ->
+  unless imapConnection then callback winston.makeMissingParamError 'imapConnection'; return
+
+  imapConnect.closeMailBox imapConnection, (error) ->
+    if error then callback error; return
+
+    imapConnect.logout imapConnection, (error) ->
+      if error then callback error; return
+
+      callback()
