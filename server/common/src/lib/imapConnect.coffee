@@ -4,19 +4,21 @@ winston = require('./winstonWrapper').winston
 conf = require '../conf'
 constants = require '../constants'
 
-exports.createImapConnection = (email, token) ->
+imapConnect = this
+
+exports.createImapConnection = (email, accessToken) ->
   unless email then winston.doMissingParamError 'email'; return null
-  unless token then winston.doMissingParamError 'token'; return null
+  unless accessToken then winston.doMissingParamError 'accessToken'; return null
 
   imapParams = conf.gmailImapParams
   imapParams.user = email
-  imapParams.xoauth2 = token
+  imapParams.xoauth2 = accessToken
 
   imapConnection = new Imap imapParams
   imapConnection
 
-exports.openSentMailBox = (imap, email, callback) ->
-  unless imap then winston.doMissingParamError 'imap'; return null
+exports.openSentMailBox = (imapConnection, email, callback) ->
+  unless imapConnection then winston.doMissingParamError 'imapConnection'; return null
   unless email then winston.doMissingParamError 'email'; return null
 
   callbackCalled = false
@@ -29,32 +31,32 @@ exports.openSentMailBox = (imap, email, callback) ->
       callbackCalled = true
       callback error, sentMailBox
 
-  imap.connect()
-  imap.once 'ready', (err) ->
+  imapConnection.connect()
+  imapConnection.once 'ready', (err) ->
     if err
       imapConnect.handleOpenSentMailBoxReadyError err, email, callbackWrapper
     else
-      imapConnect.handleOpenSentMailBoxReady imap, email, callbackWrapper
+      imapConnect.handleOpenSentMailBoxReady imapConnection, email, callbackWrapper
 
-  imap.once 'error', (err) ->
+  imapConnection.once 'error', (err) ->
     imapConnect.handleOpenSentMailBoxError err, email, callbackWrapper
 
-  imap.once 'end', ->
+  imapConnection.once 'end', ->
     winston.doInfo 'Connection ended for user',
       email: userEmail
 
-  imap.on 'alert', (msg) ->
+  imapConnection.on 'alert', (msg) ->
     winston.doWarn 'Imap alert',
       msg: msg
       email: userEmail
       
 
-exports.handleOpenSentMailBoxReady = (imap, email, callback) ->
-  unless imap then winston.doMissingParamError 'imap'; return null
+exports.handleOpenSentMailBoxReady = (imapConnection, email, callback) ->
+  unless imapConnection then winston.doMissingParamError 'imapConnection'; return null
   unless email then winston.doMissingParamError 'email'; return null
 
   # check whether they are "Google Mail" or "GMail"
-  imap.getBoxes '', (getBoxesErr, boxes) ->
+  imapConnection.getBoxes '', (getBoxesErr, boxes) ->
     if getBoxesErr then callback winston.makeError 'Could not get boxes', {err: getBoxesErr}; return
     unless boxes then callback winston.makeError 'No mailBoxes found'; return
 
@@ -62,7 +64,7 @@ exports.handleOpenSentMailBoxReady = (imap, email, callback) ->
       if error then callback error; return
       unless fullSentMailBoxName then callback winston.makeError 'no fullSentMailBoxName, but no error!'; return
 
-      imap.openBox fullSentMailBoxName, true, (openBoxErr, sentMailBox) ->
+      imapConnection.openBox fullSentMailBoxName, true, (openBoxErr, sentMailBox) ->
         if openBoxErr
           callback winston.makeError 'Could not open sentMailBox',
             err: openBoxErr
@@ -187,10 +189,10 @@ exports.handleOpenSentMailBoxReadyError = (err, email, callback ) ->
   if callback
     callback winstonError
 
-exports.closeMailBox = (imap, callback) ->
-  imap.closeBox callback
+exports.closeMailBox = (imapConnection, callback) ->
+  imapConnection.closeBox callback
 
-exports.logout = (imap, callback) ->
+exports.logout = (imapConnection, callback) ->
   winston.doInfo 'imapConnect.logout: logging out'
-  imap.end()
+  imapConnection.end()
   callback()
