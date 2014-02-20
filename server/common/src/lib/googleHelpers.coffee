@@ -5,6 +5,7 @@ GoogleUserModel = require('../schema/googleUser').GoogleUserModel
 GoogleContactModel = require('../schema/googleContact').GoogleContactModel
 urlUtils = require './urlUtils'
 webUtils = require './webUtils'
+sqsUtils = require './sqsUtils'
 contactHelpers = require './contactHelpers'
 
 conf = require '../conf'
@@ -75,7 +76,14 @@ exports.doDataImportJob = (job, callback) ->
         googleUserId: googleUserId
       return
     
-    googleHelpers.getContacts userId, googleUser, callback
+    googleHelpers.getContacts userId, googleUser, (error) ->
+      if error then callback error; return
+
+      mailDownloadJob =
+        userId: userId
+        googleUserId: googleUserId
+
+      sqsUtils.addJobToQueue conf.queue.mailDownload, mailDownloadJob, callback
 
 
 exports.getContacts = (userId, googleUser, callback) ->

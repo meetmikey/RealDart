@@ -955,6 +955,7 @@
       return RD.Helper.user.getUser(true, (function(_this) {
         return function(error, user) {
           if (error || !user) {
+            rdLog('account getUser fail');
             callback('fail');
             _this.bail();
             return;

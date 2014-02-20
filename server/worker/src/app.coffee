@@ -7,6 +7,7 @@ commonConf = require commonAppDir + '/conf'
 commonConstants = require commonAppDir + '/constants'
 
 dataImportHelpers = require './lib/dataImportHelpers'
+mailDownloadHelpers = require './lib/mailDownloadHelpers'
 
 constants = require './constants'
 
@@ -36,6 +37,10 @@ exports.doJob = (job, queueName, callback) ->
   switch queueName
     when commonConf.queue.dataImport
       dataImportHelpers.doDataImportJob job, callback
+    when commonConf.queue.mailDownload
+      mailDownloadHelpers.doMailDownloadJob job, callback
+    when commonConf.queue.mailHeaderDownload
+      mailDownloadHelpers.doMailHeaderDownloadJob job, callback
     else
       winston.doError 'unsupported queueName',
         queueName: queueName

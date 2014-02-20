@@ -26,7 +26,7 @@ class RD.View.Account extends RD.View.Base
 
   getUser: (callback) =>
     RD.Helper.user.getUser true, (error, user) =>
-      if error or not user then callback('fail'); @bail(); return
+      if error or not user then rdLog 'account getUser fail'; callback('fail'); @bail(); return
 
       @user = user
       if @user.get('googleUserId') and @user.get('googleUserId').length

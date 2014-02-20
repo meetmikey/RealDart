@@ -16,6 +16,7 @@ module.exports =
   DEFAULT_WEB_GET_TIMEOUT: 30000
   RESPONSE_MAX_WAIT_MS: 5000
   MONGO_ERROR_CODE_DUPLICATE: 11000
+  HEADER_BATCH_SIZE: 1000
 
   #Milliseconds to wait with one miss.  Will do exponential back-off if many misses.
   #A 'miss' is either an error or 'no message'
@@ -37,6 +38,12 @@ module.exports =
   initAction:
     CONNECT_MONGO: 'connectMongo'
     HANDLE_SQS_WORKERS: 'handleSQSWorkers'
+
+  errorType:
+    imap:
+      DOMAIN_ERROR: 'domainError'
+      NO_BOX_TO_OPEN: 'noBoxToOpen'
+      SENT_MAIL_DOESNT_EXIST: 'sendMailDoesntExist'
 
   # Modified version of http://notes.ericwillis.com/2009/11/common-name-prefixes-titles-and-honorifics/
   # NOTE: must be lower case, and exclude any periods ("."s)
