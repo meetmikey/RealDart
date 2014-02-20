@@ -28,6 +28,9 @@ module.exports =
   RADIX_DECIMAL: 10
 
   gmail:
+    topLevelBoxName:
+      GMAIL: '[Gmail]'
+      GOOGLE_MAIL: '[Google Mail]'
     mailBoxType:
       SENT: 'sent'
 

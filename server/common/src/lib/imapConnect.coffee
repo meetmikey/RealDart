@@ -78,7 +78,6 @@ exports.openMailBox = (imapConnection, mailBoxType, callback) ->
       email: imapConnection.email
 
 
-
 exports.handleOpenMailBoxReadyError = (err, imapConnection, callback ) ->
   winstonError = winston.makeError 'imap connect error',
     err: err
@@ -108,99 +107,53 @@ exports.handleOpenMailBoxReady = (imapConnection, mailBoxType, callback) ->
     if getBoxesErr then callback winston.makeError 'Could not get boxes', {err: getBoxesErr}; return
     unless boxes then callback winston.makeError 'No mailBoxes found'; return
 
-    imapConnect.findMailBox mailBoxType, boxes, (error, fullMailBoxName, folderNames) ->
+    imapConnect.findMailBox mailBoxType, boxes, (error, fullMailBoxName) ->
       if error then callback error; return
       unless fullMailBoxName then callback winston.makeError 'no fullMailBoxName, but no error!'; return
 
       imapConnection.openBox fullMailBoxName, true, (openBoxErr, mailBox) ->
-        if openBoxErr
-          callback winston.makeError 'Could not open mailBox',
-            err: openBoxErr
-          return
+        if openBoxErr then callback winston.makeError 'Could not open mailBox', {err: openBoxErr}; return
+        unless mailBox then callback winston.makeError 'no mailBox', {email: imapConnection.email}; return
 
-        unless mailBox
-          callback winston.makeError 'no mailBox', {email: imapConnection.email}; return
-
-        # add dictionary of relevant folders to the mailBox
-        mailBox.folderNames = folderNames
         callback null, mailBox
 
 
 exports.findMailBox = (mailBoxType, boxes, callback) ->
+  unless mailBoxType then callback winston.makeMissingParamError 'mailBoxType'; return
+  unless boxes then callback winston.makeMissingParamError 'boxes'; return
+  mailBoxNames = conf.gmail.mailBoxNames?[mailBoxType]
+  unless mailBoxNames then callback winston.makeError 'no such mailBoxNames in conf', {mailBoxType: mailBoxType}; return
 
-  boxToOpen = undefined
-  hasGmail = false
-  hasGoogleMail = false
+  winston.doInfo 'boxes',
+    boxes: boxes
 
-  keys = Object.keys boxes
-  keys.forEach (boxName) ->
-    if boxName is '[Gmail]'
-      if boxes[boxName].children
-        boxToOpen = boxName
-        hasGmail = true
-    if boxName is '[Google Mail]'
-      if boxes[boxName].children
-        boxToOpen = boxName
-        hasGoogleMail = true
+  topLevelBoxName = null
+  for key, value of boxes
+    if key is constants.gmail.topLevelBoxName.GMAIL
+      topLevelBoxName = key
+    if key is constants.gmail.topLevelBoxName.GOOGLE_MAIL
+      topLevelBoxName = key
 
-  unless boxToOpen
-    winstonError = winston.makeError 'Could not find candidate mailBox to open',
+  topBoxChildren = boxes[topLevelBoxName]?.children
+  unless topLevelBoxName and topBoxChildren
+    winstonError = winston.makeError 'Could not find candidate topLevelBoxName',
+      topLevelBoxName: topLevelBoxName
       boxes: boxes
     winston.setErrorType winstonError, constants.errorType.imap.NO_BOX_TO_OPEN
     callback winstonError
     return
 
-  mailBox = undefined
-  folderNames = {}
+  for topBoxChildrenKey, topBoxChildrenValue of topBoxChildren
+    attributes = topBoxChildrenValue?.attribs || []
+    for attribute in attributes
+      if attribute is mailBoxNames.capitalizedMailBoxName or attribute is mailBoxNames.slashedMailBoxName
+        fullBoxName = topLevelBoxName + '/' + topBoxChildrenKey
+        callback null, fullBoxName
+        return
 
-  mailBoxNames = conf.gmail.mailBoxNames?[mailBoxType]
-  unless mailBoxNames
-    callback winston.makeError 'no such mailBoxNames in conf',
-      mailBoxType: mailBoxType
-    return
-
-  capitalizedMailBoxName = mailBoxNames.capitalizedMailBoxName
-  slashedMailBoxName = mailBoxNames.slashedMailBoxName
-
-  # corner case - both Gmail and Google Mail folders are present
-  if hasGmail and hasGoogleMail
-    childrenGmail = boxes['[Gmail]'].children
-    for key of childrenGmail
-      childrenGmail[key].attribs.forEach (attrib) ->
-        if attrib is capitalizedMailBoxName or attrib is slashedMailBoxName
-          mailBox = key
-          boxToOpen = '[Gmail]'
-        folderNames[attrib] = key
-
-    childrenGoogleMail = boxes["[Google Mail]"].children
-    for key of childrenGoogleMail
-      childrenGoogleMail[key].attribs.forEach (attrib) ->
-        if attrib is capitalizedMailBoxName or attrib is slashedMailBoxName
-          mailBox = key
-          boxToOpen = '[Google Mail]'
-        folderNames[attrib] = key
-
-  else
-    children = boxes[boxToOpen].children
-    if children
-      for key of children
-        children[key].attribs.forEach (attrib) ->
-          folderNames[attrib] = key
-          if attrib is capitalizedMailBoxName or attrib is slashedMailBoxName
-            mailBox = key  
-
-  unless mailBox
-    winstonError = winston.makeError 'Error: Could not find folder',
-      folderNames: folderNames
-    winston.setErrorType winstonError, constants.errorType.imap.MAIL_BOX_DOES_NOT_EXIST
-    callback winstonError
-    return
-
-  fullBoxName = boxToOpen + '/' + mailBox
-  winston.doInfo 'Successfully connected to imap, now opening mailBox',
-    fullBoxName: fullBoxName
-
-  callback null, fullBoxName, folderNames
+  winstonError = winston.makeError 'Error: Could not find mailBox'
+  winston.setErrorType winstonError, constants.errorType.imap.MAIL_BOX_DOES_NOT_EXIST
+  callback winstonError
 
 
 exports.handleOpenMailBoxError = (err, imapConnection, callback) ->
