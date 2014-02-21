@@ -60,7 +60,7 @@ exports.deleteContactsWithReplacement = (contactsToDelete, replacementContact, c
       $set:
         contactId: replacementContact._id
 
-    options:
+    options =
       multi: true
 
     TouchModel.update select, update, options, (mongoError) ->
