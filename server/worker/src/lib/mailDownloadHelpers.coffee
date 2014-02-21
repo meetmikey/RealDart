@@ -166,9 +166,9 @@ exports.downloadHeaders = (userId, googleUser, minUID, maxUID, callback) ->
 
         unless headersArray and headersArray.length then callback; return
 
-        async.each headersArray, (headers, eachCallback) ->
-
-          mailDownloadHelpers.saveHeadersAndAddTouches userId, googleUser, headers, eachCallback
+        #eachSeries is slower, but helps prevent contact conflicts
+        async.eachSeries headersArray, (headers, eachSeriesCallback) ->
+          mailDownloadHelpers.saveHeadersAndAddTouches userId, googleUser, headers, eachSeriesCallback
 
         , (error) ->
           imapConnect.closeMailBoxAndLogout imapConnection, (imapLogoutError) ->

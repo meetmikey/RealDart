@@ -85,15 +85,16 @@ exports.getContactFromEmail = (userId, email, fullName, contacts, callback) ->
 
   if foundContact
     callback null, foundContact
-  else
-    winston.doInfo 'no matching contact for email, making one...',
-      email: email
+    return
 
-    parsedName = contactHelpers.parseFullName fullName
-    userInfo =
-      email: email
-      firstName: parsedName.fullName
-      middleName: parsedName.middleName
-      lastName: parsedName.lastName
+  winston.doInfo 'no matching contact for email, making one...',
+    email: email
 
-    contactHelpers.addContact userId, constants.service.SENT_MAIL_TOUCH, userInfo, callback
+  parsedName = contactHelpers.parseFullName fullName
+  userInfo =
+    email: email
+    firstName: parsedName.fullName
+    middleName: parsedName.middleName
+    lastName: parsedName.lastName
+
+  contactHelpers.addContact userId, constants.service.SENT_MAIL_TOUCH, userInfo, callback

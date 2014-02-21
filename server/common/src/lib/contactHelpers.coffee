@@ -2,6 +2,7 @@ async = require 'async'
 
 fbHelpers = require './fbHelpers'
 ContactModel = require( '../schema/contact').ContactModel
+TouchModel = require( '../schema/touch').TouchModel
 winston = require('./winstonWrapper').winston
 basicUtils = require './basicUtils'
 mailUtils = require './mailUtils'
@@ -24,13 +25,6 @@ exports.addContact = (userId, service, contactServiceUser, callback) ->
     contactsToDelete = []
     contactToSave = newContact
     if existingContacts and existingContacts.length
-
-      ###
-      winston.doInfo 'found match(es)',
-        existingContacts: existingContacts
-        newContact: newContact
-      ###
-
       contactToSave = existingContacts[0]
 
       #check for multi-merge (and delete) situation
@@ -46,15 +40,41 @@ exports.addContact = (userId, service, contactServiceUser, callback) ->
     contactToSave.save (mongoError) ->
       if mongoError then callback winston.makeMongoError mongoError; return
 
-      #delete any others...
-      async.each contactsToDelete, (contactToDelete, eachCallback) ->
-        contactToDelete.remove (error) ->
-          if error then eachCallback winston.makeMongoError error; return
-          eachCallback()
-
-      , (error) ->
+      contactHelpers.deleteContactsWithReplacement contactsToDelete, contactToSave, (error) ->
         if error then callback error; return
         callback null, contactToSave
+
+
+exports.deleteContactsWithReplacement = (contactsToDelete, replacementContact, callback) ->
+  contactsToDelete = contactsToDelete || []
+  async.each contactsToDelete, (contactToDelete, eachCallback) ->
+
+    unless replacementContact
+      contactHelpers.deleteContact contactToDelete, eachCallback
+      return
+
+    select =
+      contactId: contactToDelete._id
+
+    update =
+      $set:
+        contactId: replacementContact._id
+
+    options:
+      multi: true
+
+    TouchModel.update select, update, options, (mongoError) ->
+      if mongoError then eachCallback winston.makeMongoError mongoError; return
+      contactHelpers.deleteContact contactToDelete, eachCallback
+    
+  , callback
+
+
+exports.deleteContact = (contact, callback) ->
+  unless contact then callback winston.makeMissingParamError 'contact'; return
+  contact.remove (error) ->
+    if error then callback winston.makeMongoError error; return
+    callback()
 
 
 exports.matchExistingContacts = (contact, callback) ->
