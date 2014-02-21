@@ -10,8 +10,8 @@ Contact = new Schema
   googleContactId: {type: Schema.ObjectId}
   fbUserId: {type: Number}
   liUserId: {type: String}
-  primaryEmail: {type: String}
-  emails: {type: [String]}
+  primaryEmail: {type: String} #normalized email
+  emails: {type: [String]} #normalized email(s)
   firstName: {type: String}
   middleName: {type: String}
   lastName: {type: String}

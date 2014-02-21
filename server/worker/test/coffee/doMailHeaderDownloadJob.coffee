@@ -17,8 +17,9 @@ initActions = [
   commonConstants.initAction.CONNECT_MONGO
 ]
 
-minUID = 0
+minUID = 1
 maxUID = minUID + workerConstants.HEADER_BATCH_SIZE - 1
+#maxUID = 30
 
 mailHeaderDownloadJob = 
   userId: '52f706661edc38e84c397b2a'
@@ -30,7 +31,6 @@ mailHeaderDownloadJob =
 
 run = (callback) ->
   mailDownloadHelpers.doMailHeaderDownloadJob mailHeaderDownloadJob, callback
-
 
 postInit = () ->
   run (error) ->

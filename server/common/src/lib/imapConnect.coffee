@@ -12,9 +12,6 @@ exports.createImapConnection = (email, accessToken, callback) ->
   unless email then winston.doMissingParamError 'email'; return null
   unless accessToken then winston.doMissingParamError 'accessToken'; return null
 
-  winston.doInfo 'createImapConnection',
-    accessToken: accessToken
-
   xoauthParams = imapConnect.getXOauthParams email, accessToken
   xoauth2gen = xoauth2.createXOAuth2Generator xoauthParams
 
@@ -27,9 +24,6 @@ exports.createImapConnection = (email, accessToken, callback) ->
     imapParams = conf.gmail.imapParams
     imapParams.user = email
     imapParams.xoauth2 = xoauth2Token
-
-    winston.doInfo 'imapParams',
-      imapParams: imapParams
 
     imapConnection = new Imap imapParams
     imapConnection.email = email

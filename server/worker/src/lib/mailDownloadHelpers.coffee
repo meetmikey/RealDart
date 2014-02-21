@@ -4,8 +4,10 @@ async = require 'async'
 
 winston = require(commonAppDir + '/lib/winstonWrapper').winston
 GoogleUserModel = require(commonAppDir + '/schema/googleUser').GoogleUserModel
+EmailModel = require(commonAppDir + '/schema/email').EmailModel
 imapConnect = require commonAppDir + '/lib/imapConnect'
 imapHelpers = require commonAppDir + '/lib/imapHelpers'
+touchHelpers = require commonAppDir + '/lib/touchHelpers'
 utils = require commonAppDir + '/lib/utils'
 sqsUtils = require commonAppDir + '/lib/sqsUtils'
 
@@ -58,15 +60,10 @@ exports.getHeaderUIDs = (userId, googleUser, callback) ->
       if error then callback error; return
       unless imapConnection then callback winston.makeError 'no mailBox'; return
 
-      minUID = 0
-      maxUID = 0
+      minUID = 1
+      maxUID = 1
       if mailBox.uidnext
         maxUID = mailBox.uidnext - 1
-
-      winston.doInfo 'got sent mailBox',
-        mailBox: mailBox
-        minUID: minUID
-        maxUID: maxUID
 
       imapConnect.closeMailBoxAndLogout imapConnection, (error) ->
         callback error, minUID, maxUID
@@ -75,9 +72,9 @@ exports.getHeaderUIDs = (userId, googleUser, callback) ->
 exports.createHeaderDownloadJobs = (userId, googleUser, minUID, maxUID, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
   unless googleUser then callback winston.makeMissingParamError 'googleUser'; return
-  unless ( minUID is 0 ) or ( minUID > 0 )  then callback winston.makeMissingParamError 'minUID'; return
-  unless ( maxUID is 0 ) or ( maxUID > 0 )  then callback winston.makeMissingParamError 'maxUID'; return
-  unless ( minUID <= maxUID ) then callback winston.makeMissingParamError 'minUID isnt <= maxUID'; return
+  unless minUID > 0 then callback winston.makeMissingParamError 'minUID'; return
+  unless maxUID > 0 then callback winston.makeMissingParamError 'maxUID'; return
+  unless minUID <= maxUID then callback winston.makeMissingParamError 'minUID isnt <= maxUID'; return
   
   uidBatches = mailDownloadHelpers.getUIDBatches minUID, maxUID
 
@@ -96,7 +93,7 @@ exports.createHeaderDownloadJobs = (userId, googleUser, minUID, maxUID, callback
 exports.getUIDBatches = ( minUID, maxUID, batchSizeInput ) ->
   uidBatches = []
 
-  unless ( ( minUID is 0 ) or ( minUID > 0 ) ) and ( ( maxUID is 0 ) or ( maxUID > 0 ) ) and ( maxUID >= minUID )
+  unless ( minUID > 0 ) and ( maxUID > 0 ) and ( maxUID >= minUID )
     winston.doWarn 'invalid minUID and maxUID',
       minUID: minUID
       maxUID: maxUID
@@ -126,10 +123,6 @@ exports.getUIDBatches = ( minUID, maxUID, batchSizeInput ) ->
 
 
 exports.doMailHeaderDownloadJob = (job, callback) ->
-
-  winston.doInfo 'doMailHeaderDownloadJob',
-    job: job
-
   unless job then callback winston.makeMissingParamError 'job'; return
   unless job.userId then callback winston.makeMissingParamError 'job.userId'; return
   unless job.googleUserId then callback winston.makeMissingParamError 'job.googleUserId'; return
@@ -154,9 +147,9 @@ exports.doMailHeaderDownloadJob = (job, callback) ->
 exports.downloadHeaders = (userId, googleUser, minUID, maxUID, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
   unless googleUser then callback winston.makeMissingParamError 'googleUser'; return
-  unless ( minUID is 0 ) or ( minUID > 0 )  then callback winston.makeMissingParamError 'minUID'; return
-  unless ( maxUID is 0 ) or ( maxUID > 0 )  then callback winston.makeMissingParamError 'maxUID'; return
-  unless ( minUID <= maxUID ) then callback winston.makeMissingParamError 'minUID isnt <= maxUID'; return
+  unless minUID > 0 then callback winston.makeMissingParamError 'minUID'; return
+  unless maxUID > 0 then callback winston.makeMissingParamError 'maxUID'; return
+  unless minUID <= maxUID then callback winston.makeMissingParamError 'minUID isnt <= maxUID'; return
 
   accessToken = googleUser.accessToken
   email = googleUser.email
@@ -169,12 +162,46 @@ exports.downloadHeaders = (userId, googleUser, minUID, maxUID, callback) ->
     imapConnect.openMailBox imapConnection, mailBoxType, (error, mailBox) ->
       if error then callback error; return
 
-      imapHelpers.getHeaders userId, imapConnection, minUID, maxUID, (error, headers) ->
+      imapHelpers.getHeaders userId, imapConnection, minUID, maxUID, (error, headersArray) ->
 
-        winston.doInfo 'got headers!',
-          headers: headers
+        unless headersArray and headersArray.length then callback; return
 
-        #TODO: write this...
+        async.each headersArray, (headers, eachCallback) ->
+
+          mailDownloadHelpers.saveHeadersAndAddTouches userId, googleUser, headers, eachCallback
+
+        , (error) ->
+          imapConnect.closeMailBoxAndLogout imapConnection, (imapLogoutError) ->
+            if imapLogoutError
+              winston.handleError imapLogoutError
+            callback error
 
 
-        imapConnect.closeMailBoxAndLogout imapConnection, callback
+exports.saveHeadersAndAddTouches = (userId, googleUser, headers, callback) ->
+  unless userId then callback winston.makeMissingParamError 'userId'; return
+  unless googleUser then callback winston.makeMissingParamError 'googleUser'; return
+  unless headers then callback winston.makeMissingParamError 'headers'; return
+
+  emailJSON = headers
+  emailJSON.userId = userId
+  emailJSON.googleUserId = googleUser._id
+
+  select =
+    userId: emailJSON.userId
+    googleUserId: emailJSON.googleUserId
+    uid: emailJSON.uid
+
+  update =
+    $set: emailJSON
+
+  options =
+    upsert: true
+    new: false
+
+  EmailModel.findOneAndUpdate select, update, options, (mongoError, existingEmailModel) ->
+    if mongoError then callback winston.makeMongoError mongoError; return
+
+    if existingEmailModel
+      callback()
+    else
+      touchHelpers.addTouchesFromEmail userId, emailJSON, callback

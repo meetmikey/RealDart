@@ -4,6 +4,7 @@ fbHelpers = require './fbHelpers'
 ContactModel = require( '../schema/contact').ContactModel
 winston = require('./winstonWrapper').winston
 basicUtils = require './basicUtils'
+mailUtils = require './mailUtils'
 utils = require './utils'
 
 constants = require '../constants'
@@ -135,16 +136,16 @@ exports.buildContact = (userId, service, contactServiceUser) ->
   if service is constants.service.GOOGLE
     contactData.googleContactId = contactServiceUser._id
     contactData.googleUserId = contactServiceUser.googleUserId
-    contactData.primaryEmail = contactServiceUser.primaryEmail
-    contactData.emails = contactServiceUser.emails
+    contactData.primaryEmail = mailUtils.normalizeEmailAddress contactServiceUser.primaryEmail
+    contactData.emails = mailUtils.normalizeEmailAddressArray contactServiceUser.emails
     contactData.firstName = contactServiceUser.firstName
     contactData.lastName = contactServiceUser.lastName
 
   else if service is constants.service.FACEBOOK
     contactData.fbUserId = contactServiceUser._id
     if contactServiceUser.email
-      contactData.primaryEmail = contactServiceUser.email
-      contactData.emails = [contactServiceUser.email]
+      contactData.primaryEmail = mailUtils.normalizeEmailAddress contactServiceUser.email
+      contactData.emails = mailUtils.normalizeEmailAddressArray [contactServiceUser.email]
     contactData.firstName = contactServiceUser.first_name
     contactData.middleName = contactServiceUser.middle_name
     contactData.lastName = contactServiceUser.last_name
@@ -153,8 +154,8 @@ exports.buildContact = (userId, service, contactServiceUser) ->
   else if service is constants.service.LINKED_IN
     contactData.liUserId = contactServiceUser._id
     if contactServiceUser.emailAddress
-      contactData.primaryEmail = contactServiceUser.emailAddress
-      contactData.emails = [contactServiceUser.emailAddress]
+      contactData.primaryEmail = mailUtils.normalizeEmailAddress contactServiceUser.emailAddress
+      contactData.emails = mailUtils.normalizeEmailAddressArray [contactServiceUser.emailAddress]
     contactData.firstName = contactServiceUser.firstName
     contactData.lastName = contactServiceUser.lastName
     contactData.picURL = contactServiceUser.pictureUrl

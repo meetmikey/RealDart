@@ -23,10 +23,10 @@ exports.getAllRecipients = (headers) ->
   if headers.bcc and headers.bcc.length > 0
     bccRecipients = mimelib.parseAddresses headers.bcc[0]
     mailUtils.renameAddressField bccRecipients
-  
+
   allRecipients = toRecipients.concat(ccRecipients).concat(bccRecipients)
   for recipient, index in allRecipients
-    allRecipients[index] = mailUtils.normalizeEmailAddress recipient
+    allRecipients[index]['email'] = mailUtils.normalizeEmailAddress recipient['email']
   allRecipients
 
 
@@ -57,6 +57,15 @@ exports.normalizeEmailAddress = (input) ->
   beforeAt = beforeAt.replace /\./g, ''
   output = beforeAt + '@' + afterAt
   output
+
+
+exports.normalizeEmailAddressArray = (emailAddressArray) ->
+  unless emailAddressArray and emailAddressArray.length then return []
+
+  for emailAddress, index in emailAddressArray
+    emailAddressArray[ index ] = mailUtils.normalizeEmailAddress emailAddress
+    
+  emailAddressArray
 
 
 exports.getCleanSubject = (rawSubject) ->

@@ -1,5 +1,9 @@
+imap = require 'imap'
+_ = require 'underscore'
+
 winston = require('./winstonWrapper').winston
 imapConnect = require './imapConnect'
+mailUtils = require './mailUtils'
 
 conf = require '../conf'
 
@@ -8,13 +12,9 @@ imapHelpers = this
 exports.getHeaders = (userId, imapConnection, minUID, maxUID, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
   unless imapConnection then callback winston.makeMissingParamError 'imapConnection'; return
-  unless ( minUID is 0 ) or ( minUID > 0 )  then callback winston.makeMissingParamError 'minUID'; return
-  unless ( maxUID is 0 ) or ( maxUID > 0 )  then callback winston.makeMissingParamError 'maxUID'; return
-  unless ( minUID <= maxUID ) then callback winston.makeMissingParamError 'minUID isnt <= maxUID'; return
-
-  winston.doInfo 'getHeaders',
-    minUID: minUID
-    maxUID: maxUID
+  unless minUID > 0 then callback winston.makeMissingParamError 'minUID'; return
+  unless maxUID > 0 then callback winston.makeMissingParamError 'maxUID'; return
+  unless minUID <= maxUID then callback winston.makeMissingParamError 'minUID isnt <= maxUID'; return
 
   hasCalledBack = false
   callbackWrapper = (error, headers) ->
@@ -26,12 +26,14 @@ exports.getHeaders = (userId, imapConnection, minUID, maxUID, callback) ->
 
   uidQuery = minUID + ':' + maxUID
   headerFields = 'HEADER.FIELDS (' + conf.gmail.headerFieldsToFetch.join(' ') + ')'
+
   imapFetch = imapConnection.fetch uidQuery,
     bodies: headerFields
   
-  headers = []
+  headersArray = []
   
   imapFetch.on 'message', (msg, uid) ->
+
     mailInfo = {}
     msg.on 'body', (stream, info) ->
       buffer = ''
@@ -39,16 +41,13 @@ exports.getHeaders = (userId, imapConnection, minUID, maxUID, callback) ->
         buffer += chunk.toString 'utf8'
 
       stream.once 'end', ->
-        winston.doInfo 'stream end',
-          which: info?.which
-
         unless info.which is headerFields
           return
 
-        emailHeaders = Imap.parseHeader buffer
+        emailHeaders = imap.parseHeader buffer
         mailInfo['messageId'] = emailHeaders['message-id']
         mailInfo['subject'] = emailHeaders['subject']
-        mailInfo['recipients'] = mailUtils.getAllRecipients emailHeaders
+        mailInfo['recipientEmails'] = _.pluck mailUtils.getAllRecipients( emailHeaders ), 'email'
 
     msg.once 'attributes', (attrs) ->
       mailInfo['uid'] = attrs.uid
@@ -56,10 +55,10 @@ exports.getHeaders = (userId, imapConnection, minUID, maxUID, callback) ->
         mailInfo['date'] = new Date( Date.parse( attrs['date'] ) )
 
     msg.once 'end', ->
-      headers.push mailInfo
+      headersArray.push mailInfo
 
   imapFetch.on 'end', ->
-    callbackWrapper null, headers
+    callbackWrapper null, headersArray
     
   imapFetch.on 'error', (err) ->
     callbackWrapper winston.makeError 'imap fetch error',
