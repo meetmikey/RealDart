@@ -10,10 +10,19 @@ module.exports = (grunt) ->
         src: ['**/*.coffee']
         dest: 'app'
         ext: '.js'
+      test:
+        expand: true
+        cwd: 'test/coffee'
+        src: ['**/*.coffee']
+        dest: 'test/js'
+        ext: '.js'
     watch:
       srcCoffee:
         files: 'src/**/*.coffee'
         tasks: ['coffee:src']
+      testCoffee:
+        files: 'test/coffee/**/*.coffee'
+        tasks: ['coffee:test']
 
   grunt.loadNpmTasks 'grunt-contrib-watch'
   grunt.loadNpmTasks 'grunt-contrib-coffee'

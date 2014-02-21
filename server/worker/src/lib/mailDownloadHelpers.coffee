@@ -7,6 +7,8 @@ GoogleUserModel = require(commonAppDir + '/schema/googleUser').GoogleUserModel
 utils = require commonAppDir + '/lib/utils'
 sqsUtils = require commonAppDir + '/lib/sqsUtils'
 
+constants = require commonAppDir + '/constants'
+
 mailDownloadHelpers = this
 
 exports.doMailDownloadJob = (job, callback) ->
@@ -26,10 +28,10 @@ exports.doMailDownloadJob = (job, callback) ->
 
     unless googleUser then callback winston.makeError 'googleUser not found', {googleUserId: googleUserId}; return
 
-    mailDownloadHelpers.getHeaderUIDs userId, googleUser, (error, uids) ->
+    mailDownloadHelpers.getHeaderUIDs userId, googleUser, (error, minUID, maxUID) ->
       if error then callback error; return
 
-      mailDownloadHelpers.createHeaderDownloadJobs userId, googleUser, uids, callback
+      mailDownloadHelpers.createHeaderDownloadJobs userId, googleUser, minUID, maxUID, callback
 
 exports.getHeaderUIDs = (userId, googleUser, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
@@ -37,12 +39,31 @@ exports.getHeaderUIDs = (userId, googleUser, callback) ->
 
   headerUIDs = []
 
-  #TODO: write this...
-  imapConection = imapConnect.
+  accessToken = googleUser.accessToken
+  email = googleUser.email
 
-  callback null, headerUIDs
+  imapConnect.createImapConnection email, accessToken, (error, imapConnection) ->
+    if error then callback error; return
+    unless imapConnection then callback winston.makeError 'no imapConnection'; return
 
-exports.createHeaderDownloadJobs = (userId, googleUser, uids, callback) ->
+    mailBoxType = constants.gmail.mailBoxType.SENT
+    imapConnect.openMailBox imapConnection, mailBoxType, (error, mailBox) ->
+      if error then callback error; return
+      unless imapConnection then callback winston.makeError 'no mailBox'; return
+
+      minUID = 0
+      maxUID = 0
+      if mailBox.uidnext
+        maxUID = mailBox.uidnext - 1
+
+      winston.doInfo 'got sent mailBox',
+        mailBox: mailBox
+        minUID: minUID
+        maxUID: maxUID
+
+      callback null, minUID, maxUID
+
+exports.createHeaderDownloadJobs = (userId, googleUser, minUID, maxUID, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
   unless googleUser then callback winston.makeMissingParamError 'googleUser'; return
 
@@ -53,8 +74,22 @@ exports.createHeaderDownloadJobs = (userId, googleUser, uids, callback) ->
     return
   
   uidBatches = []
+  batchIndex = 0
+  batchSize = constants.HEADER_BATCH_SIZE
   while uids and uids.length
-    uidBatches.push uids.splice 0, constants.HEADER_BATCH_SIZE
+    minBatchUID = minUID + ( batchIndex * batchSize )
+    if minBatchUID > maxUID
+      break
+
+    maxBatchUID = minBatchUID + ( batchSize - 1 )
+    if maxBatchUID > ( maxUID - 1 )
+      maxBatchUID = maxUID
+
+    uidBatch =
+      minUID: minBatchUID
+      maxUID: maxBatchUID
+    uidBatches.push uidBatch
+    batchIndex++
 
   async.each uidBatches, (uidBatch, eachCallback) ->
 
@@ -66,6 +101,41 @@ exports.createHeaderDownloadJobs = (userId, googleUser, uids, callback) ->
     sqsUtils.addJobToQueue conf.queue.mailHeaderDownload, mailHeaderDownloadJob, eachCallback
 
   , callback
+
+
+exports.getUIDBatches = ( minUID, maxUID, batchSizeInput ) ->
+  uidBatches = []
+
+  unless ( ( minUID is 0 ) or ( minUID > 0 ) ) and ( ( maxUID is 0 ) or ( maxUID > 0 ) ) and ( maxUID >= minUID )
+    winston.doWarn 'invalid minUID and maxUID',
+      minUID: minUID
+      maxUID: maxUID
+    return uidBatches
+
+  batchSize = constants.HEADER_BATCH_SIZE
+  if batchSizeInput
+    batchSize = batchSizeInput
+
+  winston.doInfo 'batchSize',
+    batchSize: batchSize
+
+  batchIndex = 0
+  while true
+    minBatchUID = minUID + ( batchIndex * batchSize )
+    if minBatchUID > maxUID
+      break
+
+    maxBatchUID = minBatchUID + ( batchSize - 1 )
+    if maxBatchUID > ( maxUID - 1 )
+      maxBatchUID = maxUID
+
+    uidBatch =
+      minUID: minBatchUID
+      maxUID: maxBatchUID
+    uidBatches.push uidBatch
+    batchIndex++
+
+  uidBatches
 
 
 exports.doMailHeaderDownloadJob = (job, callback) ->

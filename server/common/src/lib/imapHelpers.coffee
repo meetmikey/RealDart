@@ -15,7 +15,7 @@ exports.getMailBox = (googleUser, mailBoxType, callback) ->
     if error then callback error; return
     unless imapConnection then callback winston.makeError 'no imapConnection'; return
 
-    imapConnect.openMailBox imapConnection, mailBoxType, (error, sentMailBox) ->
+    imapConnect.openMailBox imapConnection, mailBoxType, (error, mailBox) ->
       if error then callback error; return
 
       winston.doInfo 'mailBox opened!',

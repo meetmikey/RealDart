@@ -124,9 +124,6 @@ exports.findMailBox = (mailBoxType, boxes, callback) ->
   mailBoxNames = conf.gmail.mailBoxNames?[mailBoxType]
   unless mailBoxNames then callback winston.makeError 'no such mailBoxNames in conf', {mailBoxType: mailBoxType}; return
 
-  winston.doInfo 'boxes',
-    boxes: boxes
-
   topLevelBoxName = null
   for key, value of boxes
     if key is constants.gmail.topLevelBoxName.GMAIL
