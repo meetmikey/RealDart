@@ -44,12 +44,7 @@ exports.addContact = (userId, service, contactServiceUser, callback) ->
 
     utils.removeNullFields contactToSave, true, true
     contactToSave.save (mongoError) ->
-      #if mongoError then callback winston.makeMongoError mongoError; return
-      if mongoError
-        callback winston.makeMongoError mongoError,
-          contactToSave: contactToSave
-          contactToSaveEmails: contactToSave?.emails
-        return
+      if mongoError then callback winston.makeMongoError mongoError; return
 
       #delete any others...
       async.each contactsToDelete, (contactToDelete, eachCallback) ->
@@ -57,7 +52,9 @@ exports.addContact = (userId, service, contactServiceUser, callback) ->
           if error then eachCallback winston.makeMongoError error; return
           eachCallback()
 
-      , callback
+      , (error) ->
+        if error then callback error; return
+        callback null, contactToSave
 
 
 exports.matchExistingContacts = (contact, callback) ->
@@ -139,6 +136,7 @@ exports.buildContact = (userId, service, contactServiceUser) ->
     contactData.primaryEmail = mailUtils.normalizeEmailAddress contactServiceUser.primaryEmail
     contactData.emails = mailUtils.normalizeEmailAddressArray contactServiceUser.emails
     contactData.firstName = contactServiceUser.firstName
+    contactData.middleName = contactServiceUser.middleName
     contactData.lastName = contactServiceUser.lastName
 
   else if service is constants.service.FACEBOOK
@@ -159,6 +157,14 @@ exports.buildContact = (userId, service, contactServiceUser) ->
     contactData.firstName = contactServiceUser.firstName
     contactData.lastName = contactServiceUser.lastName
     contactData.picURL = contactServiceUser.pictureUrl
+
+  else if service is constants.service.SENT_MAIL_TOUCH
+    if contactServiceUser.email
+      contactData.primaryEmail = mailUtils.normalizeEmailAddress contactServiceUser.email
+      contactData.emails = mailUtils.normalizeEmailAddressArray [contactServiceUser.email]
+    contactData.firstName = contactServiceUser.firstName
+    contactData.middleName = contactServiceUser.middleName
+    contactData.lastName = contactServiceUser.lastName
 
   contact = new ContactModel contactData
   utils.removeNullFields contact, true, true

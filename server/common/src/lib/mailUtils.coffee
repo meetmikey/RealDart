@@ -68,10 +68,9 @@ exports.normalizeEmailAddressArray = (emailAddressArray) ->
   emailAddressArray
 
 
-exports.getCleanSubject = (rawSubject) ->
-  subject = rawSubject
-  unless subject
-    subject = ''
+exports.getCleanSubject = (subject) ->
+  unless subject and utils.isString subject
+    return ''
   
   prefixes = [
     'Re:'
@@ -90,3 +89,8 @@ exports.getCleanSubject = (rawSubject) ->
     subject = subject.trim()
 
   subject
+
+exports.isValidEmail = (email) ->
+  re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+  isValid = re.test email
+  isValid

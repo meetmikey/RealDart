@@ -1,9 +1,13 @@
 async = require 'async'
+_ = require 'underscore'
 
 winston = require('./winstonWrapper').winston
 ContactModel = require('../schema/contact').ContactModel
 TouchModel = require('../schema/touch').TouchModel
 mailUtils = require './mailUtils'
+contactHelpers = require './contactHelpers'
+
+constants = require '../constants'
 
 touchHelpers = this
 
@@ -12,14 +16,15 @@ exports.addTouchesFromEmail = (userId, emailJSON, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
   unless emailJSON then callback winston.makeMissingParamError 'emailJSON'; return
 
-  recipientEmails = emailJSON.recipientEmails
-  unless recipientEmails and recipientEmails.length
-    winston.doWarn 'no recipientEmails in emailJSON',
+  recipients = emailJSON.recipients
+  unless recipients and recipients.length
+    winston.doWarn 'no recipients in emailJSON',
       emailJSON: emailJSON
     callback()
     return
 
   #For efficiency, select all the contacts at once then match them up
+  recipientEmails = _.pluck recipients, 'email'
   select =
     userId: emailJSON.userId
     emails:
@@ -28,39 +33,67 @@ exports.addTouchesFromEmail = (userId, emailJSON, callback) ->
   ContactModel.find select, (mongoError, foundContacts) ->
     if mongoError then callback winston.makeMongoError mongoError; return
 
-    contactIds = touchHelpers.matchContactsToEmails foundContacts, recipientEmails
-    async.each contactIds, (contactId, eachCallback) ->
-      touch = new TouchModel
-        userId: userId
-        contactId: contactId
-        type: 'email'
-        emailSubject = mailUtils.getCleanSubject emailJSON.subject
-        date: emailJSON.date
-
-      touch.save (mongoError) ->
-        if mongoError then eachCallback winston.makeMongoError mongoError; return
-        eachCallback()
-
+    #eachSeries is slower, but helps prevent contact conflicts
+    async.eachSeries recipients, (recipient, eachSeriesCallback) ->
+      touchHelpers.addTouchForEmailRecipient userId, emailJSON, recipient, foundContacts, eachSeriesCallback
     , callback
 
 
-exports.matchContactsToEmails = (contacts, emails) ->
-  unless emails and emails.length then return []
+exports.addTouchForEmailRecipient = (userId, emailJSON, recipient, foundContacts, callback) ->
+  unless userId then callback winston.makeMissingParamError 'userId'; return
+  unless emailJSON then callback winston.makeMissingParamError 'emailJSON'; return
+  unless recipient then callback winston.makeMissingParamError 'recipient'; return
 
-  contactIds = []
-  for email in emails
-    contactId = null
-    for contact in contacts
-      if contact.emails.indexOf( email ) isnt -1
-        if contactId
-          winston.doError 'More than one matching contact for email',
-            email: email
-        contactId = contact._id
+  recipientName = recipient.name
+  recipientEmail = recipient.email
 
-    if contactId
-      contactIds.push contactId
-    else
-      winston.doError 'no matching contact for email',
-        email: email
+  unless recipientEmail and mailUtils.isValidEmail recipientEmail
+    winston.doWarn 'invalid recipientEmail', {recipientEmail: recipientEmail}
+    callback()
+    return
 
-  contactIds
+  touchHelpers.getContactFromEmail userId, recipientEmail, recipientName, foundContacts, (error, contact) ->
+    if error then callback error; return
+    unless contact then callback winston.makeError 'no contact', {recipientEmail: recipientEmail}; return
+
+    touch = new TouchModel
+      userId: userId
+      contactId: contact._id
+      type: 'email'
+      emailSubject: mailUtils.getCleanSubject emailJSON.subject
+      date: emailJSON.date
+
+    touch.save (mongoError) ->
+      if mongoError then callback winston.makeMongoError mongoError; return
+      callback()
+
+
+#As an optimization, a list of probable contact matches is provided.
+#If it's in there, we're done.
+exports.getContactFromEmail = (userId, email, fullName, contacts, callback) ->
+  unless userId then callback winston.makeMissingParamError 'userId'; return
+  unless email then callback winston.makeMissingParamError 'email'; return
+
+  foundContact = null
+  contacts = contacts || []
+  for contact in contacts
+    if contact.emails.indexOf( email ) isnt -1
+      if foundContact
+        winston.doWarn 'More than one matching contact for email',
+          email: email
+      foundContact = contact
+
+  if foundContact
+    callback null, foundContact
+  else
+    winston.doInfo 'no matching contact for email, making one...',
+      email: email
+
+    parsedName = contactHelpers.parseFullName fullName
+    userInfo =
+      email: email
+      firstName: parsedName.fullName
+      middleName: parsedName.middleName
+      lastName: parsedName.lastName
+
+    contactHelpers.addContact userId, constants.service.SENT_MAIL_TOUCH, userInfo, callback

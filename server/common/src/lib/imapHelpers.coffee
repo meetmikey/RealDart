@@ -1,5 +1,4 @@
 imap = require 'imap'
-_ = require 'underscore'
 
 winston = require('./winstonWrapper').winston
 imapConnect = require './imapConnect'
@@ -47,7 +46,7 @@ exports.getHeaders = (userId, imapConnection, minUID, maxUID, callback) ->
         emailHeaders = imap.parseHeader buffer
         mailInfo['messageId'] = emailHeaders['message-id']
         mailInfo['subject'] = emailHeaders['subject']
-        mailInfo['recipientEmails'] = _.pluck mailUtils.getAllRecipients( emailHeaders ), 'email'
+        mailInfo['recipients'] = mailUtils.getAllRecipients( emailHeaders )
 
     msg.once 'attributes', (attrs) ->
       mailInfo['uid'] = attrs.uid

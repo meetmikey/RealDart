@@ -37,6 +37,9 @@ module.exports =
     FACEBOOK: 'facebook'
     LINKED_IN: 'linkedIn'
     GOOGLE: 'google'
+    SENT_MAIL_TOUCH: 'sentMailTouch' #This is here because 'services' double as possible contact sources,
+                                     # one of which is finding the email in the sent mail
+
 
   message:
     SQS_ALL_WORKERS_DONE: 'All workers done.'
