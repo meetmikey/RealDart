@@ -1,2 +1,3 @@
 module.exports = 
   MAX_WORKERS_PER_QUEUE: 1
+  HEADER_BATCH_SIZE: 1000

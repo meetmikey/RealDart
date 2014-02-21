@@ -4,10 +4,15 @@ async = require 'async'
 
 winston = require(commonAppDir + '/lib/winstonWrapper').winston
 GoogleUserModel = require(commonAppDir + '/schema/googleUser').GoogleUserModel
+imapConnect = require commonAppDir + '/lib/imapConnect'
+imapHelpers = require commonAppDir + '/lib/imapHelpers'
 utils = require commonAppDir + '/lib/utils'
 sqsUtils = require commonAppDir + '/lib/sqsUtils'
 
-constants = require commonAppDir + '/constants'
+commonConstants = require commonAppDir + '/constants'
+commonConf = require commonAppDir + '/conf'
+
+workerConstants = require '../constants'
 
 mailDownloadHelpers = this
 
@@ -48,7 +53,7 @@ exports.getHeaderUIDs = (userId, googleUser, callback) ->
     if error then callback error; return
     unless imapConnection then callback winston.makeError 'no imapConnection'; return
 
-    mailBoxType = constants.gmail.mailBoxType.SENT
+    mailBoxType = commonConstants.gmail.mailBoxType.SENT
     imapConnect.openMailBox imapConnection, mailBoxType, (error, mailBox) ->
       if error then callback error; return
       unless imapConnection then callback winston.makeError 'no mailBox'; return
@@ -70,12 +75,9 @@ exports.getHeaderUIDs = (userId, googleUser, callback) ->
 exports.createHeaderDownloadJobs = (userId, googleUser, minUID, maxUID, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
   unless googleUser then callback winston.makeMissingParamError 'googleUser'; return
-
-  unless uids and utils.isArray uids
-    winston.doWarn 'mailDownloadHelpers.createHeaderDownloadJobs: empty uids array',
-      userId: userId
-    callback()
-    return
+  unless ( minUID is 0 ) or ( minUID > 0 )  then callback winston.makeMissingParamError 'minUID'; return
+  unless ( maxUID is 0 ) or ( maxUID > 0 )  then callback winston.makeMissingParamError 'maxUID'; return
+  unless ( minUID <= maxUID ) then callback winston.makeMissingParamError 'minUID isnt <= maxUID'; return
   
   uidBatches = mailDownloadHelpers.getUIDBatches minUID, maxUID
 
@@ -86,7 +88,7 @@ exports.createHeaderDownloadJobs = (userId, googleUser, minUID, maxUID, callback
       googleUserId: googleUser._id
       uidBatch: uidBatch
 
-    sqsUtils.addJobToQueue conf.queue.mailHeaderDownload, mailHeaderDownloadJob, eachCallback
+    sqsUtils.addJobToQueue commonConf.queue.mailHeaderDownload, mailHeaderDownloadJob, eachCallback
 
   , callback
 
@@ -100,12 +102,9 @@ exports.getUIDBatches = ( minUID, maxUID, batchSizeInput ) ->
       maxUID: maxUID
     return uidBatches
 
-  batchSize = constants.HEADER_BATCH_SIZE
+  batchSize = workerConstants.HEADER_BATCH_SIZE
   if batchSizeInput
     batchSize = batchSizeInput
-
-  winston.doInfo 'batchSize',
-    batchSize: batchSize
 
   batchIndex = 0
   while true
@@ -127,6 +126,10 @@ exports.getUIDBatches = ( minUID, maxUID, batchSizeInput ) ->
 
 
 exports.doMailHeaderDownloadJob = (job, callback) ->
+
+  winston.doInfo 'doMailHeaderDownloadJob',
+    job: job
+
   unless job then callback winston.makeMissingParamError 'job'; return
   unless job.userId then callback winston.makeMissingParamError 'job.userId'; return
   unless job.googleUserId then callback winston.makeMissingParamError 'job.googleUserId'; return
@@ -157,7 +160,7 @@ exports.downloadHeaders = (userId, googleUser, minUID, maxUID, callback) ->
 
   accessToken = googleUser.accessToken
   email = googleUser.email
-  mailBoxType = constants.gmail.mailBoxType.SENT
+  mailBoxType = commonConstants.gmail.mailBoxType.SENT
 
   imapConnect.createImapConnection email, accessToken, (error, imapConnection) ->
     if error then callback error; return
@@ -172,5 +175,6 @@ exports.downloadHeaders = (userId, googleUser, minUID, maxUID, callback) ->
           headers: headers
 
         #TODO: write this...
-        
+
+
         imapConnect.closeMailBoxAndLogout imapConnection, callback

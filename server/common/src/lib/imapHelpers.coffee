@@ -13,8 +13,8 @@ exports.getHeaders = (userId, imapConnection, minUID, maxUID, callback) ->
   unless ( minUID <= maxUID ) then callback winston.makeMissingParamError 'minUID isnt <= maxUID'; return
 
   winston.doInfo 'getHeaders',
-    minUid: minUid
-    maxUid: maxUid
+    minUID: minUID
+    maxUID: maxUID
 
   hasCalledBack = false
   callbackWrapper = (error, headers) ->
@@ -24,26 +24,21 @@ exports.getHeaders = (userId, imapConnection, minUID, maxUID, callback) ->
       callback error, headers
       hasCalledBack = true
 
-  uidQuery = minUid + ':' + maxUid
+  uidQuery = minUID + ':' + maxUID
   headerFields = 'HEADER.FIELDS (' + conf.gmail.headerFieldsToFetch.join(' ') + ')'
-  imapFetch = imapConn.fetch uidQuery,
+  imapFetch = imapConnection.fetch uidQuery,
     bodies: headerFields
   
   headers = []
   
   imapFetch.on 'message', (msg, uid) ->
-
     mailInfo = {}
-
     msg.on 'body', (stream, info) ->
       buffer = ''
-      count = 0
       stream.on 'data', (chunk) ->
-        count += chunk.length
         buffer += chunk.toString 'utf8'
 
       stream.once 'end', ->
-
         winston.doInfo 'stream end',
           which: info?.which
 
@@ -52,8 +47,8 @@ exports.getHeaders = (userId, imapConnection, minUID, maxUID, callback) ->
 
         emailHeaders = Imap.parseHeader buffer
         mailInfo['messageId'] = emailHeaders['message-id']
-
-        mailObject['recipients'] = mailUtils.getAllRecipients emailHeaders
+        mailInfo['subject'] = emailHeaders['subject']
+        mailInfo['recipients'] = mailUtils.getAllRecipients emailHeaders
 
     msg.once 'attributes', (attrs) ->
       mailInfo['uid'] = attrs.uid
@@ -61,19 +56,10 @@ exports.getHeaders = (userId, imapConnection, minUID, maxUID, callback) ->
         mailInfo['date'] = new Date( Date.parse( attrs['date'] ) )
 
     msg.once 'end', ->
-      docsToSave.push mailObject
-      
-      unless mailObject.gmDate
-        winston.doWarn "mailObject does not have a gmDate",
-          mailObject: mailObject
+      headers.push mailInfo
 
   imapFetch.on 'end', ->
-    winston.doInfo 'fetch end',
-      minUid: minUid
-      maxUid: maxUid
-
     callbackWrapper null, headers
-
     
   imapFetch.on 'error', (err) ->
     callbackWrapper winston.makeError 'imap fetch error',

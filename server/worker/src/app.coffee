@@ -27,24 +27,8 @@ exports.startPolling = () ->
   if process.argv and process.argv.length > 2
     maxWorkers = process.argv[2]
 
-  for queueName of commonConf.queue
-    sqsUtils.pollQueue queueName, (job, callback) ->
-      serverWorkerApp.doJob job, queueName, callback
-    , maxWorkers
-
-exports.doJob = (job, queueName, callback) ->
-
-  switch queueName
-    when commonConf.queue.dataImport
-      dataImportHelpers.doDataImportJob job, callback
-    when commonConf.queue.mailDownload
-      mailDownloadHelpers.doMailDownloadJob job, callback
-    when commonConf.queue.mailHeaderDownload
-      mailDownloadHelpers.doMailHeaderDownloadJob job, callback
-    else
-      winston.doError 'unsupported queueName',
-        queueName: queueName
-        job: job
-      callback()
+  sqsUtils.pollQueue commonConf.queue.dataImport, dataImportHelpers.doDataImportJob, maxWorkers
+  sqsUtils.pollQueue commonConf.queue.mailDownload, mailDownloadHelpers.doMailDownloadJob, maxWorkers
+  sqsUtils.pollQueue commonConf.queue.mailHeaderDownload, mailDownloadHelpers.doMailHeaderDownloadJob, maxWorkers
 
 appInitUtils.initApp 'workerApp', initActions, serverWorkerApp.postInit
