@@ -1,195 +1,81 @@
 winston = require('./winstonWrapper').winston
 imapConnect = require './imapConnect'
 
+conf = require '../conf'
+
 imapHelpers = this
 
-exports.getMailBox = (googleUser, mailBoxType, callback) ->
-  unless googleUser then callback winston.makeMissingParamError 'googleUser'; return
-  unless googleUser.accessToken then callback winston.makeMissingParamError 'googleUser.accessToken'; return
-  unless googleUser.email then callback winston.makeMissingParamError 'googleUser.email'; return
-
-  accessToken = googleUser.accessToken
-  email = googleUser.email
-
-  imapConnect.createImapConnection email, accessToken, (error, imapConnection) ->
-    if error then callback error; return
-    unless imapConnection then callback winston.makeError 'no imapConnection'; return
-
-    imapConnect.openMailBox imapConnection, mailBoxType, (error, mailBox) ->
-      if error then callback error; return
-
-      winston.doInfo 'mailBox opened!',
-        mailBox: mailBox
-
-      callback null, mailBox
-
-exports.getHeaders = (userId, imapConnection, uidBatch, callback) ->
+exports.getHeaders = (userId, imapConnection, minUID, maxUID, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
   unless imapConnection then callback winston.makeMissingParamError 'imapConnection'; return
-  unless uidBatch then callback winston.makeMissingParamError 'uidBatch'; return
+  unless ( minUID is 0 ) or ( minUID > 0 )  then callback winston.makeMissingParamError 'minUID'; return
+  unless ( maxUID is 0 ) or ( maxUID > 0 )  then callback winston.makeMissingParamError 'maxUID'; return
+  unless ( minUID <= maxUID ) then callback winston.makeMissingParamError 'minUID isnt <= maxUID'; return
 
-  uidQuery = undefined
-  if uidArray
-    winston.doInfo 'getHeaders by array',
-      uidArray: uidArray
+  winston.doInfo 'getHeaders',
+    minUid: minUid
+    maxUid: maxUid
 
-    return callback()  unless uidArray.length
-    uidQuery = uidArray
-  else
-    winston.doInfo "getHeaders in range",
-      minUid: minUid
-      maxUid: maxUid
+  hasCalledBack = false
+  callbackWrapper = (error, headers) ->
+    if hasCalledBack
+      winston.doWarn 'imapHelpers.getHeaders double callback'
+    else
+      callback error, headers
+      hasCalledBack = true
 
-    if not minUid or not maxUid or (maxUid isnt "*" and minUid > maxUid)
-      return callback(winston.makeError("getHeaders validation error: minUid, maxUid invalid",
-        userId: userId
-        stateId: onboardingStateId
-        minUid: minUid
-        maxUid: maxUid
-      ))
-    uidQuery = minUid + ":" + maxUid
-  currentLength = 0
-  fetch = imapConn.fetch(uidQuery,
-    bodies: "HEADER.FIELDS (MESSAGE-ID FROM TO CC BCC DATE X-IS-MIKEY)"
-    size: true
-  )
+  uidQuery = minUid + ':' + maxUid
+  headerFields = 'HEADER.FIELDS (' + conf.gmail.headerFieldsToFetch.join(' ') + ')'
+  imapFetch = imapConn.fetch uidQuery,
+    bodies: headerFields
   
-  # mail objects to be written to the databas
-  docsToSave = []
+  headers = []
   
-  # mail objects to only map-reduce the contacts of
-  docsForContactCounts = []
-  fetch.on "message", (msg, uid) ->
-    mailObject =
-      userId: userId
-      mailboxId: mailboxId
+  imapFetch.on 'message', (msg, uid) ->
 
-    prefix = "(#" + uid + ") "
-    msg.on "body", (stream, info) ->
-      buffer = ""
+    mailInfo = {}
+
+    msg.on 'body', (stream, info) ->
+      buffer = ''
       count = 0
-      stream.on "data", (chunk) ->
+      stream.on 'data', (chunk) ->
         count += chunk.length
-        buffer += chunk.toString("utf8") #TODO: binary?
-        return
+        buffer += chunk.toString 'utf8'
 
-      stream.once "end", ->
-        if info.which isnt "TEXT"
-          hdrs = Imap.parseHeader(buffer)
-          mailObject["messageId"] = hdrs["message-id"]
-          mailObject["isMikeyLike"] = true  if hdrs["x-is-mikey"] and hdrs["x-is-mikey"].length
-          mailObject["sender"] = mailUtils.getSender(hdrs)
-          mailObject["recipients"] = mailUtils.getAllRecipients(hdrs)
-        return
+      stream.once 'end', ->
 
-      return
+        winston.doInfo 'stream end',
+          which: info?.which
 
-    msg.once "attributes", (attrs) ->
-      mailObject["uid"] = attrs.uid
-      mailObject["seqNo"] = attrs.seqno
-      mailObject["size"] = attrs.size
-      mailObject["gmDate"] = new Date(Date.parse(attrs["date"]))  if attrs["date"]
-      mailObject.gmThreadId = attrs["x-gm-thrid"]  if attrs["x-gm-thrid"]
-      mailObject.gmMsgId = attrs["x-gm-msgid"]  if attrs["x-gm-msgid"]
-      if attrs["x-gm-labels"]
-        mailObject.gmLabels = []
-        attrs["x-gm-labels"].forEach (label) ->
-          mailObject.gmLabels.push label
+        unless info.which is headerFields
           return
 
-      return
+        emailHeaders = Imap.parseHeader buffer
+        mailInfo['messageId'] = emailHeaders['message-id']
 
-    msg.once "end", ->
-      unless imapRetrieve.checkLabelIsInvalid(mailObject, folderNames)
-        docsToSave.push mailObject  if isPremium or mailObject.gmDate.getTime() >= argDict.minDate.getTime()
-        currentLength += 1
-        
-        # only update this during onboarding or new mail updates
-        docsForContactCounts.push mailObject  unless isResumeDownloading
-        
-        # update min overall date (only during onboarding)
-        if isOnboarding and mailObject.gmDate and mailObject.gmDate.getTime() < argDict.earliestEmailDate.getTime()
-          winston.doInfo "update min date for user to ",
-            date: mailObject.gmDate
+        mailObject['recipients'] = mailUtils.getAllRecipients emailHeaders
 
-          argDict.earliestEmailDate = mailObject.gmDate
-          daemonUtils.markMinMailDateForUser argDict.userId, mailObject.gmDate
-        unless mailObject.gmDate
-          winston.doWarn "mailObject does not have a gmDate",
-            mailObject: mailObject
+    msg.once 'attributes', (attrs) ->
+      mailInfo['uid'] = attrs.uid
+      if attrs['date']
+        mailInfo['date'] = new Date( Date.parse( attrs['date'] ) )
 
-      return
+    msg.once 'end', ->
+      docsToSave.push mailObject
+      
+      unless mailObject.gmDate
+        winston.doWarn "mailObject does not have a gmDate",
+          mailObject: mailObject
 
-    return
-
-  fetch.on "end", ->
-    winston.doInfo "FETCH END",
+  imapFetch.on 'end', ->
+    winston.doInfo 'fetch end',
       minUid: minUid
       maxUid: maxUid
 
-    result =
-      minUid: minUid
-      maxUid: maxUid
-      numMails: currentLength
+    callbackWrapper null, headers
 
     
-    # we need to both save any docs worth saving and ensure that the
-    # contact counts are updated prior
-    async.parallel [
-      (asyncCb) ->
-        unless isResumeDownloading
-          mrResults = imapRetrieve.mapReduceContactsInMemory(argDict.userId, argDict.userEmail, docsForContactCounts)
-          imapRetrieve.incrementMapReduceValuesInDB mrResults, argDict.userId, argDict.userEmail, asyncCb
-        else
-          asyncCb()
-      
-      # save the docsToSave
-      (asyncCb) ->
-        if docsToSave.length is 0
-          asyncCb()
-        else
-          MailModel.collection.insert docsToSave, (err) ->
-            if err and err.code is 11000
-              asyncCb()
-            else if err
-              asyncCb winston.makeError("Error from bulk insert",
-                err: err
-              )
-            else
-              asyncCb()
-            return
-
-    ], (err, results) ->
-      if err
-        callback err
-      else
-        if isOnboarding
-          imapRetrieve.updateOnboardingStateModelWithHeaderBatch onboardingStateId, result, (err) ->
-            if err
-              callback err
-            else
-              callback()
-            return
-
-        else if isPremium and isResumeDownloading
-          imapRetrieve.updateResumeDownloadModelWithHeaderBatch resumeDownloadingId, result, (err) ->
-            if err
-              callback err
-            else
-              callback()
-            return
-
-        else
-          callback()
-      return
-
-    return
-
-  fetch.on "error", (err) ->
-    winston.doWarn "FETCH ERROR",
-      msg: err.message
-      stack: err.stack
-
-    return
-
-  return
+  imapFetch.on 'error', (err) ->
+    callbackWrapper winston.makeError 'imap fetch error',
+      message: err?.message
+      stack: err?.stack

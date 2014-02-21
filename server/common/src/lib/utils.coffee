@@ -295,3 +295,18 @@ exports.removeNullFields = (object, removeEmptyStrings, removeEmptyArrays) ->
       continue
 
   object
+
+
+exports.startsWithAPrefix = (input, prefixes) ->
+
+  unless subject
+    return false
+  
+  inputLowerCase = input.toLowerCase()
+
+  for prefix in prefixes
+    prefixLowerCase = prefix.toLowerCase()
+    if inputLowerCase.substring( 0, prefixLowerCase.length ) is prefixLowerCase
+      return true
+
+  return false

@@ -11,6 +11,7 @@ constants = require commonAppDir + '/constants'
 
 mailDownloadHelpers = this
 
+
 exports.doMailDownloadJob = (job, callback) ->
   unless job then callback winston.makeMissingParamError 'job'; return
   unless job.userId then callback winston.makeMissingParamError 'job.userId'; return
@@ -32,6 +33,7 @@ exports.doMailDownloadJob = (job, callback) ->
       if error then callback error; return
 
       mailDownloadHelpers.createHeaderDownloadJobs userId, googleUser, minUID, maxUID, callback
+
 
 exports.getHeaderUIDs = (userId, googleUser, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
@@ -61,7 +63,9 @@ exports.getHeaderUIDs = (userId, googleUser, callback) ->
         minUID: minUID
         maxUID: maxUID
 
-      callback null, minUID, maxUID
+      imapConnect.closeMailBoxAndLogout imapConnection, (error) ->
+        callback error, minUID, maxUID
+
 
 exports.createHeaderDownloadJobs = (userId, googleUser, minUID, maxUID, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
@@ -151,6 +155,22 @@ exports.downloadHeaders = (userId, googleUser, minUID, maxUID, callback) ->
   unless ( maxUID is 0 ) or ( maxUID > 0 )  then callback winston.makeMissingParamError 'maxUID'; return
   unless ( minUID <= maxUID ) then callback winston.makeMissingParamError 'minUID isnt <= maxUID'; return
 
-  #TODO: write this...
+  accessToken = googleUser.accessToken
+  email = googleUser.email
+  mailBoxType = constants.gmail.mailBoxType.SENT
 
-  callback()
+  imapConnect.createImapConnection email, accessToken, (error, imapConnection) ->
+    if error then callback error; return
+    unless imapConnection then callback winston.makeError 'no imapConnection'; return
+
+    imapConnect.openMailBox imapConnection, mailBoxType, (error, mailBox) ->
+      if error then callback error; return
+
+      imapHelpers.getHeaders userId, imapConnection, minUID, maxUID, (error, headers) ->
+
+        winston.doInfo 'got headers!',
+          headers: headers
+
+        #TODO: write this...
+        
+        imapConnect.closeMailBoxAndLogout imapConnection, callback
