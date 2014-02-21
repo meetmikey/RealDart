@@ -36,7 +36,6 @@ exports.addContact = (userId, service, contactServiceUser, callback) ->
 
       contactHelpers.mergeContacts contactToSave, newContact
 
-    utils.removeNullFields contactToSave, true, true
     contactToSave.save (mongoError) ->
       if mongoError then callback winston.makeMongoError mongoError; return
 
@@ -189,8 +188,8 @@ exports.buildContact = (userId, service, contactServiceUser) ->
     contactData.middleName = contactServiceUser.middleName
     contactData.lastName = contactServiceUser.lastName
 
+  utils.removeNullFields contactData, true, true
   contact = new ContactModel contactData
-  utils.removeNullFields contact, true, true
   contact
 
 exports.mergeContacts = (existingContact, newContact) ->
