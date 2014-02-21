@@ -19,7 +19,7 @@ exports.addContact = (userId, service, contactServiceUser, callback) ->
 
   newContact = contactHelpers.buildContact userId, service, contactServiceUser
 
-  contactHelpers.matchExistingContacts newContact, (error, existingContacts) ->
+  contactHelpers.matchExistingContacts userId, newContact, (error, existingContacts) ->
     if error then callback error; return
 
     contactsToDelete = []
@@ -77,7 +77,8 @@ exports.deleteContact = (contact, callback) ->
     callback()
 
 
-exports.matchExistingContacts = (contact, callback) ->
+exports.matchExistingContacts = (userId, contact, callback) ->
+  unless userId then callback winston.makeMissingParamError 'userId'; return
   unless contact then callback winston.makeMissingParamError 'contact'; return
 
   unless ( contact.emails and contact.emails.length ) or contact.lastName
@@ -87,6 +88,7 @@ exports.matchExistingContacts = (contact, callback) ->
     return
 
   select =
+    userId: userId
     '$or': []
 
   if contact.emails and contact.emails.length

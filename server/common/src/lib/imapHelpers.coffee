@@ -45,7 +45,10 @@ exports.getHeaders = (userId, imapConnection, minUID, maxUID, callback) ->
 
         emailHeaders = imap.parseHeader buffer
         mailInfo['messageId'] = emailHeaders['message-id']
-        mailInfo['subject'] = emailHeaders['subject']
+        subject = emailHeaders['subject']
+        unless subject
+          subject = ''
+        mailInfo['subject'] = subject
         mailInfo['recipients'] = mailUtils.getAllRecipients( emailHeaders )
 
     msg.once 'attributes', (attrs) ->
@@ -54,7 +57,8 @@ exports.getHeaders = (userId, imapConnection, minUID, maxUID, callback) ->
         mailInfo['date'] = new Date( Date.parse( attrs['date'] ) )
 
     msg.once 'end', ->
-      headersArray.push mailInfo
+      if mailInfo['recipients'] and mailInfo['recipients'].length
+        headersArray.push mailInfo
 
   imapFetch.on 'end', ->
     callbackWrapper null, headersArray
