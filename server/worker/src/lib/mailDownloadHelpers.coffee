@@ -73,23 +73,7 @@ exports.createHeaderDownloadJobs = (userId, googleUser, minUID, maxUID, callback
     callback()
     return
   
-  uidBatches = []
-  batchIndex = 0
-  batchSize = constants.HEADER_BATCH_SIZE
-  while uids and uids.length
-    minBatchUID = minUID + ( batchIndex * batchSize )
-    if minBatchUID > maxUID
-      break
-
-    maxBatchUID = minBatchUID + ( batchSize - 1 )
-    if maxBatchUID > ( maxUID - 1 )
-      maxBatchUID = maxUID
-
-    uidBatch =
-      minUID: minBatchUID
-      maxUID: maxBatchUID
-    uidBatches.push uidBatch
-    batchIndex++
+  uidBatches = mailDownloadHelpers.getUIDBatches minUID, maxUID
 
   async.each uidBatches, (uidBatch, eachCallback) ->
 
@@ -151,20 +135,21 @@ exports.doMailHeaderDownloadJob = (job, callback) ->
   winston.doInfo 'doMailHeaderDownloadJob',
     userId: userId
     googleUserId: googleUserId
-    uidBatchLength: uidBatch.length
+    uidBatch: uidBatch
 
   GoogleUserModel.findById googleUserId, (error, googleUser) ->
     if error then callback winston.makeMongoError error; return
-
     unless googleUser then callback winston.makeError 'googleUser not found', {googleUserId: googleUserId}; return
 
-    mailDownloadHelpers.downloadHeaders userId, googleUser, uidBatch, callback
+    mailDownloadHelpers.downloadHeaders userId, googleUser, uidBatch.minUID, uidBatch.maxUID, callback
 
 
-exports.downloadHeaders = (userId, googleUser, uidBatch, callback) ->
+exports.downloadHeaders = (userId, googleUser, minUID, maxUID, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
   unless googleUser then callback winston.makeMissingParamError 'googleUser'; return
-  unless uidBatch then callback winston.makeMissingParamError 'uidBatch'; return
+  unless ( minUID is 0 ) or ( minUID > 0 )  then callback winston.makeMissingParamError 'minUID'; return
+  unless ( maxUID is 0 ) or ( maxUID > 0 )  then callback winston.makeMissingParamError 'maxUID'; return
+  unless ( minUID <= maxUID ) then callback winston.makeMissingParamError 'minUID isnt <= maxUID'; return
 
   #TODO: write this...
 

@@ -326,6 +326,7 @@ exports.fixLastNamePrefix = (fullName) ->
 
 exports.cleanFullName = (fullName) ->
   unless fullName then return ''
+  unless utils.isString fullName then return ''
 
   fullName = fullName.trim()
   unless fullName then return fullName

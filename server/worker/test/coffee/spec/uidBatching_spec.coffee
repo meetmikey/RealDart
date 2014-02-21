@@ -39,13 +39,3 @@ test = (minUID, maxUID, batchSize, batchesInfo ) ->
   expectedValueString = JSON.stringify expectedValue
 
   expect( testValueString ).toBe( expectedValueString )
-
-###
-testBatching 0, 0
-testBatching 0, 3
-testBatching 0, 4
-testBatching 1, 1
-testBatching 1, 2
-testBatching 1, 4
-testBatching 1, 5
-###
