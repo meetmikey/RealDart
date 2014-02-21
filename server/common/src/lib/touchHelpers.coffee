@@ -44,6 +44,7 @@ exports.addTouchForEmailRecipient = (userId, emailJSON, recipient, foundContacts
   unless emailJSON then callback winston.makeMissingParamError 'emailJSON'; return
   unless recipient then callback winston.makeMissingParamError 'recipient'; return
 
+  googleUserId = emailJSON.googleUserId
   recipientName = recipient.name
   recipientEmail = recipient.email
 
@@ -52,7 +53,7 @@ exports.addTouchForEmailRecipient = (userId, emailJSON, recipient, foundContacts
     callback()
     return
 
-  touchHelpers.getContactFromEmail userId, recipientEmail, recipientName, foundContacts, (error, contact) ->
+  touchHelpers.getContactFromEmail userId, googleUserId, recipientEmail, recipientName, foundContacts, (error, contact) ->
     if error then callback error; return
     unless contact then callback winston.makeError 'no contact', {recipientEmail: recipientEmail}; return
 
@@ -70,7 +71,7 @@ exports.addTouchForEmailRecipient = (userId, emailJSON, recipient, foundContacts
 
 #As an optimization, a list of probable contact matches is provided.
 #If it's in there, we're done.
-exports.getContactFromEmail = (userId, email, fullName, contacts, callback) ->
+exports.getContactFromEmail = (userId, googleUserId, email, fullName, contacts, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
   unless email then callback winston.makeMissingParamError 'email'; return
 
@@ -87,8 +88,8 @@ exports.getContactFromEmail = (userId, email, fullName, contacts, callback) ->
     callback null, foundContact
     return
 
-  winston.doInfo 'no matching contact for email, making one...',
-    email: email
+  #winston.doInfo 'no matching contact for email, making one...',
+  #  email: email
 
   parsedName = contactHelpers.parseFullName fullName
   userInfo =
@@ -96,5 +97,9 @@ exports.getContactFromEmail = (userId, email, fullName, contacts, callback) ->
     firstName: parsedName.fullName
     middleName: parsedName.middleName
     lastName: parsedName.lastName
+
+  #Mark a googleUserId on the contact, so we know which account it came from
+  if googleUserId
+    userInfo.googleUserId = googleUserId
 
   contactHelpers.addContact userId, constants.service.SENT_MAIL_TOUCH, userInfo, callback

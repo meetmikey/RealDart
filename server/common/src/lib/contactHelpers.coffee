@@ -182,6 +182,7 @@ exports.buildContact = (userId, service, contactServiceUser) ->
     if contactServiceUser.email
       contactData.primaryEmail = mailUtils.normalizeEmailAddress contactServiceUser.email
       contactData.emails = mailUtils.normalizeEmailAddressArray [contactServiceUser.email]
+    contactData.googleUserId = contactServiceUser.googleUserId
     contactData.firstName = contactServiceUser.firstName
     contactData.middleName = contactServiceUser.middleName
     contactData.lastName = contactServiceUser.lastName

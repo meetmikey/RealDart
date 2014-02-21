@@ -316,8 +316,8 @@ exports._workQueue = ( workerId, queue, queueName, maxWorkers, handleMessage, pr
   if not maxWorkers then winston.doMissingParamError('maxWorkers'); return
   if not handleMessage then winston.doMissingParamError('handleMessage'); return
 
-  winston.doInfo 'working queue...',
-    queueName: queueName
+  #winston.doInfo 'working queue...',
+  #  queueName: queueName
 
   if sqsUtils._stopSignalReceived or sqsUtils._stopWorkForQueueReceived[queueName]
     winston.doInfo 'Stopping worker',
