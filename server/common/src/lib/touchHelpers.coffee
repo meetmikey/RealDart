@@ -94,7 +94,7 @@ exports.getContactFromEmail = (userId, googleUserId, email, fullName, contacts, 
   parsedName = contactHelpers.parseFullName fullName
   userInfo =
     email: email
-    firstName: parsedName.fullName
+    firstName: parsedName.firstName
     middleName: parsedName.middleName
     lastName: parsedName.lastName
 

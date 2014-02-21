@@ -14,7 +14,6 @@ googleHelpers = require commonAppDir + '/lib/googleHelpers'
 
 routeUtils = require './routeUtils'
 
-
 googleConnect = this
 
 passport.use new GoogleStrategy
@@ -66,7 +65,6 @@ exports.saveUserAndQueueImport = (userId, accessToken, refreshToken, profile, ca
     upsert: true
 
   GoogleUserModel.findByIdAndUpdate googleUserId, update, options, (mongoError, googleUser) ->
-    
     if mongoError and mongoError.code isnt commonConstants.MONGO_ERROR_CODE_DUPLICATE
       callback winston.makeMongoError mongoError
       return
@@ -80,7 +78,6 @@ exports.saveUserAndQueueImport = (userId, accessToken, refreshToken, profile, ca
 
     UserModel.findOneAndUpdate select, update, (error, updatedUser) ->
       if error then callback winston.makeMongoError error; return
-
       job =
         userId: userId
         service: commonConstants.service.GOOGLE

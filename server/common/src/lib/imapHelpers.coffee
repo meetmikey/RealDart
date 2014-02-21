@@ -57,6 +57,8 @@ exports.getHeaders = (userId, imapConnection, minUID, maxUID, callback) ->
         mailInfo['date'] = new Date( Date.parse( attrs['date'] ) )
 
     msg.once 'end', ->
+      #Apparently not all messages have recipients, even in the 'sent' folder.
+      #Andrew's iOS notes examples demonstrated this.
       if mailInfo['recipients'] and mailInfo['recipients'].length
         headersArray.push mailInfo
 

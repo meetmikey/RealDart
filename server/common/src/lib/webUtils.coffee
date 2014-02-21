@@ -146,7 +146,7 @@ exports.handleWebGetResponse = ( response, asBuffer, remainingRedirectsToFollow,
       responseCode: responseCode
       url: url
       originalURL: originalURL
-    winston.setSuppressErrorFlag error, true
+    #winston.setSuppressErrorFlag error, true
     callback error
     return
 

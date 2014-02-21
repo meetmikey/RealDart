@@ -76,7 +76,7 @@ exports.doDataImportJob = (job, callback) ->
       callback winston.makeError 'google user missing',
         googleUserId: googleUserId
       return
-    
+
     googleHelpers.getContacts userId, googleUser, (error) ->
       if error then callback error; return
 

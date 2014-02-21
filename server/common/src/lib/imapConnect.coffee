@@ -84,7 +84,7 @@ exports.handleOpenMailBoxReadyError = (err, imapConnection, callback ) ->
     winston.setErrorType winstonError, err.source
 
   if err.source is 'timeout'
-    winston.setSuppressErrorFlag winstonError, true
+    #winston.setSuppressErrorFlag winstonError, true
     winston.doWarn 'imap connect error timeout',
       err: err
       email: imapConnection?.email
@@ -164,7 +164,7 @@ exports.handleOpenMailBoxError = (err, imapConnection, callback) ->
   else if err.source
     winston.setErrorType winstonError, err.source
     if err.source is 'timeout'
-      winston.setSuppressErrorFlag winstonError, true
+      #winston.setSuppressErrorFlag winstonError, true
       winston.doWarn 'imap connect error timeout',
         err: err
         email: imapConnection?.email
