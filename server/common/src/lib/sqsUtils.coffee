@@ -283,8 +283,7 @@ exports._deleteMessageFromQueueNoRetry = ( queue, queueName, sqsMessage, callbac
   outbound =
     ReceiptHandle: receiptHandle
 
-  winston.doInfo 'deleting message from queue',
-
+  #winston.doInfo 'deleting message from queue'
 
   queue.call 'DeleteMessage', outbound, (sqsError) ->
     if sqsError
