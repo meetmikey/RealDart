@@ -12,8 +12,7 @@ User = new Schema
   liUserId : {type: String}
   timestamp: {type: Date, default: Date.now}
 
-User.index({email: 1}, {unique : true})
-User.index({fbUserId: 1}, {unique: true, sparse: true})
+User.index {email: 1}, {unique : true}
 
 mongoose.model 'User', User
 exports.UserModel = mongoose.model 'User'

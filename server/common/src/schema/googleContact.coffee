@@ -14,7 +14,7 @@ GoogleContact = new Schema
   middleName: {type: String}
   lastName: {type: String}
 
-GoogleContact.index {userId: 1, primaryEmail: 1}, {background: 1, unique: true, sparse: true}
+GoogleContact.index {userId: 1, emails: 1}, {sparse: true}
 
 mongoose.model 'GoogleContact', GoogleContact
 exports.GoogleContactModel = mongoose.model 'GoogleContact'

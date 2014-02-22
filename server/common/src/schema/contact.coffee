@@ -19,9 +19,8 @@ Contact = new Schema
 
   timestamp: {type: Date, default: Date.now}
 
-Contact.index {userId: 1}, {background: 1}
-Contact.index {primaryEmail: 1}, {background: 1, sparse: true}
-Contact.index {lastName: 1}, {background: 1, sparse: true}
+Contact.index {userId: 1, emails: 1}, {sparse: 1}
+Contact.index {userId: 1, lastName: 1}, {sparse: 1}
 
 mongoose.model 'Contact', Contact
 exports.ContactModel = mongoose.model 'Contact'

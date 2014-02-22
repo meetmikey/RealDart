@@ -22,7 +22,7 @@ GoogleUser = new Schema
   hd: {type: String}
 
 
-GoogleUser.index({email: 1}, {unique : true})
+GoogleUser.index {email: 1}, {unique : true}
 
 
 GoogleUser.virtual('accessToken').set (input) ->

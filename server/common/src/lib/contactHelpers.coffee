@@ -39,12 +39,14 @@ exports.addContact = (userId, service, contactServiceUser, callback) ->
     contactToSave.save (mongoError) ->
       if mongoError then callback winston.makeMongoError mongoError; return
 
-      contactHelpers.deleteContactsWithReplacement contactsToDelete, contactToSave, (error) ->
+      contactHelpers.deleteContactsWithReplacement userId, contactsToDelete, contactToSave, (error) ->
         if error then callback error; return
         callback null, contactToSave
 
 
-exports.deleteContactsWithReplacement = (contactsToDelete, replacementContact, callback) ->
+exports.deleteContactsWithReplacement = (userId, contactsToDelete, replacementContact, callback) ->
+  unless userId then callback winston.makeMissingParamError 'userId'; return
+
   contactsToDelete = contactsToDelete || []
   async.each contactsToDelete, (contactToDelete, eachCallback) ->
 
@@ -53,6 +55,7 @@ exports.deleteContactsWithReplacement = (contactsToDelete, replacementContact, c
       return
 
     select =
+      userId: userId
       contactId: contactToDelete._id
 
     update =

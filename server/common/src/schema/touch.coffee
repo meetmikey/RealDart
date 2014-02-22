@@ -9,5 +9,7 @@ Touch = new Schema
   date: {type: Date}
   timestamp: {type: Date, default: Date.now}
 
+Touch.index {userId: 1, contactId: 1}
+
 mongoose.model 'Touch', Touch
 exports.TouchModel = mongoose.model 'Touch'
