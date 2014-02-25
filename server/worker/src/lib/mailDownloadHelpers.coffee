@@ -11,12 +11,11 @@ imapHelpers = require commonAppDir + '/lib/imapHelpers'
 touchHelpers = require commonAppDir + '/lib/touchHelpers'
 googleHelpers = require commonAppDir + '/lib/googleHelpers'
 utils = require commonAppDir + '/lib/utils'
+emailImportUtils = require commonAppDir + '/lib/emailImportUtils'
 sqsUtils = require commonAppDir + '/lib/sqsUtils'
 
 commonConstants = require commonAppDir + '/constants'
 commonConf = require commonAppDir + '/conf'
-
-workerConstants = require '../constants'
 
 mailDownloadHelpers = this
 
@@ -110,7 +109,7 @@ exports.getUIDBatches = ( minUID, maxUID, batchSizeInput ) ->
       maxUID: maxUID
     return uidBatches
 
-  batchSize = workerConstants.HEADER_BATCH_SIZE
+  batchSize = commonConstants.HEADER_BATCH_SIZE
   if batchSizeInput
     batchSize = batchSizeInput
 
@@ -152,73 +151,10 @@ exports.doMailHeaderDownloadJob = (job, callback) ->
     if error then callback winston.makeMongoError error; return
     unless googleUser then callback winston.makeError 'googleUser not found', {googleUserId: googleUserId}; return
 
-    mailDownloadHelpers.downloadHeaders userId, googleUser, uidBatch.minUID, uidBatch.maxUID, (error) ->
+    emailImportUtils.importHeaders userId, googleUser, uidBatch.minUID, uidBatch.maxUID, (error) ->
       if error then callback error; return
 
       mailDownloadHelpers.updateEmailAccountStateWithFinishedUIDBatch userId, googleUserId, uidBatch, callback
-
-
-exports.downloadHeaders = (userId, googleUser, minUID, maxUID, callback) ->
-  unless userId then callback winston.makeMissingParamError 'userId'; return
-  unless googleUser then callback winston.makeMissingParamError 'googleUser'; return
-  unless minUID > 0 then callback winston.makeMissingParamError 'minUID'; return
-  unless maxUID > 0 then callback winston.makeMissingParamError 'maxUID'; return
-  unless minUID <= maxUID then callback winston.makeMissingParamError 'minUID isnt <= maxUID'; return
-
-  googleHelpers.getAccessToken googleUser, (error, accessToken) ->
-    if error then callback error; return
-    unless accessToken then callback winston.makeError 'no accessToken'; return
-
-    imapConnect.createImapConnection googleUser.email, accessToken, (error, imapConnection) ->
-      if error then callback error; return
-      unless imapConnection then callback winston.makeError 'no imapConnection'; return
-
-      mailBoxType = commonConstants.gmail.mailBoxType.SENT
-      imapConnect.openMailBox imapConnection, mailBoxType, (error, mailBox) ->
-        if error then callback error; return
-
-        imapHelpers.getHeaders userId, imapConnection, minUID, maxUID, (error, headersArray) ->
-          unless headersArray and headersArray.length then callback; return
-
-          #eachSeries is slower, but helps prevent contact conflicts
-          async.eachSeries headersArray, (headers, eachSeriesCallback) ->
-            mailDownloadHelpers.saveHeadersAndAddTouches userId, googleUser, headers, eachSeriesCallback
-
-          , (error) ->
-            imapConnect.closeMailBoxAndLogout imapConnection, (imapLogoutError) ->
-              if imapLogoutError
-                winston.handleError imapLogoutError
-              callback error
-
-
-exports.saveHeadersAndAddTouches = (userId, googleUser, headers, callback) ->
-  unless userId then callback winston.makeMissingParamError 'userId'; return
-  unless googleUser then callback winston.makeMissingParamError 'googleUser'; return
-  unless headers then callback winston.makeMissingParamError 'headers'; return
-
-  emailJSON = headers
-  emailJSON.userId = userId
-  emailJSON.googleUserId = googleUser._id
-
-  select =
-    userId: emailJSON.userId
-    googleUserId: emailJSON.googleUserId
-    uid: emailJSON.uid
-
-  update =
-    $set: emailJSON
-
-  options =
-    upsert: true
-    new: false
-
-  EmailModel.findOneAndUpdate select, update, options, (mongoError, existingEmailModel) ->
-    if mongoError then callback winston.makeMongoError mongoError; return
-
-    if existingEmailModel
-      callback()
-    else
-      touchHelpers.addTouchesFromEmail userId, emailJSON, callback
 
 
 exports.updateEmailAccountStateWithFinishedUIDBatch = (userId, googleUserId, uidBatch, callback) ->

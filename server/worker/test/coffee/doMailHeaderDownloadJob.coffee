@@ -11,14 +11,12 @@ commonConstants = require commonAppDir + '/constants'
 
 mailDownloadHelpers = require workerAppDir + '/lib/mailDownloadHelpers'
 
-workerConstants = require workerAppDir + '/constants'
-
 initActions = [
   commonConstants.initAction.CONNECT_MONGO
 ]
 
 minUID = 1
-maxUID = minUID + workerConstants.HEADER_BATCH_SIZE - 1
+maxUID = minUID + commonConstants.HEADER_BATCH_SIZE - 1
 #maxUID = 30
 
 mailHeaderDownloadJob = 

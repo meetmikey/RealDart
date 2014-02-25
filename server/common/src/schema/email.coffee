@@ -14,7 +14,7 @@ Email = new Schema
   subject: {type: String}
   date: {type: Date}
 
-Email.index({userId: 1, googleUserId: 1, uid: 1}, {unique : true})
+Email.index {userId: 1, googleUserId: 1, uid: 1}, {unique : true}
 
 mongoose.model 'Email', Email
 exports.EmailModel = mongoose.model 'Email'
