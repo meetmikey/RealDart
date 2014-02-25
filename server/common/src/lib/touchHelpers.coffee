@@ -4,7 +4,7 @@ _ = require 'underscore'
 winston = require('./winstonWrapper').winston
 ContactModel = require('../schema/contact').ContactModel
 TouchModel = require('../schema/touch').TouchModel
-mailUtils = require './mailUtils'
+emailUtils = require './emailUtils'
 contactHelpers = require './contactHelpers'
 
 constants = require '../constants'
@@ -48,7 +48,7 @@ exports.addTouchForEmailRecipient = (userId, emailJSON, recipient, foundContacts
   recipientName = recipient.name
   recipientEmail = recipient.email
 
-  unless recipientEmail and mailUtils.isValidEmail recipientEmail
+  unless recipientEmail and emailUtils.isValidEmail recipientEmail
     winston.doWarn 'invalid recipientEmail', {recipientEmail: recipientEmail}
     callback()
     return
@@ -61,7 +61,7 @@ exports.addTouchForEmailRecipient = (userId, emailJSON, recipient, foundContacts
       userId: userId
       contactId: contact._id
       type: 'email'
-      emailSubject: mailUtils.getCleanSubject emailJSON.subject
+      emailSubject: emailUtils.getCleanSubject emailJSON.subject
       date: emailJSON.date
 
     touch.save (mongoError) ->

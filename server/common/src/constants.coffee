@@ -32,7 +32,7 @@ module.exports =
       GOOGLE_MAIL: '[Google Mail]'
     mailBoxType:
       SENT: 'sent'
-    ACCESS_TOKEN_UPDATE_TIME_BUFFER: 1000 * 60 * 30  # 30 mins
+    ACCESS_TOKEN_UPDATE_TIME_BUFFER: 1000 * 60 * 10  #10 minutes
 
   service:
     FACEBOOK: 'facebook'

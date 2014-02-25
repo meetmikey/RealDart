@@ -1,47 +1,98 @@
-aws = require 'aws-lib'
-Handlebars = require('./handlebarsWrapper').Handlebars
+mimelib = require 'mimelib'
+
+winston = require('./winstonWrapper').winston
+basicUtils = require './basicUtils'
+utils = require './utils'
 
 conf = require '../conf'
-winston = require('./winstonWrapper').winston
-sesUtils = require './sesUtils'
-eventDigestHelpers = require './eventDigestHelpers'
-templates = require('./templates')(Handlebars)
+
 emailUtils = this
 
+exports.getAllRecipients = (headers) ->
+  toRecipients = []
+  ccRecipients = []
+  bccRecipients = []
 
-exports.sendEventDigestEmail = ( eventDigest, user, callback ) ->
-  unless eventDigest then callback winston.makeMissingParamError 'eventDigest'; return
-  unless user then callback winston.makeMissingParamError 'user'; return
-  unless user.email then callback winston.makeMissingParamError 'user.email'; return
+  if headers.to and headers.to.length > 0
+    toRecipients = mimelib.parseAddresses headers.to[0]
+    emailUtils.renameAddressField toRecipients
+  
+  if headers.cc and headers.cc.length > 0
+    ccRecipients = mimelib.parseAddresses headers.cc[0]
+    emailUtils.renameAddressField ccRecipients
+  
+  if headers.bcc and headers.bcc.length > 0
+    bccRecipients = mimelib.parseAddresses headers.bcc[0]
+    emailUtils.renameAddressField bccRecipients
 
-  eventDigestHelpers.getEventDigestEmailText eventDigest, user, (error, emailHTML) ->
-    if error then callback error; return
+  allRecipients = toRecipients.concat(ccRecipients).concat(bccRecipients)
+  for recipient, index in allRecipients
+    allRecipients[index]['email'] = emailUtils.normalizeEmailAddress recipient['email']
+  allRecipients
 
-    recipients = [user.email]
-    sender = conf.sendingEmailAddress
-    text = emailHTML
-    html = emailHTML
-    subject = 'Your daily RealDart'
 
-    winston.doInfo 'about to send email...',
-      recipients: recipients
-      sender: sender
-      text: text
-      subject: subject
+exports.renameAddressField = (arr) ->
+  for element in arr
+    element['email'] = element['address']
+    delete element['address']
 
-    #TEMP
-    #callback winston.makeError 'temp error!'
+
+exports.normalizeEmailAddress = (input) ->
+  unless input and utils.isString( input ) then return ''
+
+  output = input.trim().toLowerCase()
+  atIndex = output.indexOf '@'
+  
+  unless atIndex > 0
+    winston.doWarn 'normalizeEmailAddress: invalid email address',
+      input: input
+    return ''
+
+  beforeAt = output.substring 0, atIndex
+  afterAt = output.substring atIndex + 1
+
+  plusIndex = beforeAt.indexOf '+'
+  if plusIndex > 0
+    beforeAt = beforeAt.substring 0, plusIndex
+
+  beforeAt = beforeAt.replace /\./g, ''
+  output = beforeAt + '@' + afterAt
+  output
+
+
+exports.normalizeEmailAddressArray = (emailAddressArray) ->
+  unless emailAddressArray and emailAddressArray.length then return []
+
+  for emailAddress, index in emailAddressArray
+    emailAddressArray[ index ] = emailUtils.normalizeEmailAddress emailAddress
     
-    sesUtils.sendEmail recipients, sender, text, html, subject, callback
+  emailAddressArray
 
-exports.getEmailTemplateHTML = (templateName, templateData) ->
-  unless templateName then return ''
 
-  winston.doInfo 'partials',
-    partials: Handlebars.partials
+exports.getCleanSubject = (subject) ->
+  unless subject and utils.isString subject
+    return ''
+  
+  prefixes = [
+    'Re:'
+    'Fwd:'
+    ' '
+    'Aw:'   #Apparently 'Aw:' is German for 'Re:'
+  ]
 
-  templateData = templateData || {}
-  fullTemplateName = 'src/templates/' + templateName + '.html'
-  emailTemplate = templates[fullTemplateName]
-  emailHTML = emailTemplate templateData
-  emailHTML
+  while utils.startsWithAPrefix subject, prefixes
+    for prefix in prefixes
+      if subject.toLowerCase().substring( 0, prefix.length ) is prefix.toLowerCase()
+        subject = subject.substring( prefix.length ).trim()
+        continue
+
+  if subject
+    subject = subject.trim()
+
+  subject
+
+
+exports.isValidEmail = (email) ->
+  re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+  isValid = re.test email
+  isValid

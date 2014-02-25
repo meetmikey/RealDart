@@ -2,7 +2,7 @@ imap = require 'imap'
 
 winston = require('./winstonWrapper').winston
 imapConnect = require './imapConnect'
-mailUtils = require './mailUtils'
+emailUtils = require './emailUtils'
 
 conf = require '../conf'
 
@@ -49,7 +49,7 @@ exports.getHeaders = (userId, imapConnection, minUID, maxUID, callback) ->
         unless subject
           subject = ''
         mailInfo['subject'] = subject
-        mailInfo['recipients'] = mailUtils.getAllRecipients( emailHeaders )
+        mailInfo['recipients'] = emailUtils.getAllRecipients( emailHeaders )
 
     msg.once 'attributes', (attrs) ->
       mailInfo['uid'] = attrs.uid

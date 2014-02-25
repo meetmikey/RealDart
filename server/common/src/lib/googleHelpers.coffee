@@ -5,7 +5,7 @@ winston = require('../lib/winstonWrapper').winston
 GoogleUserModel = require('../schema/googleUser').GoogleUserModel
 GoogleContactModel = require('../schema/googleContact').GoogleContactModel
 urlUtils = require './urlUtils'
-mailUtils = require './mailUtils'
+emailUtils = require './emailUtils'
 webUtils = require './webUtils'
 sqsUtils = require './sqsUtils'
 contactHelpers = require './contactHelpers'
@@ -58,7 +58,7 @@ exports.getContactsJSONFromAPIData = (contactsAPIData) ->
         contact.emails.push emailAddress
 
     #email is critical here, so only allow contacts with primaryEmail
-    if contact.primaryEmail and mailUtils.isValidEmail contact.primaryEmail
+    if contact.primaryEmail and emailUtils.isValidEmail contact.primaryEmail
       contacts.push contact
 
   contacts
