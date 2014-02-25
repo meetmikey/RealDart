@@ -173,10 +173,6 @@ exports.updateEmailAccountStateWithFinishedUIDBatch = (userId, googleUserId, uid
         minUID: uidBatch.minUID
         maxUID: uidBatch.maxUID
 
-  winston.doInfo 'updateEmailAccountStateWithFinishedUIDBatch',
-    select: select
-    update: update
-
   EmailAccountStateModel.findOneAndUpdate select, update, (mongoError) ->
     if mongoError then callback winston.makeMongoError mongoError; return
 
