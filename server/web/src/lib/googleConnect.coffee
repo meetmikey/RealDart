@@ -21,11 +21,13 @@ passport.use new GoogleStrategy
   clientSecret: commonConf.auth.google.clientSecret
   callbackURL: routeUtils.getProtocolHostAndPort() + '/auth/google/callback'
   passReqToCallback: true
-  , (req, accessToken, refreshToken, profile, done) ->
+  , (req, accessToken, refreshToken, params, profile, done) ->
 
     winston.doInfo 'googleConnect',
       accessToken: accessToken
       refreshToken: refreshToken
+      params: params
+      profile: profile
 
     userId = routeUtils.getUserIdFromAuthRequest req
     unless userId
@@ -33,14 +35,14 @@ passport.use new GoogleStrategy
       done 'server error', profile
       return
 
-    googleConnect.saveUserAndQueueImport userId, accessToken, refreshToken, profile, (error) ->
+    googleConnect.saveUserAndQueueImport userId, accessToken, refreshToken, params, profile, (error) ->
       if error
         winston.handleError error
         done 'server error', profile
       else
         done null, profile
 
-exports.saveUserAndQueueImport = (userId, accessToken, refreshToken, profile, callback) ->
+exports.saveUserAndQueueImport = (userId, accessToken, refreshToken, params, profile, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
   unless accessToken then callback winston.makeMissingParamError 'accessToken'; return
   unless profile then callback winston.makeMissingParamError 'profile'; return
@@ -60,6 +62,12 @@ exports.saveUserAndQueueImport = (userId, accessToken, refreshToken, profile, ca
 
   update =
     $set: googleUserJSON
+
+  if params?.expires_in
+    update['$set'].accessTokenExpiresAt = Date.now() + ( 1000 * params.expires_in )
+
+  winston.doInfo 'update',
+    update: update
 
   options =
     upsert: true

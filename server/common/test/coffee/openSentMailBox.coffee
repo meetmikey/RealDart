@@ -23,21 +23,22 @@ run = (callback) ->
     unless user then callback winston.makeError 'missing user'; return
     unless googleUser then callback winston.makeError 'missing googleUser'; return
 
-    accessToken = googleUser.accessToken
-    email = googleUser.email
-    sentMailBoxType = constants.gmail.mailBoxType.SENT
-
-    imapConnect.createImapConnection email, accessToken, (error, imapConnection) ->
+    googleHelpers.getAccessToken googleUser, (error, accessToken) ->
       if error then callback error; return
-      unless imapConnection then callback winston.makeError 'no imapConnection'; return
+      unless accessToken then callback winston.makeError 'no accessToken'; return
 
-      imapConnect.openMailBox imapConnection, sentMailBoxType, (error, sentMailBox) ->
+      imapConnect.createImapConnection googleUser.email, accessToken, (error, imapConnection) ->
         if error then callback error; return
+        unless imapConnection then callback winston.makeError 'no imapConnection'; return
 
-        winston.doInfo 'sentMailBox opened!',
-          sentMailBox: sentMailBox
+        sentMailBoxType = constants.gmail.mailBoxType.SENT
+        imapConnect.openMailBox imapConnection, sentMailBoxType, (error, sentMailBox) ->
+          if error then callback error; return
 
-        imapConnect.closeMailBoxAndLogout imapConnection, callback
+          winston.doInfo 'sentMailBox opened!',
+            sentMailBox: sentMailBox
+
+          imapConnect.closeMailBoxAndLogout imapConnection, callback
 
 
 getUserAndGoogleUser = (userId, googleUserIdIndex, callback) ->

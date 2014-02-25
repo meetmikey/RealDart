@@ -17,6 +17,7 @@
     , "grunt-contrib-coffee": "~>0.9.0"
     , "imap": "~>0.8.9"
     , "xoauth2": "~>0.1.8"
+    , "oauth": "~>0.9.11"
     , "mimelib": "~>0.2.14"
   },
   "engines": {

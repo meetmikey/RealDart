@@ -961,7 +961,7 @@
             return;
           }
           _this.user = user;
-          if (_this.user.get('googleUserId') && _this.user.get('googleUserId').length) {
+          if (_this.user.get('googleUserIds') && _this.user.get('googleUserIds').length) {
             _this.serviceAuth.google.status = 'success';
           }
           if (_this.user.get('fbUserId')) {

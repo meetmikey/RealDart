@@ -101,6 +101,7 @@ addAuth = (app, service) ->
       if service is commonConstants.service.GOOGLE
         options.accessType = commonConf.auth.google.accessType
         options.scope = commonConf.auth.google.scope
+        #options.approvalPrompt = 'force'
 
       passport.authenticate( passportName, options )(req, res, next)
 

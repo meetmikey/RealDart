@@ -8,6 +8,7 @@ EmailModel = require(commonAppDir + '/schema/email').EmailModel
 imapConnect = require commonAppDir + '/lib/imapConnect'
 imapHelpers = require commonAppDir + '/lib/imapHelpers'
 touchHelpers = require commonAppDir + '/lib/touchHelpers'
+googleHelpers = require commonAppDir + '/lib/googleHelpers'
 utils = require commonAppDir + '/lib/utils'
 sqsUtils = require commonAppDir + '/lib/sqsUtils'
 
@@ -46,27 +47,26 @@ exports.getHeaderUIDs = (userId, googleUser, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
   unless googleUser then callback winston.makeMissingParamError 'googleUser'; return
 
-  headerUIDs = []
-
-  accessToken = googleUser.accessToken
-  email = googleUser.email
-
-  imapConnect.createImapConnection email, accessToken, (error, imapConnection) ->
+  googleHelpers.getAccessToken googleUser, (error, accessToken) ->
     if error then callback error; return
-    unless imapConnection then callback winston.makeError 'no imapConnection'; return
+    unless accessToken then callback winston.makeError 'no accessToken'; return
 
-    mailBoxType = commonConstants.gmail.mailBoxType.SENT
-    imapConnect.openMailBox imapConnection, mailBoxType, (error, mailBox) ->
+    imapConnect.createImapConnection googleUser.email, accessToken, (error, imapConnection) ->
       if error then callback error; return
-      unless imapConnection then callback winston.makeError 'no mailBox'; return
+      unless imapConnection then callback winston.makeError 'no imapConnection'; return
 
-      minUID = 1
-      maxUID = 1
-      if mailBox.uidnext
-        maxUID = mailBox.uidnext - 1
+      mailBoxType = commonConstants.gmail.mailBoxType.SENT
+      imapConnect.openMailBox imapConnection, mailBoxType, (error, mailBox) ->
+        if error then callback error; return
+        unless imapConnection then callback winston.makeError 'no mailBox'; return
 
-      imapConnect.closeMailBoxAndLogout imapConnection, (error) ->
-        callback error, minUID, maxUID
+        minUID = 1
+        maxUID = 1
+        if mailBox.uidnext
+          maxUID = mailBox.uidnext - 1
+
+        imapConnect.closeMailBoxAndLogout imapConnection, (error) ->
+          callback error, minUID, maxUID
 
 
 exports.createHeaderDownloadJobs = (userId, googleUser, minUID, maxUID, callback) ->
@@ -151,30 +151,30 @@ exports.downloadHeaders = (userId, googleUser, minUID, maxUID, callback) ->
   unless maxUID > 0 then callback winston.makeMissingParamError 'maxUID'; return
   unless minUID <= maxUID then callback winston.makeMissingParamError 'minUID isnt <= maxUID'; return
 
-  accessToken = googleUser.accessToken
-  email = googleUser.email
-  mailBoxType = commonConstants.gmail.mailBoxType.SENT
-
-  imapConnect.createImapConnection email, accessToken, (error, imapConnection) ->
+  googleHelpers.getAccessToken googleUser, (error, accessToken) ->
     if error then callback error; return
-    unless imapConnection then callback winston.makeError 'no imapConnection'; return
+    unless accessToken then callback winston.makeError 'no accessToken'; return
 
-    imapConnect.openMailBox imapConnection, mailBoxType, (error, mailBox) ->
+    imapConnect.createImapConnection googleUser.email, accessToken, (error, imapConnection) ->
       if error then callback error; return
+      unless imapConnection then callback winston.makeError 'no imapConnection'; return
 
-      imapHelpers.getHeaders userId, imapConnection, minUID, maxUID, (error, headersArray) ->
+      mailBoxType = commonConstants.gmail.mailBoxType.SENT
+      imapConnect.openMailBox imapConnection, mailBoxType, (error, mailBox) ->
+        if error then callback error; return
 
-        unless headersArray and headersArray.length then callback; return
+        imapHelpers.getHeaders userId, imapConnection, minUID, maxUID, (error, headersArray) ->
+          unless headersArray and headersArray.length then callback; return
 
-        #eachSeries is slower, but helps prevent contact conflicts
-        async.eachSeries headersArray, (headers, eachSeriesCallback) ->
-          mailDownloadHelpers.saveHeadersAndAddTouches userId, googleUser, headers, eachSeriesCallback
+          #eachSeries is slower, but helps prevent contact conflicts
+          async.eachSeries headersArray, (headers, eachSeriesCallback) ->
+            mailDownloadHelpers.saveHeadersAndAddTouches userId, googleUser, headers, eachSeriesCallback
 
-        , (error) ->
-          imapConnect.closeMailBoxAndLogout imapConnection, (imapLogoutError) ->
-            if imapLogoutError
-              winston.handleError imapLogoutError
-            callback error
+          , (error) ->
+            imapConnect.closeMailBoxAndLogout imapConnection, (imapLogoutError) ->
+              if imapLogoutError
+                winston.handleError imapLogoutError
+              callback error
 
 
 exports.saveHeadersAndAddTouches = (userId, googleUser, headers, callback) ->

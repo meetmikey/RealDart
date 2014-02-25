@@ -9,6 +9,7 @@ GoogleUser = new Schema
   #tokens
   accessTokenEncrypted: {type: String}
   accessTokenSalt: {type: String}
+  accessTokenExpiresAt: {type: Date}
   refreshTokenEncrypted: {type: String}
   refreshTokenSalt: {type: String}
 

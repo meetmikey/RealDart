@@ -1,4 +1,5 @@
 async = require 'async'
+OAuth2 = require('oauth').OAuth2
 
 winston = require('../lib/winstonWrapper').winston
 GoogleUserModel = require('../schema/googleUser').GoogleUserModel
@@ -140,27 +141,97 @@ exports.getContacts = (userId, googleUser, callback) ->
 
 exports.doAPIGet = (googleUser, path, extraData, callback) ->
   unless googleUser then callback winston.doMissingParamError 'googleUser'; return
-  accessToken = googleUser.accessToken
-  unless accessToken then callback winston.doMissingParamError 'accessToken'; return
   unless path then callback winston.doMissingParamError 'path'; return
 
-  data = extraData || {}
-  data.alt = 'json'
-  data.access_token = accessToken
-
-  queryString = urlUtils.getQueryStringFromData data
-  url = 'https://www.google.com/m8/feeds'
-  unless path.substring( 0, 1 ) is '/'
-    url += '/'
-  url += path + queryString
-
-  webUtils.webGet url, true, (error, buffer) ->
+  googleHelpers.getAccessToken googleUser, (error, accessToken) ->
     if error then callback error; return
-    dataJSON = {}
-    try
-      dataJSON = JSON.parse buffer.toString()
-    catch exception
-      winston.doError 'response parse error',
-        exceptionMessage: exception.message
+    unless accessToken then callback winston.makeError 'no accessToken'; return
 
-    callback null, dataJSON
+    data = extraData || {}
+    data.alt = 'json'
+    data.access_token = accessToken
+
+    queryString = urlUtils.getQueryStringFromData data
+    url = 'https://www.google.com/m8/feeds'
+    unless path.substring( 0, 1 ) is '/'
+      url += '/'
+    url += path + queryString
+
+    webUtils.webGet url, true, (error, buffer) ->
+      if error then callback error; return
+      dataJSON = {}
+      try
+        dataJSON = JSON.parse buffer.toString()
+      catch exception
+        winston.doError 'response parse error',
+          exceptionMessage: exception.message
+
+      callback null, dataJSON
+
+
+exports.getAccessToken = (googleUser, callback) ->
+  unless googleUser then callback winston.makeMissingParamError 'googleUser'; return
+
+  #winston.doInfo 'getAccessToken'
+
+  timeBuffer = constants.gmail.ACCESS_TOKEN_UPDATE_TIME_BUFFER
+  nowPlusBuffer = new Date(Date.now() + timeBuffer)
+  
+  accessToken = googleUser.accessToken
+  accessTokenExpiresAt = googleUser.accessTokenExpiresAt
+  refreshToken = googleUser.refreshToken
+
+  # if there is a token and it's fresh just return it
+  if accessToken and accessTokenExpiresAt and accessTokenExpiresAt > nowPlusBuffer
+    #winston.doInfo 'access token still valid',
+    #  accessTokenExpiresAt: accessTokenExpiresAt
+    callback null, accessToken
+    return
+
+  unless refreshToken
+    callback winston.makeError 'googleUser does not have a refreshToken or valid accessToken'
+    return
+
+  googleHelpers.getNewAccessTokenFromRefreshToken refreshToken, (error, accessToken, refreshToken, accessTokenExpiresAt) ->
+    if error then callback error; return
+    unless accessToken then callback winston.makeError 'no accessToken'; return
+    unless accessTokenExpiresAt then callback winston.makeError 'no accessTokenExpiresAt'; return
+
+    googleUser.accessToken = accessToken
+    googleUser.accessTokenExpiresAt = accessTokenExpiresAt
+    if refreshToken
+      googleUser.refreshToken = refreshToken
+    googleUser.save (mongoError) ->
+      if mongoError then callback winston.makeMongoError mongoError; return
+
+      callback null, accessToken
+
+
+exports.getNewAccessTokenFromRefreshToken = (refreshToken, callback) ->
+  unless refreshToken then callback winston.makeMissingParamError 'refreshToken'; return
+
+  #winston.doInfo 'getting new accessToken'
+
+  basePath = conf.auth.google.baseOAuthPath
+  authorizePath = basePath + '/auth'
+  accessTokenPath = basePath + '/token'
+
+  oauth2 = new OAuth2 conf.auth.google.clientId, conf.auth.google.clientSecret, '', authorizePath, accessTokenPath
+  oauth2.getOAuthAccessToken refreshToken,
+    grant_type: 'refresh_token'
+    refresh_token: refreshToken
+  , (error, accessToken, refreshToken, results) ->
+    if error
+      callback winston.makeError 'error getting new google accessToken',
+        errorStatusCode: error?.statusCode
+        errorData: error?.data
+      return
+
+    unless accessToken and results?.expires_in
+      callback winston.makeError 'missing accessToken or results.expires_in',
+        accessToken: accessToken
+        results: results
+      return
+
+    accessTokenExpiresAt = Date.now() + ( 1000 * results.expires_in )
+    callback null, accessToken, refreshToken, accessTokenExpiresAt

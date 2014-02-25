@@ -29,7 +29,7 @@ class RD.View.Account extends RD.View.Base
       if error or not user then rdLog 'account getUser fail'; callback('fail'); @bail(); return
 
       @user = user
-      if @user.get('googleUserId') and @user.get('googleUserId').length
+      if @user.get('googleUserIds') and @user.get('googleUserIds').length
         @serviceAuth.google.status = 'success'
       if @user.get 'fbUserId'
         @serviceAuth.facebook.status = 'success'
