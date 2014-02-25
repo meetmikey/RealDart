@@ -3,6 +3,7 @@ imap = require 'imap'
 winston = require('./winstonWrapper').winston
 imapConnect = require './imapConnect'
 emailUtils = require './emailUtils'
+utils = require './utils'
 
 conf = require '../conf'
 
@@ -45,10 +46,7 @@ exports.getHeaders = (userId, imapConnection, minUID, maxUID, callback) ->
 
         emailHeaders = imap.parseHeader buffer
         mailInfo['messageId'] = emailHeaders['message-id']
-        subject = emailHeaders['subject']
-        unless subject
-          subject = ''
-        mailInfo['subject'] = subject
+        mailInfo['subject'] = imapHelpers.getSubjectFromHeaders emailHeaders
         mailInfo['recipients'] = emailUtils.getAllRecipients( emailHeaders )
 
     msg.once 'attributes', (attrs) ->
@@ -69,3 +67,21 @@ exports.getHeaders = (userId, imapConnection, minUID, maxUID, callback) ->
     callbackWrapper winston.makeError 'imap fetch error',
       message: err?.message
       stack: err?.stack
+
+
+exports.getSubjectFromHeaders = (headers) ->
+
+  subject = headers?['subject'] || []
+
+  # For some reason, the subject is an array.  Just take the first element.
+  if subject and utils.isArray subject
+    if subject.length
+      subject = subject[0]
+    else
+      subject = ''
+
+  # Another safety check, just in case
+  unless subject and utils.isString subject
+    subject = ''
+    
+  subject
