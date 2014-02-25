@@ -56,3 +56,18 @@ describe 'isValidEmail', () ->
     expect( emailUtils.isValidEmail( {} ) ).toBe( false )
     expect( emailUtils.isValidEmail( {'foo': 'bar'} ) ).toBe( false )
     expect( emailUtils.isValidEmail( 123 ) ).toBe( false )
+
+  it 'base cases', () ->
+    expect( emailUtils.isValidEmail( 'a.com' ) ).toBe( false )
+    expect( emailUtils.isValidEmail( '@a.com' ) ).toBe( false )
+    expect( emailUtils.isValidEmail( 'a@a' ) ).toBe( false )
+
+    expect( emailUtils.isValidEmail( 'a@a.com' ) ).toBe( true )
+    expect( emailUtils.isValidEmail( 'a@asdf.a.com' ) ).toBe( true )
+
+  it 'fancier', () ->
+    expect( emailUtils.isValidEmail( 'a+1234@a.com' ) ).toBe( true )
+    expect( emailUtils.isValidEmail( 'a.b.c.d+asdf@a.com' ) ).toBe( true )
+
+  it 'real life case', () ->
+    expect( emailUtils.isValidEmail( 'karenponcelet@agropur.natrel.ca' ) ).toBe( true )
