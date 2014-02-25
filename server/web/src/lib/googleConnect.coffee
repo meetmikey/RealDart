@@ -23,12 +23,6 @@ passport.use new GoogleStrategy
   passReqToCallback: true
   , (req, accessToken, refreshToken, params, profile, done) ->
 
-    winston.doInfo 'googleConnect',
-      accessToken: accessToken
-      refreshToken: refreshToken
-      params: params
-      profile: profile
-
     userId = routeUtils.getUserIdFromAuthRequest req
     unless userId
       winston.doError 'no userId in auth req'
@@ -65,9 +59,6 @@ exports.saveUserAndQueueImport = (userId, accessToken, refreshToken, params, pro
 
   if params?.expires_in
     update['$set'].accessTokenExpiresAt = Date.now() + ( 1000 * params.expires_in )
-
-  winston.doInfo 'update',
-    update: update
 
   options =
     upsert: true
