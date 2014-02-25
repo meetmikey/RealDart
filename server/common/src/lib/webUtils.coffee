@@ -14,6 +14,8 @@ webUtils = this
 exports.webGet = ( url, asBuffer, callback ) ->
   #winston.doInfo 'webGet', {url : url}
 
+  numArguments = arguments.length
+
   #Pass null, so we use the default
   webUtils.webGetWithRedirects url, asBuffer, null, callback
 

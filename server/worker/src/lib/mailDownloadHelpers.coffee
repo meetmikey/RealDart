@@ -4,6 +4,7 @@ async = require 'async'
 
 winston = require(commonAppDir + '/lib/winstonWrapper').winston
 GoogleUserModel = require(commonAppDir + '/schema/googleUser').GoogleUserModel
+EmailAccountStateModel = require(commonAppDir + '/schema/emailAccountState').EmailAccountStateModel
 EmailModel = require(commonAppDir + '/schema/email').EmailModel
 imapConnect = require commonAppDir + '/lib/imapConnect'
 imapHelpers = require commonAppDir + '/lib/imapHelpers'
@@ -40,7 +41,7 @@ exports.doMailDownloadJob = (job, callback) ->
     mailDownloadHelpers.getHeaderUIDs userId, googleUser, (error, minUID, maxUID) ->
       if error then callback error; return
 
-      mailDownloadHelpers.createHeaderDownloadJobs userId, googleUser, minUID, maxUID, callback
+      mailDownloadHelpers.createEmailAccountStateAndHeaderDownloadJobs userId, googleUser, minUID, maxUID, callback
 
 
 exports.getHeaderUIDs = (userId, googleUser, callback) ->
@@ -69,7 +70,7 @@ exports.getHeaderUIDs = (userId, googleUser, callback) ->
           callback error, minUID, maxUID
 
 
-exports.createHeaderDownloadJobs = (userId, googleUser, minUID, maxUID, callback) ->
+exports.createEmailAccountStateAndHeaderDownloadJobs = (userId, googleUser, minUID, maxUID, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
   unless googleUser then callback winston.makeMissingParamError 'googleUser'; return
   unless minUID > 0 then callback winston.makeMissingParamError 'minUID'; return
@@ -77,17 +78,27 @@ exports.createHeaderDownloadJobs = (userId, googleUser, minUID, maxUID, callback
   unless minUID <= maxUID then callback winston.makeMissingParamError 'minUID isnt <= maxUID'; return
   
   uidBatches = mailDownloadHelpers.getUIDBatches minUID, maxUID
+  emailAccountState = new EmailAccountStateModel
+    userId: userId
+    googleUserId: googleUser._id
+    accountType: 'google'
+    outstandingInitialUIDBatches: uidBatches
+    originalUIDNext: maxUID + 1 # the maxUID passed here is to be downloaded, so the uidNext is maxUID + 1
+    currentUIDNext: maxUID + 1 # same as originalUIDNext
 
-  async.each uidBatches, (uidBatch, eachCallback) ->
+  emailAccountState.save (mongoError) ->
+    if mongoError then callback winston.makeMongoError mongoError; return
 
-    mailHeaderDownloadJob =
-      userId: userId
-      googleUserId: googleUser._id
-      uidBatch: uidBatch
+    async.each uidBatches, (uidBatch, eachCallback) ->
 
-    sqsUtils.addJobToQueue commonConf.queue.mailHeaderDownload, mailHeaderDownloadJob, eachCallback
+      mailHeaderDownloadJob =
+        userId: userId
+        googleUserId: googleUser._id
+        uidBatch: uidBatch
 
-  , callback
+      sqsUtils.addJobToQueue commonConf.queue.mailHeaderDownload, mailHeaderDownloadJob, eachCallback
+
+    , callback
 
 
 exports.getUIDBatches = ( minUID, maxUID, batchSizeInput ) ->
@@ -141,7 +152,10 @@ exports.doMailHeaderDownloadJob = (job, callback) ->
     if error then callback winston.makeMongoError error; return
     unless googleUser then callback winston.makeError 'googleUser not found', {googleUserId: googleUserId}; return
 
-    mailDownloadHelpers.downloadHeaders userId, googleUser, uidBatch.minUID, uidBatch.maxUID, callback
+    mailDownloadHelpers.downloadHeaders userId, googleUser, uidBatch.minUID, uidBatch.maxUID, (error) ->
+      if error then callback error; return
+
+      mailDownloadHelpers.updateEmailAccountStateWithFinishedUIDBatch userId, googleUserId, uidBatch, callback
 
 
 exports.downloadHeaders = (userId, googleUser, minUID, maxUID, callback) ->
@@ -205,3 +219,29 @@ exports.saveHeadersAndAddTouches = (userId, googleUser, headers, callback) ->
       callback()
     else
       touchHelpers.addTouchesFromEmail userId, emailJSON, callback
+
+
+exports.updateEmailAccountStateWithFinishedUIDBatch = (userId, googleUserId, uidBatch, callback) ->
+  unless userId then callback winston.makeMissingParamError 'userId'; return
+  unless googleUserId then callback winston.makeMissingParamError 'googleUserId'; return
+  unless uidBatch then callback winston.makeMissingParamError 'uidBatch'; return
+
+  select =
+    userId: userId
+    googleUserId: googleUserId
+    accountType: 'google'
+
+  update =
+    $pull:
+      outstandingInitialUIDBatches:
+        minUID: uidBatch.minUID
+        maxUID: uidBatch.maxUID
+
+  winston.doInfo 'updateEmailAccountStateWithFinishedUIDBatch',
+    select: select
+    update: update
+
+  EmailAccountStateModel.findOneAndUpdate select, update, (mongoError) ->
+    if mongoError then callback winston.makeMongoError mongoError; return
+
+    callback()

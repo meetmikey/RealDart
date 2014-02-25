@@ -8,6 +8,7 @@ urlUtils = require './urlUtils'
 emailUtils = require './emailUtils'
 webUtils = require './webUtils'
 sqsUtils = require './sqsUtils'
+utils = require './utils'
 contactHelpers = require './contactHelpers'
 
 conf = require '../conf'
@@ -157,7 +158,9 @@ exports.doAPIGet = (googleUser, path, extraData, callback) ->
       url += '/'
     url += path + queryString
 
-    webUtils.webGet url, true, (error, buffer) ->
+
+    utils.runWithRetries webUtils.webGet, constants.DEFAULT_API_CALL_ATTEMPTS
+    , (error, buffer) ->
       if error then callback error; return
       dataJSON = {}
       try
@@ -167,6 +170,8 @@ exports.doAPIGet = (googleUser, path, extraData, callback) ->
           exceptionMessage: exception.message
 
       callback null, dataJSON
+
+    , url, true
 
 
 exports.getAccessToken = (googleUser, callback) ->

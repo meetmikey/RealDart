@@ -16,6 +16,7 @@ module.exports =
   DEFAULT_WEB_GET_TIMEOUT: 30000
   RESPONSE_MAX_WAIT_MS: 5000
   MONGO_ERROR_CODE_DUPLICATE: 11000
+  DEFAULT_API_CALL_ATTEMPTS: 3
 
   #Milliseconds to wait with one miss.  Will do exponential back-off if many misses.
   #A 'miss' is either an error or 'no message'

@@ -1,10 +1,13 @@
-Handlebars = require('./handlebarsWrapper').Handlebars
-templates = require('./templates')(Handlebars)
-winston = require('./winstonWrapper').winston
-sesUtils = require './sesUtils'
-eventDigestHelpers = require './eventDigestHelpers'
+commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
 
-conf = require '../conf'
+Handlebars = require( commonAppDir + '/lib/handlebarsWrapper').Handlebars
+winston = require(commonAppDir + '/lib/winstonWrapper').winston
+sesUtils = require commonAppDir + '/lib/sesUtils'
+eventDigestHelpers = require commonAppDir + '/lib/eventDigestHelpers'
+
+commonConf = require commonAppDir + '/conf'
+
+templates = require('./templates')(Handlebars)
 
 sendEmailUtils = this
 
@@ -18,7 +21,7 @@ exports.sendEventDigestEmail = ( eventDigest, user, callback ) ->
     if error then callback error; return
 
     recipients = [user.email]
-    sender = conf.sendingEmailAddress
+    sender = commonConf.sendingEmailAddress
     text = emailHTML
     html = emailHTML
     subject = 'Your daily RealDart'
