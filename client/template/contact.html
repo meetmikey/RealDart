@@ -1,5 +1,3 @@
-<a href='#contacts'>back to contacts</a>
-
 <h3>
   {{#if contact}}
     {{contact.fullName}}
@@ -12,6 +10,7 @@
   <img src='{{contact.picURL}}' style='width:100px;height:100px;'/>
 {{/if}}
 
+number of touches: {{contact.numTouches}}
 
 {{#if contact.emails}}
   <br/>
@@ -25,20 +24,16 @@
 {{#if fbUser}}
   <br/>
   <h4><b>Facebook profile</b></h4>
-  <p>
-    <pre>
-      {{fbUser}}
-    </pre>
-  <p>
+  <pre>
+    {{fbUser}}
+  </pre>
 {{/if}}
 
 
 {{#if liUser}}
   <br/>
   <h4><b>LinkedIn profile</b></h4>
-  <p>
-    <pre>
-      {{liUser}}
-    </pre>
-  </p>
+  <pre>
+    {{liUser}}
+  </pre>
 {{/if}}

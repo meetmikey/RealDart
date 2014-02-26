@@ -16,15 +16,8 @@ routeContact = this
 exports.getContacts = (req, res) ->
   unless req?.user then routeUtils.sendFail res; return
 
-  select =
-    userId: req.user._id
-
-  ContactModel.find select, (mongoError, contacts) ->
-    if mongoError then winston.doMongoError mongoError, {}, res; return
-
-    contacts = contacts || []
-    for contact, index of contacts
-      contacts[index] = contactHelpers.sanitizeContact contact
+  contactHelpers.getAllContactsWithTouchCounts req.user._id, (error, contacts) ->
+    if error then winston.handleError error, res; return
 
     routeUtils.sendOK res,
       contacts: contacts

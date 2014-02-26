@@ -8,6 +8,7 @@ class RDContactSummaryDecorator
     object.picURL = model.get 'picURL'
     object.fbUser = model.get 'fbUser'
     object.liUser = model.get 'liUser'
+    object.numTouches = model.get 'numTouches'
     object
 
 RD.Decorator.contactSummary = new RDContactSummaryDecorator()

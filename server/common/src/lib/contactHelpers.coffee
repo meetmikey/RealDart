@@ -421,3 +421,43 @@ exports.sanitizeContact = (contact) ->
     contact[field] = undefined
 
   contact
+
+exports.getAllContactsWithTouchCounts = (userId, callback) ->
+  unless userId then callback winston.makeMissingParamError userId; return
+
+  select =
+    userId: userId
+
+  ContactModel.find select, (mongoError, contacts) ->
+    if mongoError then callback winston.makeMongoError mongoError; return
+
+    contacts = contacts || []
+    for contact, index of contacts
+      contacts[index] = contactHelpers.sanitizeContact contact
+
+    mapReduce =
+      query:
+        userId: userId
+      map: () ->
+        emit this.contactId, 1
+      reduce: (key, values) ->
+        Array.sum values
+
+    TouchModel.mapReduce mapReduce, (mongoError, mrResults) ->
+      if mongoError then callback winston.makeMongoError mongoError; return
+
+      mrResults = mrResults || []
+      firstResult = null
+      if mrResults and mrResults.length
+        firstResult = mrResults[0]
+
+      for contact, index in contacts
+        contact.numTouches = 0
+        for mrResult in mrResults
+          mrResultContactId = mrResult._id
+
+          if mrResult._id.toString() is contact._id.toString()
+            contact.numTouches = mrResult.value
+            break
+
+      callback null, contacts

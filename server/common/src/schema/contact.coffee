@@ -22,6 +22,9 @@ Contact = new Schema
 
   timestamp: {type: Date, default: Date.now}
 
+  #DUMMIES
+  numTouches: {type: Number}
+
 Contact.index {userId: 1, emails: 1}, {sparse: 1}
 Contact.index {userId: 1, lastNameLower: 1}, {sparse: 1}
 
