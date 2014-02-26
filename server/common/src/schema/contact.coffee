@@ -13,14 +13,17 @@ Contact = new Schema
   primaryEmail: {type: String} #normalized email
   emails: {type: [String]} #normalized email(s)
   firstName: {type: String}
+  firstNameLower: {type: String}
   middleName: {type: String}
+  middleNameLower: {type: String}
   lastName: {type: String}
+  lastNameLower: {type: String}
   picURL: {type: String}
 
   timestamp: {type: Date, default: Date.now}
 
 Contact.index {userId: 1, emails: 1}, {sparse: 1}
-Contact.index {userId: 1, lastName: 1}, {sparse: 1}
+Contact.index {userId: 1, lastNameLower: 1}, {sparse: 1}
 
 mongoose.model 'Contact', Contact
 exports.ContactModel = mongoose.model 'Contact'

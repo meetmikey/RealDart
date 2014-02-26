@@ -12,6 +12,7 @@ constants = require '../constants'
 
 contactHelpers = this
 
+
 exports.addContact = (userId, service, contactServiceUser, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
   unless service then callback winston.makeMissingParamError 'service'; return
@@ -83,8 +84,8 @@ exports.matchExistingContacts = (userId, contact, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
   unless contact then callback winston.makeMissingParamError 'contact'; return
 
-  unless ( contact.emails and contact.emails.length ) or contact.lastName
-    winston.doWarn 'contactHelpers.matchExistingContacts: no emails or lastName to match on',
+  unless ( contact.emails and contact.emails.length ) or contact.lastNameLower
+    winston.doWarn 'contactHelpers.matchExistingContacts: no emails or lastNameLower to match on',
       contact: contact
     callback()
     return
@@ -98,12 +99,12 @@ exports.matchExistingContacts = (userId, contact, callback) ->
       emails:
         '$in': contact.emails
 
-  if contact.lastName
+  if contact.lastNameLower
     selectNameMatch =
-      lastName: contact.lastName
+      lastNameLower: contact.lastNameLower
 
-    if contact.firstName
-      selectNameMatch.firstName = contact.firstName
+    if contact.firstNameLower
+      selectNameMatch.firstNameLower = contact.firstNameLower
 
     select['$or'].push selectNameMatch
 
@@ -193,7 +194,26 @@ exports.buildContact = (userId, service, contactServiceUser) ->
 
   utils.removeNullFields contactData, true, true
   contact = new ContactModel contactData
+  contactHelpers.setLowerCaseFields contact
   contact
+
+
+exports.setLowerCaseFields = (contact) ->
+  unless contact then return
+
+  fieldNames = [
+    'firstName'
+    'middleName'
+    'lastName'
+  ]
+
+  for fieldName in fieldNames
+    fieldNameLower = fieldName + 'Lower'
+    if contact[fieldName]
+      contact[fieldNameLower] = contact[fieldName].toLowerCase()
+    else
+      contact[fieldNameLower] = undefined
+
 
 exports.mergeContacts = (existingContact, newContact) ->
   unless newContact then return existingContact
@@ -229,6 +249,7 @@ exports.mergeContacts = (existingContact, newContact) ->
       if existingContactArrayMergeFieldIndex is -1
         existingContact[arrayMergeField].push value
 
+  contactHelpers.setLowerCaseFields existingContact
   existingContact
 
 
@@ -270,6 +291,7 @@ exports.parseFullName = (fullName) ->
   result.lastName = fullNameSplit[ fullNameSplit.length - 1 ]
   return result
 
+
 exports.clearNamePrefix = (fullName) ->
   fullName = contactHelpers.cleanFullName fullName
   result =
@@ -293,6 +315,7 @@ exports.clearNamePrefix = (fullName) ->
   fullName = fullNameSplit.join ' '
   result.fullName = fullName
   result
+
 
 exports.clearNameSuffixes = (fullName) ->
   fullName = contactHelpers.cleanFullName fullName
@@ -324,6 +347,7 @@ exports.clearNameSuffixes = (fullName) ->
   fullName = fullName.substring 0, newLastIndex + newLast.length
   fullName
 
+
 exports.flipAroundComma = (fullName) ->
   fullName = contactHelpers.cleanFullName fullName
   unless fullName then return fullName
@@ -337,6 +361,7 @@ exports.flipAroundComma = (fullName) ->
   fullName = newFirstPart + ' ' + newLastPart
   fullName = fullName.trim()
   fullName
+
 
 exports.fixLastNamePrefix = (fullName) ->
   fullName = contactHelpers.cleanFullName fullName
@@ -355,6 +380,7 @@ exports.fixLastNamePrefix = (fullName) ->
     fullNameSplit[ fullNameSplit.length - 1 ] = secondToLast + ' ' + fullNameSplit[ fullNameSplit.length - 1 ]
 
   fullNameSplit
+
 
 exports.cleanFullName = (fullName) ->
   unless fullName then return ''
