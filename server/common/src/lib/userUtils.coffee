@@ -8,6 +8,7 @@ constants = require '../constants'
 
 userUtils = this
 
+
 exports.hashPassword = (password, callback) ->
   bcrypt.genSalt 10, (err, salt) ->
     if err then callback winston.makeError err; return
@@ -16,6 +17,7 @@ exports.hashPassword = (password, callback) ->
       if err then callback winston.makeError err; return
 
       callback null, hash
+
 
 exports.checkPassword = (input, comparisonHash, callback) ->
   bcrypt.compare input, comparisonHash, (err, res) ->
@@ -69,6 +71,7 @@ exports.register = (firstName, lastName, email, password, callback) ->
         else
           callback null, savedUser
 
+
 #callback without error, but also without user means that either the email or the password is wrong.
 exports.login = (email, password, callback) ->
   unless email then callback winston.makeMissingParamError 'email'; return
@@ -88,6 +91,7 @@ exports.login = (email, password, callback) ->
         callback()
       else
         callback null, user
+
 
 exports.getFullName = (user) ->
   unless user then return ''

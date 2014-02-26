@@ -21,6 +21,7 @@ fbConnect = require './lib/fbConnect'
 googleConnect = require './lib/googleConnect'
 routeUtils = require './lib/routeUtils'
 routeUser = require './route/user'
+routeContact = require './route/contact'
 conf = require './conf'
 
 initActions = [
@@ -70,6 +71,9 @@ postInit = () =>
   #API
   # Note: All authenticated routes should be '/api/...' to use express-jwt authentication
   app.get '/api/user', routeUser.getUser
+
+  app.get '/api/contacts', routeContact.getContacts
+  app.get '/api/contact/:contactId', routeContact.getContact
 
   addAuth app, commonConstants.service.GOOGLE
   addAuth app, commonConstants.service.LINKED_IN

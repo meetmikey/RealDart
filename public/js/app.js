@@ -46,6 +46,8 @@
       this.scrollToTop = __bind(this.scrollToTop, this);
       this.renderHeader = __bind(this.renderHeader, this);
       this.renderLayout = __bind(this.renderLayout, this);
+      this.contact = __bind(this.contact, this);
+      this.contacts = __bind(this.contacts, this);
       this.account = __bind(this.account, this);
       this.register = __bind(this.register, this);
       this.login = __bind(this.login, this);
@@ -61,7 +63,9 @@
       'home': 'home',
       'login': 'login',
       'register': 'register',
-      'account': 'account'
+      'account': 'account',
+      'contacts': 'contacts',
+      'contact/:contactId': 'contact'
     };
 
     Router.prototype.initialize = function() {};
@@ -80,6 +84,16 @@
 
     Router.prototype.account = function() {
       return this.render('Account');
+    };
+
+    Router.prototype.contacts = function() {
+      return this.render('Contacts');
+    };
+
+    Router.prototype.contact = function(contactId) {
+      return this.render('Contact', {
+        contactId: contactId
+      });
     };
 
     Router.prototype.renderLayout = function() {
@@ -493,6 +507,7 @@
 
   RDHelperUtils = (function() {
     function RDHelperUtils() {
+      this.getFullName = __bind(this.getFullName, this);
       this.getObjectFromString = __bind(this.getObjectFromString, this);
       this.getClassFromName = __bind(this.getClassFromName, this);
     }
@@ -536,6 +551,17 @@
         return true;
       }
       return false;
+    };
+
+    RDHelperUtils.prototype.getFullName = function(firstName, middleName, lastName) {
+      if (firstName && lastName) {
+        return firstName + ' ' + lastName;
+      } else if (firstName) {
+        return firstName;
+      } else if (lastName) {
+        return 'M. ' + lastName;
+      }
+      return '';
     };
 
     return RDHelperUtils;
@@ -673,6 +699,7 @@
         return this.preRenderAsync((function(_this) {
           return function(error) {
             if (error) {
+              _this.bail();
               return;
             }
             return _this._continueRender();
@@ -957,7 +984,6 @@
           if (error || !user) {
             rdLog('account getUser fail');
             callback('fail');
-            _this.bail();
             return;
           }
           _this.user = user;
@@ -1024,6 +1050,109 @@
     };
 
     return Account;
+
+  })(RD.View.Base);
+
+}).call(this);
+
+(function() {
+  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  RD.View.Contact = (function(_super) {
+    __extends(Contact, _super);
+
+    function Contact() {
+      this.getTemplateData = __bind(this.getTemplateData, this);
+      this.preRenderAsync = __bind(this.preRenderAsync, this);
+      return Contact.__super__.constructor.apply(this, arguments);
+    }
+
+    Contact.prototype.bailPath = 'home';
+
+    Contact.prototype.contact = null;
+
+    Contact.prototype.preRenderAsync = function(callback) {
+      var path;
+      if (!this.contactId) {
+        callback('no contactId');
+        return;
+      }
+      path = 'contact/' + this.contactId;
+      return RD.Helper.api.get(path, {}, (function(_this) {
+        return function(error, responseData) {
+          if (error) {
+            callback('get contact failed');
+            return;
+          }
+          if (!(responseData != null ? responseData.contact : void 0)) {
+            callback('invalid api response');
+            return;
+          }
+          _this.contact = new RD.Model.Contact(responseData.contact);
+          return callback();
+        };
+      })(this));
+    };
+
+    Contact.prototype.getTemplateData = function() {
+      return {
+        contact: this.contact.decorate()
+      };
+    };
+
+    return Contact;
+
+  })(RD.View.Base);
+
+}).call(this);
+
+(function() {
+  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  RD.View.Contacts = (function(_super) {
+    __extends(Contacts, _super);
+
+    function Contacts() {
+      this.getTemplateData = __bind(this.getTemplateData, this);
+      this.preRenderAsync = __bind(this.preRenderAsync, this);
+      return Contacts.__super__.constructor.apply(this, arguments);
+    }
+
+    Contacts.prototype.contacts = null;
+
+    Contacts.prototype.preRenderAsync = function(callback) {
+      var path;
+      path = 'contacts';
+      return RD.Helper.api.get(path, {}, (function(_this) {
+        return function(error, responseData) {
+          if (error) {
+            callback('get contacts failed');
+            return;
+          }
+          if (!(responseData != null ? responseData.contacts : void 0)) {
+            callback('invalid api response');
+            return;
+          }
+          _this.contacts = new RD.Collection.ContactSummary(responseData.contacts);
+          rdLog('got contacts...', {
+            contactsSize: _this.contacts.size()
+          });
+          return callback();
+        };
+      })(this));
+    };
+
+    Contacts.prototype.getTemplateData = function() {
+      return {
+        contacts: _.invoke(this.contacts.models, 'decorate')
+      };
+    };
+
+    return Contacts;
 
   })(RD.View.Base);
 
@@ -1341,6 +1470,57 @@
 }).call(this);
 
 (function() {
+  var RDContactDecorator,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+  RDContactDecorator = (function() {
+    function RDContactDecorator() {
+      this.decorate = __bind(this.decorate, this);
+    }
+
+    RDContactDecorator.prototype.decorate = function(model) {
+      var object;
+      object = {};
+      object.fullName = model.getFullName();
+      object.primaryEmail = model.get('primaryEmail');
+      return object;
+    };
+
+    return RDContactDecorator;
+
+  })();
+
+  RD.Decorator.contact = new RDContactDecorator();
+
+}).call(this);
+
+(function() {
+  var RDContactSummaryDecorator,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+  RDContactSummaryDecorator = (function() {
+    function RDContactSummaryDecorator() {
+      this.decorate = __bind(this.decorate, this);
+    }
+
+    RDContactSummaryDecorator.prototype.decorate = function(model) {
+      var object;
+      object = {};
+      object._id = model.get('_id');
+      object.fullName = model.getFullName();
+      object.primaryEmail = model.get('primaryEmail');
+      return object;
+    };
+
+    return RDContactSummaryDecorator;
+
+  })();
+
+  RD.Decorator.contactSummary = new RDContactSummaryDecorator();
+
+}).call(this);
+
+(function() {
   var RDUserDecorator,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
@@ -1398,6 +1578,56 @@
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
+  RD.Model.Contact = (function(_super) {
+    __extends(Contact, _super);
+
+    function Contact() {
+      this.getFullName = __bind(this.getFullName, this);
+      return Contact.__super__.constructor.apply(this, arguments);
+    }
+
+    Contact.prototype.decorator = RD.Decorator.contact;
+
+    Contact.prototype.getFullName = function() {
+      return RD.Helper.utils.getFullName(this.get('firstName'), null, this.get('lastName'));
+    };
+
+    return Contact;
+
+  })(RD.Model.Base);
+
+}).call(this);
+
+(function() {
+  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  RD.Model.ContactSummary = (function(_super) {
+    __extends(ContactSummary, _super);
+
+    function ContactSummary() {
+      this.getFullName = __bind(this.getFullName, this);
+      return ContactSummary.__super__.constructor.apply(this, arguments);
+    }
+
+    ContactSummary.prototype.decorator = RD.Decorator.contactSummary;
+
+    ContactSummary.prototype.getFullName = function() {
+      return RD.Helper.utils.getFullName(this.get('firstName'), null, this.get('lastName'));
+    };
+
+    return ContactSummary;
+
+  })(RD.Model.Base);
+
+}).call(this);
+
+(function() {
+  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
   RD.Model.User = (function(_super) {
     __extends(User, _super);
 
@@ -1409,17 +1639,7 @@
     User.prototype.decorator = RD.Decorator.user;
 
     User.prototype.getFullName = function() {
-      var firstName, lastName;
-      firstName = this.get('firstName');
-      lastName = this.get('lastName');
-      if (firstName && lastName) {
-        return firstName + ' ' + lastName;
-      } else if (firstName) {
-        return firstName;
-      } else if (lastName) {
-        return 'M. ' + lastName;
-      }
-      return '';
+      return RD.Helper.utils.getFullName(this.get('firstName'), null, this.get('lastName'));
     };
 
     return User;
@@ -1495,5 +1715,24 @@
     return Base;
 
   })(Backbone.Collection);
+
+}).call(this);
+
+(function() {
+  var __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  RD.Collection.ContactSummary = (function(_super) {
+    __extends(ContactSummary, _super);
+
+    function ContactSummary() {
+      return ContactSummary.__super__.constructor.apply(this, arguments);
+    }
+
+    ContactSummary.prototype.model = RD.Model.ContactSummary;
+
+    return ContactSummary;
+
+  })(RD.Collection.Base);
 
 }).call(this);

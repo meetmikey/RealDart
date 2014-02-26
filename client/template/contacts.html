@@ -1,0 +1,18 @@
+<h3>Contacts</h3>
+
+<p>
+  This is your contact list...
+</p>
+
+{{#each contacts}}
+  <a href='#contact/{{_id}}'>
+    {{#if fullName}}
+      {{fullName}}
+    {{/if}}
+    {{#if primaryEmail}}
+      {{#if fullName}}, {{/if}}
+      {{primaryEmail}}
+    {{/if}}
+  </a>
+  <br/>
+{{/each}}

@@ -403,3 +403,21 @@ exports.cleanFullName = (fullName) ->
 
   fullName = fullNameSplit.join ' '
   fullName
+
+
+#Drop any fields we don't want to send to the client
+exports.sanitizeContact = (contact) ->
+  unless contact then return {}
+
+  fieldsToRemove = [
+    '__v'
+    'timestamp'
+    'firstNameLower'
+    'middleNameLower'
+    'lastNameLower'
+  ]
+
+  for field in fieldsToRemove
+    contact[field] = undefined
+
+  contact

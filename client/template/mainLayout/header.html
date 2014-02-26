@@ -9,6 +9,11 @@
         <span class="icon-bar"></span>
       </button>
       <a class="navbar-brand" href="#">RealDart</a>
+      <ul class="nav navbar-nav navbar-left">
+      {{#if isLoggedIn}}
+        <li><a href="#contacts">Contacts</a></li>
+      {{/if}}
+      </ul>
     </div>
     <div class="navbar-collapse collapse">
       <ul class="nav navbar-nav">

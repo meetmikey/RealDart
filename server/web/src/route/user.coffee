@@ -10,11 +10,11 @@ routeUtils = require '../lib/routeUtils'
 routeUser = this
 
 exports.register = (req, res) ->
-  unless req and req.body then routeUtils.sendFail res; return
-  unless req.body.firstName then routeUtils.sendFail res, 'first name required'; return
-  unless req.body.lastName then routeUtils.sendFail res, 'last name required'; return
-  unless req.body.email then routeUtils.sendFail res, 'email required'; return
-  unless req.body.password then routeUtils.sendFail res, 'password required'; return
+  unless req?.body then routeUtils.sendFail res; return
+  unless req?.body?.firstName then routeUtils.sendFail res, 'first name required'; return
+  unless req?.body?.lastName then routeUtils.sendFail res, 'last name required'; return
+  unless req?.body?.email then routeUtils.sendFail res, 'email required'; return
+  unless req?.body?.password then routeUtils.sendFail res, 'password required'; return
 
   firstName = req.body.firstName
   lastName = req.body.lastName
@@ -32,9 +32,9 @@ exports.register = (req, res) ->
       routeUtils.sendUserToken res, userUtils.sanitizeUser user
 
 exports.login = (req, res) ->
-  unless req and req.body then routeUtils.sendFail res; return
-  unless req.body.email then routeUtils.sendFail res, 'email required'; return
-  unless req.body.password then routeUtils.sendFail res, 'password required'; return
+  unless req?.body then routeUtils.sendFail res; return
+  unless req?.body?.email then routeUtils.sendFail res, 'email required'; return
+  unless req?.body?.password then routeUtils.sendFail res, 'password required'; return
 
   email = req.body.email
   password = req.body.password
@@ -51,7 +51,7 @@ exports.login = (req, res) ->
 
 #Auth has already happened.  Just send the user.
 exports.getUser = (req, res) ->
-  unless req and req.user then res.send 400; return
+  unless req?.user then routeUtils.sendFail res; return
 
   UserModel.findById req.user._id, (mongoError, user) ->
     if mongoError then winston.doMongoError mongoError, {}, res; return

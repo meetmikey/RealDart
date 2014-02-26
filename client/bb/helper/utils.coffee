@@ -28,4 +28,13 @@ class RDHelperUtils
       return true
     return false
 
+  getFullName: (firstName, middleName, lastName) =>
+    if firstName and lastName
+      return firstName + ' ' + lastName
+    else if firstName
+      return firstName
+    else if lastName
+      return 'M. ' + lastName
+    return ''
+
 RD.Helper.utils = new RDHelperUtils()

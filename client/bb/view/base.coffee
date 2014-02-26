@@ -46,7 +46,7 @@ class RD.View.Base extends Backbone.View
   render: =>
     if @preRenderAsync
       @preRenderAsync (error) =>
-        if error then return
+        if error then @bail(); return
         return @_continueRender()
     else
       @preRender()

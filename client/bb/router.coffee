@@ -8,6 +8,8 @@ class RD.Router extends Backbone.Router
     'login': 'login'
     'register': 'register'
     'account': 'account'
+    'contacts': 'contacts'
+    'contact/:contactId': 'contact'
 
   initialize: =>
 
@@ -22,6 +24,13 @@ class RD.Router extends Backbone.Router
 
   account: =>
     @render 'Account'
+
+  contacts: =>
+    @render 'Contacts'
+
+  contact: (contactId) =>
+    @render 'Contact',
+      contactId: contactId
 
   renderLayout: =>
     unless @_layout

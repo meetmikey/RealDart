@@ -1,6 +1,6 @@
-class RD.Model.User extends RD.Model.Base
+class RD.Model.Contact extends RD.Model.Base
 
-  decorator: RD.Decorator.user
+  decorator: RD.Decorator.contact
 
   getFullName: =>
     RD.Helper.utils.getFullName @get('firstName'), null, @get('lastName')
