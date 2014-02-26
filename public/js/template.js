@@ -48,7 +48,7 @@ function program4(depth0,data) {
 this["RDTemplates"]["template/contact.html"] = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
   this.compilerInfo = [4,'>= 1.0.0'];
 helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
-  var buffer = "", stack1, functionType="function", escapeExpression=this.escapeExpression, self=this;
+  var buffer = "", stack1, stack2, functionType="function", escapeExpression=this.escapeExpression, self=this;
 
 function program1(depth0,data) {
   
@@ -65,10 +65,70 @@ function program3(depth0,data) {
   return "\n    Contact not found\n  ";
   }
 
-  buffer += "<h3>\n  ";
+function program5(depth0,data) {
+  
+  var buffer = "", stack1;
+  buffer += "\n  <img src='"
+    + escapeExpression(((stack1 = ((stack1 = (depth0 && depth0.contact)),stack1 == null || stack1 === false ? stack1 : stack1.picURL)),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
+    + "' style='width:100px;height:100px;'/>\n";
+  return buffer;
+  }
+
+function program7(depth0,data) {
+  
+  var buffer = "", stack1, stack2;
+  buffer += "\n  <br/>\n  <h4><b>Emails</b></h4>\n  ";
+  stack2 = helpers.each.call(depth0, ((stack1 = (depth0 && depth0.contact)),stack1 == null || stack1 === false ? stack1 : stack1.emails), {hash:{},inverse:self.noop,fn:self.program(8, program8, data),data:data});
+  if(stack2 || stack2 === 0) { buffer += stack2; }
+  buffer += "\n";
+  return buffer;
+  }
+function program8(depth0,data) {
+  
+  var buffer = "";
+  buffer += "\n    <p>"
+    + escapeExpression((typeof depth0 === functionType ? depth0.apply(depth0) : depth0))
+    + "</p>\n  ";
+  return buffer;
+  }
+
+function program10(depth0,data) {
+  
+  var buffer = "", stack1;
+  buffer += "\n  <br/>\n  <h4><b>Facebook profile</b></h4>\n  <p>\n    <pre>\n      ";
+  if (stack1 = helpers.fbUser) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
+  else { stack1 = (depth0 && depth0.fbUser); stack1 = typeof stack1 === functionType ? stack1.call(depth0, {hash:{},data:data}) : stack1; }
+  buffer += escapeExpression(stack1)
+    + "\n    </pre>\n  <p>\n";
+  return buffer;
+  }
+
+function program12(depth0,data) {
+  
+  var buffer = "", stack1;
+  buffer += "\n  <br/>\n  <h4><b>LinkedIn profile</b></h4>\n  <p>\n    <pre>\n      ";
+  if (stack1 = helpers.liUser) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
+  else { stack1 = (depth0 && depth0.liUser); stack1 = typeof stack1 === functionType ? stack1.call(depth0, {hash:{},data:data}) : stack1; }
+  buffer += escapeExpression(stack1)
+    + "\n    </pre>\n  </p>\n";
+  return buffer;
+  }
+
+  buffer += "<a href='#contacts'>back to contacts</a>\n\n<h3>\n  ";
   stack1 = helpers['if'].call(depth0, (depth0 && depth0.contact), {hash:{},inverse:self.program(3, program3, data),fn:self.program(1, program1, data),data:data});
   if(stack1 || stack1 === 0) { buffer += stack1; }
   buffer += "\n</h3>\n\n";
+  stack2 = helpers['if'].call(depth0, ((stack1 = (depth0 && depth0.contact)),stack1 == null || stack1 === false ? stack1 : stack1.picURL), {hash:{},inverse:self.noop,fn:self.program(5, program5, data),data:data});
+  if(stack2 || stack2 === 0) { buffer += stack2; }
+  buffer += "\n\n\n";
+  stack2 = helpers['if'].call(depth0, ((stack1 = (depth0 && depth0.contact)),stack1 == null || stack1 === false ? stack1 : stack1.emails), {hash:{},inverse:self.noop,fn:self.program(7, program7, data),data:data});
+  if(stack2 || stack2 === 0) { buffer += stack2; }
+  buffer += "\n\n\n";
+  stack2 = helpers['if'].call(depth0, (depth0 && depth0.fbUser), {hash:{},inverse:self.noop,fn:self.program(10, program10, data),data:data});
+  if(stack2 || stack2 === 0) { buffer += stack2; }
+  buffer += "\n\n\n";
+  stack2 = helpers['if'].call(depth0, (depth0 && depth0.liUser), {hash:{},inverse:self.noop,fn:self.program(12, program12, data),data:data});
+  if(stack2 || stack2 === 0) { buffer += stack2; }
   return buffer;
   });
 
@@ -85,15 +145,29 @@ function program1(depth0,data) {
   else { stack1 = (depth0 && depth0._id); stack1 = typeof stack1 === functionType ? stack1.call(depth0, {hash:{},data:data}) : stack1; }
   buffer += escapeExpression(stack1)
     + "'>\n    ";
-  stack1 = helpers['if'].call(depth0, (depth0 && depth0.fullName), {hash:{},inverse:self.noop,fn:self.program(2, program2, data),data:data});
+  stack1 = helpers['if'].call(depth0, (depth0 && depth0.picURL), {hash:{},inverse:self.noop,fn:self.program(2, program2, data),data:data});
   if(stack1 || stack1 === 0) { buffer += stack1; }
   buffer += "\n    ";
-  stack1 = helpers['if'].call(depth0, (depth0 && depth0.primaryEmail), {hash:{},inverse:self.noop,fn:self.program(4, program4, data),data:data});
+  stack1 = helpers['if'].call(depth0, (depth0 && depth0.fullName), {hash:{},inverse:self.noop,fn:self.program(4, program4, data),data:data});
+  if(stack1 || stack1 === 0) { buffer += stack1; }
+  buffer += "\n    ";
+  stack1 = helpers['if'].call(depth0, (depth0 && depth0.primaryEmail), {hash:{},inverse:self.noop,fn:self.program(6, program6, data),data:data});
   if(stack1 || stack1 === 0) { buffer += stack1; }
   buffer += "\n  </a>\n  <br/>\n";
   return buffer;
   }
 function program2(depth0,data) {
+  
+  var buffer = "", stack1;
+  buffer += "\n      <img src=\"";
+  if (stack1 = helpers.picURL) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
+  else { stack1 = (depth0 && depth0.picURL); stack1 = typeof stack1 === functionType ? stack1.call(depth0, {hash:{},data:data}) : stack1; }
+  buffer += escapeExpression(stack1)
+    + "\" style='height:20px;width:20px;'/>\n    ";
+  return buffer;
+  }
+
+function program4(depth0,data) {
   
   var buffer = "", stack1;
   buffer += "\n      ";
@@ -104,11 +178,11 @@ function program2(depth0,data) {
   return buffer;
   }
 
-function program4(depth0,data) {
+function program6(depth0,data) {
   
   var buffer = "", stack1;
   buffer += "\n      ";
-  stack1 = helpers['if'].call(depth0, (depth0 && depth0.fullName), {hash:{},inverse:self.noop,fn:self.program(5, program5, data),data:data});
+  stack1 = helpers['if'].call(depth0, (depth0 && depth0.fullName), {hash:{},inverse:self.noop,fn:self.program(7, program7, data),data:data});
   if(stack1 || stack1 === 0) { buffer += stack1; }
   buffer += "\n      ";
   if (stack1 = helpers.primaryEmail) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
@@ -117,7 +191,7 @@ function program4(depth0,data) {
     + "\n    ";
   return buffer;
   }
-function program5(depth0,data) {
+function program7(depth0,data) {
   
   
   return ", ";
@@ -170,7 +244,7 @@ helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
   
 
 
-  return "<div class='container footerTag'>\n  <p>Sidekick Labs</p>\n</div>";
+  return "<div class='navbar navbar-fixed-bottom'>\n  <div class='footerWrapper'>\n    <div class='container'>\n      <div class='footerTag'>\n        Sidekick Labs\n      </div>\n    </div>\n  </div>\n</div>";
   });
 
 this["RDTemplates"]["template/mainLayout/header.html"] = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {

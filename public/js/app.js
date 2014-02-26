@@ -1073,6 +1073,10 @@
 
     Contact.prototype.contact = null;
 
+    Contact.prototype.fbUser = null;
+
+    Contact.prototype.liUser = null;
+
     Contact.prototype.preRenderAsync = function(callback) {
       var path;
       if (!this.contactId) {
@@ -1091,6 +1095,8 @@
             return;
           }
           _this.contact = new RD.Model.Contact(responseData.contact);
+          _this.fbUser = responseData != null ? responseData.fbUser : void 0;
+          _this.liUser = responseData != null ? responseData.liUser : void 0;
           return callback();
         };
       })(this));
@@ -1098,7 +1104,9 @@
 
     Contact.prototype.getTemplateData = function() {
       return {
-        contact: this.contact.decorate()
+        contact: this.contact.decorate(),
+        fbUser: JSON.stringify(this.fbUser),
+        liUser: JSON.stringify(this.liUser)
       };
     };
 
@@ -1483,6 +1491,8 @@
       object = {};
       object.fullName = model.getFullName();
       object.primaryEmail = model.get('primaryEmail');
+      object.picURL = model.get('picURL');
+      object.emails = model.get('emails');
       return object;
     };
 
@@ -1509,6 +1519,9 @@
       object._id = model.get('_id');
       object.fullName = model.getFullName();
       object.primaryEmail = model.get('primaryEmail');
+      object.picURL = model.get('picURL');
+      object.fbUser = model.get('fbUser');
+      object.liUser = model.get('liUser');
       return object;
     };
 

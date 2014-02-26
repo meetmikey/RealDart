@@ -3,14 +3,17 @@ body {
   font-family: 'Volkhorn', serif;
   font-size: 16px;
   background-color: #f7f7f7;
-  padding-top: 70px;
+  margin: 0;
+  padding: 0;
+  height: 100%;
 }
-#rdFooter {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
+#rdContent {
+  padding: 10px;
+  padding-top: 60px;
+  padding-bottom: 60px;
+}
+.footerWrapper {
   height: 60px;
-  /* Height of the footer */
   background: #c1c1c1;
 }
 .error {

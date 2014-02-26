@@ -3,6 +3,8 @@ commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
 winston = require(commonAppDir + '/lib/winstonWrapper').winston
 
 ContactModel = require(commonAppDir + '/schema/contact').ContactModel
+FBUserModel = require(commonAppDir + '/schema/fbUser').FBUserModel
+LIUserModel = require(commonAppDir + '/schema/liUser').LIUserModel
 ObjectID = require(commonAppDir + '/lib/mongooseConnect').mongoose.Types.ObjectId
 contactHelpers = require commonAppDir + '/lib/contactHelpers'
 
@@ -45,5 +47,27 @@ exports.getContact = (req, res) ->
   ContactModel.findOne select, (mongoError, contact) ->
     if mongoError then winston.doMongoError mongoError, {}, res; return
 
-    routeUtils.sendOK res,
-      contact: contactHelpers.sanitizeContact contact
+    contact = contactHelpers.sanitizeContact contact
+
+    getFBUser = (fbUserId, cb) ->
+      unless fbUserId then cb(); return
+      FBUserModel.findById fbUserId, (mongoError, fbUser) ->
+        if mongoError then cb winston.makeMongoError mongoError; return
+        cb null, fbUser
+
+    getLIUser = (liUserId, cb) ->
+      unless liUserId then cb(); return
+      LIUserModel.findById liUserId, (mongoError, liUser) ->
+        if mongoError then cb winston.makeMongoError mongoError; return
+        cb null, liUser
+
+    getFBUser contact.fbUserId, (error, fbUser) ->
+      if error then winston.handleError error, res; return
+
+      getLIUser contact.liUserId, (error, liUser) ->
+        if error then winston.handleError error, res; return
+
+        routeUtils.sendOK res,
+          contact: contact
+          fbUser: fbUser
+          liUser: liUser

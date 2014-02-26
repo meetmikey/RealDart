@@ -4,20 +4,27 @@
 @successGreen: #006633;
 @errorRed: #880000;
 @serif: 'Volkhorn', serif;
+@headerHeight: 60px;
+@footerHeight: 60px;
 
 body {
   color: @darkGrey;
   font-family: @serif;
   font-size: 16px;
   background-color: @lightGrey;
-  padding-top: 70px;
+  margin:0;
+  padding:0;
+  height:100%;
 }
 
-#rdFooter {
-   position:absolute;
-   bottom:0;
-   width:100%;
-   height:60px;   /* Height of the footer */
+#rdContent {
+  padding: 10px;
+  padding-top: @headerHeight;
+  padding-bottom: @footerHeight; 
+}
+
+.footerWrapper {
+   height: @footerHeight;
    background: @mediumGrey;
 }
 

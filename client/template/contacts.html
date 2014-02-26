@@ -6,6 +6,9 @@
 
 {{#each contacts}}
   <a href='#contact/{{_id}}'>
+    {{#if picURL}}
+      <img src="{{picURL}}" style='height:20px;width:20px;'/>
+    {{/if}}
     {{#if fullName}}
       {{fullName}}
     {{/if}}

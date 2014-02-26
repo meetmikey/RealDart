@@ -1,3 +1,5 @@
+<a href='#contacts'>back to contacts</a>
+
 <h3>
   {{#if contact}}
     {{contact.fullName}}
@@ -6,3 +8,37 @@
   {{/if}}
 </h3>
 
+{{#if contact.picURL}}
+  <img src='{{contact.picURL}}' style='width:100px;height:100px;'/>
+{{/if}}
+
+
+{{#if contact.emails}}
+  <br/>
+  <h4><b>Emails</b></h4>
+  {{#each contact.emails}}
+    <p>{{this}}</p>
+  {{/each}}
+{{/if}}
+
+
+{{#if fbUser}}
+  <br/>
+  <h4><b>Facebook profile</b></h4>
+  <p>
+    <pre>
+      {{fbUser}}
+    </pre>
+  <p>
+{{/if}}
+
+
+{{#if liUser}}
+  <br/>
+  <h4><b>LinkedIn profile</b></h4>
+  <p>
+    <pre>
+      {{liUser}}
+    </pre>
+  </p>
+{{/if}}
