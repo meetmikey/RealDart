@@ -1,6 +1,7 @@
 async = require 'async'
 
 fbHelpers = require './fbHelpers'
+imageUtils = require './imageUtils'
 ContactModel = require( '../schema/contact').ContactModel
 TouchModel = require( '../schema/touch').TouchModel
 winston = require('./winstonWrapper').winston
@@ -50,8 +51,8 @@ exports.saveContact = (contact, callback) ->
 
   # import images...
   contact.imageURLs = contact.imageURLs || []
-  async.eachSeries imageURLs, (imageURL, eachSeriesCallback) ->
-    imageHelpers.importContactImage imageURL, contact, eachSeriesCallback
+  async.eachSeries contact.imageURLs, (imageURL, eachSeriesCallback) ->
+    imageUtils.importContactImage imageURL, contact, eachSeriesCallback
   , (error) ->
     if error
       winston.handleError error
@@ -196,7 +197,7 @@ exports.buildContact = (userId, service, contactServiceUser) ->
 
   contactData =
     userId: userId
-    imageURLS: []
+    imageURLs: []
 
   if service is constants.service.GOOGLE
     contactData.googleContactId = contactServiceUser._id
@@ -224,7 +225,7 @@ exports.buildContact = (userId, service, contactServiceUser) ->
       contactData.emails = emailUtils.normalizeEmailAddressArray [contactServiceUser.emailAddress]
     contactData.firstName = contactServiceUser.firstName
     contactData.lastName = contactServiceUser.lastName
-    contactData.imageURLs.push = contactServiceUser.pictureUrl
+    contactData.imageURLs.push contactServiceUser.pictureUrl
 
   else if service is constants.service.SENT_MAIL_TOUCH
     if contactServiceUser.email
@@ -237,7 +238,7 @@ exports.buildContact = (userId, service, contactServiceUser) ->
 
   utils.removeNullFields contactData, true, true
   contact = new ContactModel contactData
-  contactHelpers.setLowerCaseFields existingContact
+  contactHelpers.setLowerCaseFields contact
   contact
 
 
