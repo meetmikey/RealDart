@@ -17,7 +17,10 @@ module.exports =
   RESPONSE_MAX_WAIT_MS: 5000
   MONGO_ERROR_CODE_DUPLICATE: 11000
   DEFAULT_API_CALL_ATTEMPTS: 3
+  DEFAULT_WEB_GET_ATTEMPTS: 3
   HEADER_BATCH_SIZE: 1000
+
+  S3_DEFAULT_LINK_EXPIRE_MINUTES: 30
 
   #Milliseconds to wait with one miss.  Will do exponential back-off if many misses.
   #A 'miss' is either an error or 'no message'
@@ -43,7 +46,6 @@ module.exports =
     SENT_MAIL_TOUCH: 'sentMailTouch' #This is here because 'services' double as possible contact sources,
                                      # one of which is finding the email in the sent mail
 
-
   message:
     SQS_ALL_WORKERS_DONE: 'All workers done.'
 
@@ -56,6 +58,17 @@ module.exports =
       DOMAIN_ERROR: 'domainError'
       NO_BOX_TO_OPEN: 'noBoxToOpen'
       MAIL_BOX_DOES_NOT_EXIST: 'mailBoxDoesNotExist'
+    web:
+      FOUR_OH_FOUR: '404'
+
+
+
+
+
+
+
+  #  NAME PARSING CONSTANTS
+  ##################################################
 
   # Modified version of http://notes.ericwillis.com/2009/11/common-name-prefixes-titles-and-honorifics/
   # NOTE: must be lower case, and exclude any periods ("."s)

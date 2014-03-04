@@ -9,10 +9,6 @@ class RD.View.Contacts extends RD.View.Base
       unless responseData?.contacts then callback('invalid api response'); return
 
       @contacts = new RD.Collection.ContactSummary responseData.contacts
-
-      rdLog 'got contacts...',
-        contactsSize: @contacts.size()
-
       callback()
 
 

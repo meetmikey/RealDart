@@ -9,6 +9,7 @@ conf = require '../conf'
 
 utils = this
 
+
 exports.isArray = ( input ) ->
   if input is null or input is undefined
     return false
@@ -16,12 +17,14 @@ exports.isArray = ( input ) ->
     return true
   return false
 
+
 exports.isObject = ( input ) ->
   if input is null or input is undefined
     return false
   if Object.prototype.toString.call( input ) is '[object Object]'
     return true
   return false
+
 
 exports.convertToInt = (strNumber) ->
   if typeof strNumber is 'string'
@@ -35,24 +38,29 @@ exports.convertToInt = (strNumber) ->
     
   return null
 
+
 exports.capitalize = (input) ->
   unless input and ( input.length > 0 ) then return ''
   capitalized = input[0].toUpperCase() + input.slice 1
   capitalized
+
 
 exports.uncapitalize = (input) ->
   unless input and ( input.length > 0 ) then return ''
   capitalized = input[0].toLowerCase() + input.slice 1
   capitalized
 
+
 exports.isString = ( input ) ->
   return Object.prototype.toString.call( input ) == '[object String]'
+
 
 #defaults to current date
 exports.getDateString = (dateInput) ->
   dateValue = dateInput || new Date()
   dateString = dateFormat dateInput, constants.DATE_FORMAT
   dateString
+
 
 exports.getRandomId = ( lengthInput ) ->
   rand = Math.random()
@@ -68,6 +76,7 @@ exports.getRandomId = ( lengthInput ) ->
   hash = hash.substring 0, length
   hash
 
+
 exports.getUniqueId = () ->
   uniqueId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace /[xy]/g, (c) ->
     r = Math.random()*16|0
@@ -78,6 +87,7 @@ exports.getUniqueId = () ->
     uniqueId = v.toString 16
     uniqueId
   uniqueId
+
 
 exports.getHash = (input, typeInput) ->
   unless input
@@ -99,9 +109,11 @@ exports.getHash = (input, typeInput) ->
   hash = cryptoHash.digest 'hex'
   hash
 
+
 exports.runWithRetries = ( func, numAttempts, callback, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8 ) ->
   randomId = utils.getRandomId 4
   utils.runWithRetriesCountingFails func, numAttempts, callback, 0, randomId, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8
+
 
 exports.runWithRetriesCountingFails = ( func, numRemainingAttempts, callback, numPreviousFails, randomId, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8 ) ->
   if not func then callback winston.makeMissingParamError('func'); return
@@ -137,6 +149,7 @@ exports.runWithRetriesCountingFails = ( func, numRemainingAttempts, callback, nu
     func ( err, cbArg1, cbArg2, cbArg3, cbArg4, cbArg5, cbArg6, cbArg7, cbArg8 ) ->
       utils.runWithRetriesCallback func, numRemainingAttempts, callback, numPreviousFails, randomId, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, err, cbArg1, cbArg2, cbArg3, cbArg4, cbArg5, cbArg6, cbArg7, cbArg8
 
+
 exports.runWithRetriesCallback = ( func, numRemainingAttempts, callback, numPreviousFails, randomId, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, err, cbArg1, cbArg2, cbArg3, cbArg4, cbArg5, cbArg6, cbArg7, cbArg8 ) ->
   if err and numRemainingAttempts >= 1
     
@@ -157,6 +170,7 @@ exports.runWithRetriesCallback = ( func, numRemainingAttempts, callback, numPrev
   else if callback
     callback err, cbArg1, cbArg2, cbArg3, cbArg4, cbArg5, cbArg6
 
+
 #returns the wait time in milliseconds, using exponential backoff with a max.
 exports.getRetryWaitTime = ( numFails ) ->
   baseWait = constants.MIN_RETRY_WAIT_TIME_MS
@@ -169,6 +183,7 @@ exports.getRetryWaitTime = ( numFails ) ->
     waitTime = constants.MAX_RETRY_WAIT_TIME_MS
 
   waitTime
+
 
 # returns {encrypted: <encrypted value>, salt: <salt>}
 exports.encryptSymmetric = (input) ->
@@ -188,6 +203,7 @@ exports.encryptSymmetric = (input) ->
   output.salt = salt
   output
 
+
 # returns the decrypted value
 exports.decryptSymmetric = (input, salt) ->
   unless input 
@@ -201,6 +217,7 @@ exports.decryptSymmetric = (input, salt) ->
   saltLen = salt.length
   decrypted = tokenAndSalt.substring saltLen, tokenAndSalt.length
   decrypted
+
 
 # callback (err, buffer, isAborted)
 exports.streamToBuffer = ( stream, capBuffer, callback ) ->
@@ -273,6 +290,7 @@ exports.streamToBuffer = ( stream, capBuffer, callback ) ->
     hasCalledBack = true
     callback winston.makeError 'streamToBuffer error',
         err: err
+
 
 exports.removeNullFields = (object, removeEmptyStrings, removeEmptyArrays) ->
   unless object then return object

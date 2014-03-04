@@ -14,12 +14,6 @@ initActions = [
   constants.initAction.CONNECT_MONGO
 ]
 
-postInit = () ->
-  run (error) ->
-    if error then winston.handleError error
-    mongooseConnect.disconnect()
-    winston.doInfo 'done.'
-
 userId = '52f706661edc38e84c397b2a'
 
 run = (callback) ->
@@ -33,5 +27,11 @@ run = (callback) ->
     callback()
   
 
+
+postInit = () ->
+  run (error) ->
+    if error then winston.handleError error
+    mongooseConnect.disconnect()
+    winston.doInfo 'Done.'
 
 appInitUtils.initApp 'contactTouchesMapReduce', initActions, postInit

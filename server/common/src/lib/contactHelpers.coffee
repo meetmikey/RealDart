@@ -37,12 +37,42 @@ exports.addContact = (userId, service, contactServiceUser, callback) ->
 
       contactHelpers.mergeContacts contactToSave, newContact
 
-    contactToSave.save (mongoError) ->
-      if mongoError then callback winston.makeMongoError mongoError; return
+    contactHelpers.saveContact contactToSave, (error) ->
+      if error then callback error; return
 
       contactHelpers.deleteContactsWithReplacement userId, contactsToDelete, contactToSave, (error) ->
         if error then callback error; return
         callback null, contactToSave
+
+
+exports.saveContact = (contact, callback) ->
+  unless contact then callback winston.makeMissingParamError 'contact'; return
+
+  # import images...
+  contact.imageURLs = contact.imageURLs || []
+  async.eachSeries imageURLs, (imageURL, eachSeriesCallback) ->
+    imageHelpers.importContactImage imageURL, contact, eachSeriesCallback
+  , (error) ->
+    if error
+      winston.handleError error
+      winston.doWarn 'contactHelpers.deleteContact: failed to delete contactImage',
+        contactId: contact._id
+        image: image
+
+    contactHelpers.setLowerCaseFields contact
+    contactHelpers.cleanDummyFields contact
+
+    contact.save (mongoError) ->
+      if mongoError then callback winston.makeMongoError mongoError; return
+      callback()
+
+
+exports.cleanDummyFields = (contact) ->
+  unless contact then winston.doMissingParamError 'contact'; return
+
+  contact.numTouches = undefined
+  contact.imageURLs = undefined
+  contact
 
 
 exports.deleteContactsWithReplacement = (userId, contactsToDelete, replacementContact, callback) ->
@@ -75,9 +105,22 @@ exports.deleteContactsWithReplacement = (userId, contactsToDelete, replacementCo
 
 exports.deleteContact = (contact, callback) ->
   unless contact then callback winston.makeMissingParamError 'contact'; return
-  contact.remove (error) ->
-    if error then callback winston.makeMongoError error; return
-    callback()
+
+  # Delete images from s3
+  contact.images = contact.images || []
+  async.each images, (image, eachCallback) ->
+    imageUtils.deleteContactImage image, eachCallback
+
+  , (error) ->
+    if error
+      winston.handleError error
+      winston.doWarn 'contactHelpers.deleteContact: failed to delete contactImage',
+        contactId: contact._id
+        image: image
+
+    contact.remove (error) ->
+      if error then callback winston.makeMongoError error; return
+      callback()
 
 
 exports.matchExistingContacts = (userId, contact, callback) ->
@@ -128,7 +171,6 @@ exports.matchExistingContacts = (userId, contact, callback) ->
           matchedContacts.push dbMatchedContact
           break
 
-
     #Email is a strong match, so if we found any of those, return them all
     # (they will all be merged together)
     if foundEmailMatch
@@ -154,6 +196,7 @@ exports.buildContact = (userId, service, contactServiceUser) ->
 
   contactData =
     userId: userId
+    imageURLS: []
 
   if service is constants.service.GOOGLE
     contactData.googleContactId = contactServiceUser._id
@@ -172,7 +215,7 @@ exports.buildContact = (userId, service, contactServiceUser) ->
     contactData.firstName = contactServiceUser.first_name
     contactData.middleName = contactServiceUser.middle_name
     contactData.lastName = contactServiceUser.last_name
-    contactData.picURL = fbHelpers.getPicURL contactServiceUser._id
+    contactData.imageURLs.push fbHelpers.getImageURL contactServiceUser._id
 
   else if service is constants.service.LINKED_IN
     contactData.liUserId = contactServiceUser._id
@@ -181,7 +224,7 @@ exports.buildContact = (userId, service, contactServiceUser) ->
       contactData.emails = emailUtils.normalizeEmailAddressArray [contactServiceUser.emailAddress]
     contactData.firstName = contactServiceUser.firstName
     contactData.lastName = contactServiceUser.lastName
-    contactData.picURL = contactServiceUser.pictureUrl
+    contactData.imageURLs.push = contactServiceUser.pictureUrl
 
   else if service is constants.service.SENT_MAIL_TOUCH
     if contactServiceUser.email
@@ -194,7 +237,7 @@ exports.buildContact = (userId, service, contactServiceUser) ->
 
   utils.removeNullFields contactData, true, true
   contact = new ContactModel contactData
-  contactHelpers.setLowerCaseFields contact
+  contactHelpers.setLowerCaseFields existingContact
   contact
 
 
@@ -226,7 +269,6 @@ exports.mergeContacts = (existingContact, newContact) ->
     'firstName'
     'middleName'
     'lastName'
-    'picURL'
   ]
 
   for mergeField in mergeFields
@@ -235,6 +277,8 @@ exports.mergeContacts = (existingContact, newContact) ->
 
   arrayMergeFields = [
     'emails'
+    'images'
+    'imageURLs'
   ]
 
   for arrayMergeField in arrayMergeFields

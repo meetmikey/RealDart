@@ -176,7 +176,7 @@ exports.getFacebookFriends = (user, callback) ->
 
         callback null, fbFriends
 
-exports.getPicURL = (fbUserId) ->
+exports.getImageURL = (fbUserId) ->
   unless fbUserId then return ''
   url = 'http://graph.facebook.com/' + fbUserId + '/picture?type=large'
   url

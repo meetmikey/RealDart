@@ -19,6 +19,7 @@ exports.webGet = ( url, asBuffer, callback ) ->
   #Pass null, so we use the default
   webUtils.webGetWithRedirects url, asBuffer, null, callback
 
+
 exports.webGetWithoutRedirects = ( url, asBuffer, callback ) ->
   #winston.doInfo 'webGetWithoutRedirects', {url: url}
 
@@ -104,6 +105,7 @@ exports.webGetAttempt = ( url, asBuffer, remainingRedirectsToFollow, originalURL
         hasHandled = true
         request.abort()
         request = null
+
 
 exports.handleWebGetResponse = ( response, asBuffer, remainingRedirectsToFollow, url, originalURL, request, callback ) ->
 
@@ -207,6 +209,7 @@ exports.getPrintableResponseInfo = ( response, callback ) ->
       winston.doWarn 'webUtils: getResponseInfo: never called back!'
       callback null, info
   , constants.RESPONSE_MAX_WAIT_MS
+
 
 exports.isWebResponseTooBig = (response) ->
   if response?.headers?['content-length']

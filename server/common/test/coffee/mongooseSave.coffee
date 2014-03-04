@@ -12,12 +12,6 @@ initActions = [
   constants.initAction.CONNECT_MONGO
 ]
 
-postInit = () ->
-  run (error) ->
-    if error then winston.handleError error
-    mongooseConnect.disconnect()
-    winston.doInfo 'done.'
-
 run = (callback) ->
 
   c1 = new ContactModel
@@ -48,5 +42,11 @@ run = (callback) ->
     callback()
 
 
+
+postInit = () ->
+  run (error) ->
+    if error then winston.handleError error
+    mongooseConnect.disconnect()
+    winston.doInfo 'Done.'
 
 appInitUtils.initApp 'mongooseSave', initActions, postInit

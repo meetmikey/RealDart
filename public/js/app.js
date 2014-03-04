@@ -982,7 +982,6 @@
       return RD.Helper.user.getUser(true, (function(_this) {
         return function(error, user) {
           if (error || !user) {
-            rdLog('account getUser fail');
             callback('fail');
             return;
           }
@@ -1146,9 +1145,6 @@
             return;
           }
           _this.contacts = new RD.Collection.ContactSummary(responseData.contacts);
-          rdLog('got contacts...', {
-            contactsSize: _this.contacts.size()
-          });
           return callback();
         };
       })(this));
@@ -1483,6 +1479,7 @@
 
   RDContactDecorator = (function() {
     function RDContactDecorator() {
+      this.getImage = __bind(this.getImage, this);
       this.decorate = __bind(this.decorate, this);
     }
 
@@ -1491,10 +1488,22 @@
       object = {};
       object.fullName = model.getFullName();
       object.primaryEmail = model.get('primaryEmail');
-      object.picURL = model.get('picURL');
+      object.image = this.getImage(model);
       object.emails = model.get('emails');
       object.numTouches = model.get('numTouches');
       return object;
+    };
+
+    RDContactDecorator.prototype.getImage = function(model) {
+      var images;
+      if (!model) {
+        return '';
+      }
+      images = model.get('images');
+      if (images && images.length) {
+        return images[0];
+      }
+      return '';
     };
 
     return RDContactDecorator;
@@ -1511,6 +1520,7 @@
 
   RDContactSummaryDecorator = (function() {
     function RDContactSummaryDecorator() {
+      this.getImage = __bind(this.getImage, this);
       this.decorate = __bind(this.decorate, this);
     }
 
@@ -1520,11 +1530,23 @@
       object._id = model.get('_id');
       object.fullName = model.getFullName();
       object.primaryEmail = model.get('primaryEmail');
-      object.picURL = model.get('picURL');
+      object.image = this.getImage(model);
       object.fbUser = model.get('fbUser');
       object.liUser = model.get('liUser');
       object.numTouches = model.get('numTouches');
       return object;
+    };
+
+    RDContactSummaryDecorator.prototype.getImage = function(model) {
+      var images;
+      if (!model) {
+        return '';
+      }
+      images = model.get('images');
+      if (images && images.length) {
+        return images[0];
+      }
+      return '';
     };
 
     return RDContactSummaryDecorator;
