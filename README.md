@@ -14,6 +14,7 @@
   - *export REAL_DART_HOME='/home/jdurack/source/RealDart'*
   - *export AWS_PREFIX='justin'*
 - *cd* to server/web/app and create a symlink to /public with *ln -s ../../../public/ public*
+- Add *127.0.0.1 localhost local.realdart.com* to your */etc/hosts* file
 
 ### Building
 - Open a terminal and go to each of the following directores, and run *npm install*, then *grunt*.  Just leave grunt running to continuosly build changes.
