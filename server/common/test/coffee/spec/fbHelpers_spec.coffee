@@ -2,18 +2,6 @@ commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
 
 fbHelpers = require commonAppDir + '/lib/fbHelpers'
 
-describe "getUpdateJSONForUser", ()->
-  it "test generic case", () ->
-    userData =
-      'hello' : 'world'
-      'more' : 'keys'
-      '_id' : 'someId'
-
-    updateJSON = JSON.stringify(fbHelpers.getUpdateJSONForUser userData)
-    expectedUpdateJson = JSON.stringify({$set : {'hello' : 'world', 'more' : 'keys'}})
-
-    expect(updateJSON).toBe(expectedUpdateJson)
-
 describe "getFriendsFromFQLResponse", ()->
   it "test generic case", () ->
     fqlData = [ 
