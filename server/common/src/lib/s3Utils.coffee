@@ -20,6 +20,7 @@ exports.getClient = () ->
       key: conf.aws.key
       secret: conf.aws.secret
       bucket: conf.aws.s3.bucket
+      region: conf.aws.s3.region
   knoxClient
 
 
