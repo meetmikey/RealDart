@@ -662,7 +662,7 @@
     Base.prototype.bailPath = null;
 
     Base.prototype.initialize = function(data) {
-      data = data || {};
+      data || (data = {});
       _.each(data, (function(_this) {
         return function(value, key) {
           return _this[key] = value;
@@ -719,7 +719,7 @@
       var fullViewClassName, subView, subViewClass;
       fullViewClassName = 'RD.View.' + subViewDefinition.viewClassName;
       subViewClass = RD.Helper.utils.getClassFromName(fullViewClassName);
-      subViewData = subViewData || {};
+      subViewData || (subViewData = {});
       subViewData._selector = subViewDefinition.selector;
       subViewData._parentView = this;
       subViewData._classNameSuffix = subViewDefinition.viewClassName;
@@ -1479,7 +1479,7 @@
 
   RDContactDecorator = (function() {
     function RDContactDecorator() {
-      this.getImage = __bind(this.getImage, this);
+      this.getImageURL = __bind(this.getImageURL, this);
       this.decorate = __bind(this.decorate, this);
     }
 
@@ -1488,20 +1488,20 @@
       object = {};
       object.fullName = model.getFullName();
       object.primaryEmail = model.get('primaryEmail');
-      object.image = this.getImage(model);
+      object.imageURL = this.getImageURL(model);
       object.emails = model.get('emails');
       object.numTouches = model.get('numTouches');
       return object;
     };
 
-    RDContactDecorator.prototype.getImage = function(model) {
-      var images;
+    RDContactDecorator.prototype.getImageURL = function(model) {
+      var imageURLs;
       if (!model) {
         return '';
       }
-      images = model.get('images');
-      if (images && images.length) {
-        return images[0];
+      imageURLs = model.get('imageURLs');
+      if (imageURLs && imageURLs.length) {
+        return imageURLs[0];
       }
       return '';
     };
@@ -1520,7 +1520,7 @@
 
   RDContactSummaryDecorator = (function() {
     function RDContactSummaryDecorator() {
-      this.getImage = __bind(this.getImage, this);
+      this.getImageURL = __bind(this.getImageURL, this);
       this.decorate = __bind(this.decorate, this);
     }
 
@@ -1530,21 +1530,21 @@
       object._id = model.get('_id');
       object.fullName = model.getFullName();
       object.primaryEmail = model.get('primaryEmail');
-      object.image = this.getImage(model);
+      object.imageURL = this.getImageURL(model);
       object.fbUser = model.get('fbUser');
       object.liUser = model.get('liUser');
       object.numTouches = model.get('numTouches');
       return object;
     };
 
-    RDContactSummaryDecorator.prototype.getImage = function(model) {
-      var images;
+    RDContactSummaryDecorator.prototype.getImageURL = function(model) {
+      var imageURLs;
       if (!model) {
         return '';
       }
-      images = model.get('images');
-      if (images && images.length) {
-        return images[0];
+      imageURLs = model.get('imageURLs');
+      if (imageURLs && imageURLs.length) {
+        return imageURLs[0];
       }
       return '';
     };

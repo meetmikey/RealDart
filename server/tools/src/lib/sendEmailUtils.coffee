@@ -44,7 +44,7 @@ exports.getEmailTemplateHTML = (templateName, templateData) ->
   winston.doInfo 'partials',
     partials: Handlebars.partials
 
-  templateData = templateData || {}
+  templateData ||= {}
   fullTemplateName = 'src/templates/' + templateName + '.html'
   emailTemplate = templates[fullTemplateName]
   emailHTML = emailTemplate templateData

@@ -7,6 +7,7 @@ TouchModel = require( '../schema/touch').TouchModel
 winston = require('./winstonWrapper').winston
 basicUtils = require './basicUtils'
 emailUtils = require './emailUtils'
+s3Utils = require './s3Utils'
 utils = require './utils'
 
 constants = require '../constants'
@@ -50,7 +51,7 @@ exports.saveContact = (contact, callback) ->
   unless contact then callback winston.makeMissingParamError 'contact'; return
 
   # import images...
-  contact.imageURLs = contact.imageURLs || []
+  contact.imageURLs ||= []
   async.eachSeries contact.imageURLs, (imageURL, eachSeriesCallback) ->
     imageUtils.importContactImage imageURL, contact, eachSeriesCallback
   , (error) ->
@@ -79,7 +80,7 @@ exports.cleanDummyFields = (contact) ->
 exports.deleteContactsWithReplacement = (userId, contactsToDelete, replacementContact, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
 
-  contactsToDelete = contactsToDelete || []
+  contactsToDelete ||= []
   async.each contactsToDelete, (contactToDelete, eachCallback) ->
 
     unless replacementContact
@@ -108,7 +109,7 @@ exports.deleteContact = (contact, callback) ->
   unless contact then callback winston.makeMissingParamError 'contact'; return
 
   # Delete images from s3
-  contact.images = contact.images || []
+  contact.images ||= []
   async.each images, (image, eachCallback) ->
     imageUtils.deleteContactImage image, eachCallback
 
@@ -284,7 +285,7 @@ exports.mergeContacts = (existingContact, newContact) ->
 
   for arrayMergeField in arrayMergeFields
 
-    existingContact[arrayMergeField] = existingContact[arrayMergeField] || []
+    existingContact[arrayMergeField] ||= []
 
     unless newContact[arrayMergeField] and newContact[arrayMergeField].length
       continue
@@ -460,6 +461,7 @@ exports.sanitizeContact = (contact) ->
     'firstNameLower'
     'middleNameLower'
     'lastNameLower'
+    'images'
   ]
 
   for field in fieldsToRemove
@@ -476,7 +478,7 @@ exports.getAllContactsWithTouchCounts = (userId, callback) ->
   ContactModel.find select, (mongoError, contacts) ->
     if mongoError then callback winston.makeMongoError mongoError; return
 
-    contacts = contacts || []
+    contacts ||= []
     for contact, index of contacts
       contacts[index] = contactHelpers.sanitizeContact contact
 
@@ -491,7 +493,7 @@ exports.getAllContactsWithTouchCounts = (userId, callback) ->
     TouchModel.mapReduce mapReduce, (mongoError, mrResults) ->
       if mongoError then callback winston.makeMongoError mongoError; return
 
-      mrResults = mrResults || []
+      mrResults ||= []
       firstResult = null
       if mrResults and mrResults.length
         firstResult = mrResults[0]
@@ -506,3 +508,14 @@ exports.getAllContactsWithTouchCounts = (userId, callback) ->
             break
 
       callback null, contacts
+
+
+exports.signImageURLs = (contact) ->
+  unless contact then wiston.doMissingParamError 'contact'; return
+
+  contact.images ||= []
+  contact.imageURLs ||= []
+  for image in contact.images
+    s3Path = imageUtils.getContactImageS3Path image
+    imageURL = s3Utils.signedURL s3Path
+    contact.imageURLs.push imageURL

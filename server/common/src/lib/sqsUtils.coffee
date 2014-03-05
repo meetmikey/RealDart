@@ -88,6 +88,7 @@ exports._initQueues = () ->
     queuePath = '/' + conf.aws.accountId + '/' + conf.aws.sqs.queueNamePrefix + utils.capitalize queueName
     queueOptions =
       path: queuePath
+      host: conf.aws.sqs.host
     queue = aws.createSQSClient conf.aws.key, conf.aws.secret, queueOptions
     sqsUtils._queues[queueName] = queue
 

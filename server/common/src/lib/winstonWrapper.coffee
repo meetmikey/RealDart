@@ -38,8 +38,8 @@ winston.setErrorType = (winstonError, type) ->
 
 winston.setFlag = (winstonError, flagName, value) ->
   unless winstonError then return
-  winstonError.extra = winstonError.extra || {}
-  winstonError.extra.flag = winstonError.extra.flag || {}
+  winstonError.extra ||= {}
+  winstonError.extra.flag ||= {}
   winstonError.extra.flag[flagName] = value
 
 winston.getFlag = (winstonError, flagName) ->

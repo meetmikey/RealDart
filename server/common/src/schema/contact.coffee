@@ -23,7 +23,11 @@ Contact = new Schema
 
   #DUMMIES
   numTouches: {type: Number}
-  imageURLs: {type: [String]} # temporary storage for imageURLs (before we import them into s3)
+
+  # Double purpose...
+  #  Temporary storage for imageURLs (before we import them into s3)
+  #  And signedURLs of images when we are about to display them
+  imageURLs: {type: [String]}
 
 Contact.index {userId: 1, emails: 1}, {sparse: 1}
 Contact.index {userId: 1, lastNameLower: 1}, {sparse: 1}

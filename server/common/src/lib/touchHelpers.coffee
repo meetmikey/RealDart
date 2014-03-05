@@ -76,7 +76,7 @@ exports.getContactFromEmail = (userId, googleUserId, email, fullName, contacts, 
   unless email then callback winston.makeMissingParamError 'email'; return
 
   foundContact = null
-  contacts = contacts || []
+  contacts ||= []
   for contact in contacts
     if contact.emails.indexOf( email ) isnt -1
       if foundContact

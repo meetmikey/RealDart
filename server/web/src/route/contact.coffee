@@ -19,6 +19,11 @@ exports.getContacts = (req, res) ->
   contactHelpers.getAllContactsWithTouchCounts req.user._id, (error, contacts) ->
     if error then winston.handleError error, res; return
 
+    contacts ||= []
+    for contact in contacts
+      contactHelpers.signImageURLs contact
+      contactHelpers.sanitizeContact contact
+
     routeUtils.sendOK res,
       contacts: contacts
 
@@ -40,7 +45,8 @@ exports.getContact = (req, res) ->
   ContactModel.findOne select, (mongoError, contact) ->
     if mongoError then winston.doMongoError mongoError, {}, res; return
 
-    contact = contactHelpers.sanitizeContact contact
+    contactHelpers.signImageURLs contact
+    contactHelpers.sanitizeContact contact
 
     getFBUser = (fbUserId, cb) ->
       unless fbUserId then cb(); return

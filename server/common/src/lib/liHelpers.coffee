@@ -19,7 +19,7 @@ exports.getUserJSONFromConnection = (connection) ->
   liHelpers.getUserJSONFromProfileData connection
 
 exports.getUserJSONFromProfileData = (profileData) ->
-  profileData = profileData || {}
+  profileData ||= {}
   userJSON = {}
   omitKeys = [
   ]

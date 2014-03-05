@@ -69,7 +69,7 @@ function program5(depth0,data) {
   
   var buffer = "", stack1;
   buffer += "\n  <img src='"
-    + escapeExpression(((stack1 = ((stack1 = (depth0 && depth0.contact)),stack1 == null || stack1 === false ? stack1 : stack1.image)),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
+    + escapeExpression(((stack1 = ((stack1 = (depth0 && depth0.contact)),stack1 == null || stack1 === false ? stack1 : stack1.imageURL)),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
     + "' style='width:100px;height:100px;'/>\n";
   return buffer;
   }
@@ -118,7 +118,7 @@ function program12(depth0,data) {
   stack1 = helpers['if'].call(depth0, (depth0 && depth0.contact), {hash:{},inverse:self.program(3, program3, data),fn:self.program(1, program1, data),data:data});
   if(stack1 || stack1 === 0) { buffer += stack1; }
   buffer += "\n</h3>\n\n";
-  stack2 = helpers['if'].call(depth0, ((stack1 = (depth0 && depth0.contact)),stack1 == null || stack1 === false ? stack1 : stack1.image), {hash:{},inverse:self.noop,fn:self.program(5, program5, data),data:data});
+  stack2 = helpers['if'].call(depth0, ((stack1 = (depth0 && depth0.contact)),stack1 == null || stack1 === false ? stack1 : stack1.imageURL), {hash:{},inverse:self.noop,fn:self.program(5, program5, data),data:data});
   if(stack2 || stack2 === 0) { buffer += stack2; }
   buffer += "\n\nnumber of touches: "
     + escapeExpression(((stack1 = ((stack1 = (depth0 && depth0.contact)),stack1 == null || stack1 === false ? stack1 : stack1.numTouches)),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
@@ -147,7 +147,7 @@ function program1(depth0,data) {
   else { stack1 = (depth0 && depth0._id); stack1 = typeof stack1 === functionType ? stack1.call(depth0, {hash:{},data:data}) : stack1; }
   buffer += escapeExpression(stack1)
     + "'>\n    ";
-  stack1 = helpers['if'].call(depth0, (depth0 && depth0.image), {hash:{},inverse:self.noop,fn:self.program(2, program2, data),data:data});
+  stack1 = helpers['if'].call(depth0, (depth0 && depth0.imageURL), {hash:{},inverse:self.noop,fn:self.program(2, program2, data),data:data});
   if(stack1 || stack1 === 0) { buffer += stack1; }
   buffer += "\n    ";
   stack1 = helpers['if'].call(depth0, (depth0 && depth0.fullName), {hash:{},inverse:self.noop,fn:self.program(4, program4, data),data:data});
@@ -166,8 +166,8 @@ function program2(depth0,data) {
   
   var buffer = "", stack1;
   buffer += "\n      <img src=\"";
-  if (stack1 = helpers.image) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
-  else { stack1 = (depth0 && depth0.image); stack1 = typeof stack1 === functionType ? stack1.call(depth0, {hash:{},data:data}) : stack1; }
+  if (stack1 = helpers.imageURL) { stack1 = stack1.call(depth0, {hash:{},data:data}); }
+  else { stack1 = (depth0 && depth0.imageURL); stack1 = typeof stack1 === functionType ? stack1.call(depth0, {hash:{},data:data}) : stack1; }
   buffer += escapeExpression(stack1)
     + "\" style='height:20px;width:20px;'/>\n    ";
   return buffer;

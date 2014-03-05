@@ -3,8 +3,9 @@
   "version": "0.0.1",
   "private": true,
   "dependencies": {
-      "jsonwebtoken" : "~>0.1.0"
-    , "express" : "~>3.4.8"
+      "async": "~>0.2.10"
+    , "jsonwebtoken": "~>0.1.0"
+    , "express": "~>3.4.8"
     , "express-jwt": "~>0.1.1"
     , "ejs": "~>0.8.5"
     , "passport" : "~>0.2.0"

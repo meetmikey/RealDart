@@ -27,7 +27,7 @@ exports.signedURL = (s3Path, filename, expireMinutesInput) ->
   unless s3Path then winston.doMissingParamError 's3Path'; return ''
   
   unless filename
-    winston.doWarn 's3Utils.signedURL: no filename'
+    #winston.doWarn 's3Utils.signedURL: no filename'
     filename = 'file'
 
   expireMinutes = constants.S3_DEFAULT_LINK_EXPIRE_MINUTES

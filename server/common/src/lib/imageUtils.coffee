@@ -24,7 +24,7 @@ exports.importContactImage = (imageURL, contact, callback) ->
     s3Utils.putStream response, s3Path, responseHeaders, false, (error) ->
       if error then callback error; return
 
-      contact.images = contact.images || []
+      contact.images ||= []
       contact.images.push s3Filename
 
       contact.save (mongoError) ->

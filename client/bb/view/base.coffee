@@ -20,7 +20,7 @@ class RD.View.Base extends Backbone.View
   #public, but don't overide these ones...
   initialize: (data) =>
     #there's probably a one-liner way to do this data assignment.  Cody would know it.
-    data = data || {}
+    data ||= {}
     _.each data, (value, key) =>
       @[key] = value
     @preInitialize()
@@ -58,7 +58,7 @@ class RD.View.Base extends Backbone.View
   addSubView: (name, subViewDefinition, subViewData) =>
     fullViewClassName = 'RD.View.' + subViewDefinition.viewClassName
     subViewClass = RD.Helper.utils.getClassFromName fullViewClassName
-    subViewData = subViewData || {}
+    subViewData ||= {}
     subViewData._selector = subViewDefinition.selector
     subViewData._parentView = this
     subViewData._classNameSuffix = subViewDefinition.viewClassName
