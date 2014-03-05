@@ -25,8 +25,13 @@
   - server/worker
 
 ### AWS
-- Add SQS queues for each of the queues listed in *serverCommon/conf.queue*.  They should be named your $AWS_PREFIX + the camelCase queue name (e.g. justinDataImport)
-- Add an s3 bucket named $AWS_PREFIX + '-realdart'
+- Add SQS queues for each of the queues listed in *serverCommon/conf.queue*.  They should be named your $AWS_PREFIX + the camelCase queue name (e.g. 'justinDataImport').  Give each queue the following configuration:
+  - Default visibility timeout: 10 minutes
+  - Message retention period: 14 days
+  - Maximum message size: 256KB (the default)
+  - Delivery delay: 0 seconds (the default)
+  - Receive message wait time: 20 seconds
+- Add an s3 bucket named $AWS_PREFIX + '-realdart' (e.g. 'justin-realdart')
   - Then create a folder for each of the folders listed in *serverCommon/conf.aws.s3.folder*
 
 ### Run it
