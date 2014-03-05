@@ -64,10 +64,12 @@ exports.putStream = (stream, s3Path, headers, useGzip, callback) ->
   unless s3Path then callback winston.makeMissingParamError 's3Path'; return
   if useGzip then callback winston.makeError 's3Utils.putStream: useGzip not yet supported'; return
 
+  ###
   winston.doInfo 's3Utils.putStream...',
     s3Path: s3Path
     headers: headers
     useGzip: useGzip
+  ###
   
   hasCalledBack = false
   s3Utils.getClient().putStream stream, s3Path, headers, (s3Err, response) ->
@@ -149,8 +151,10 @@ exports.getFile = (s3Path, useGzip, callback) ->
 exports.deleteFile = (s3Path, callback) ->
   unless s3Path then callback winston.makeMissingParamError 's3Path'; return
 
+  ###
   winston.doInfo 's3Utils: deleteFile...',
     s3Path: s3Path
+  ###
 
   hasCalledBack = false
   s3Utils.getClient().deleteFile s3Path, (s3Err, res) ->

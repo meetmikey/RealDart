@@ -20,12 +20,15 @@ exports.importContactImage = (imageURL, contact, callback) ->
 
     s3Filename = imageUtils.getS3FilenameForNewContactImage contact
     s3Path = imageUtils.getContactImageS3Path s3Filename
+    s3FileHeaders = {}
+    if responseHeaders?['content-type'] then s3FileHeaders['content-type'] = responseHeaders['content-type']
+    if responseHeaders?['content-length'] then s3FileHeaders['content-length'] = responseHeaders['content-length']
 
-    s3Utils.putStream response, s3Path, responseHeaders, false, (error) ->
+    s3Utils.putStream response, s3Path, s3FileHeaders, false, (error) ->
       if error then callback error; return
 
-      contact.images ||= []
-      contact.images.push s3Filename
+      contact.imageS3Filenames ||= []
+      contact.imageS3Filenames.push s3Filename
 
       contact.save (mongoError) ->
         if mongoError then callback winston.makeMongoError mongoError; return
@@ -38,14 +41,10 @@ exports.importContactImage = (imageURL, contact, callback) ->
 exports.getS3FilenameForNewContactImage = (contact) ->
   unless contact then winston.doMissingParamError 'contact'; return ''
 
-  imageIndex = 0
-  if contact.images and contact.images.length
-    imageIndex = contact.images.length
-
   # kind of dumb, but use randomString to avoid race conditions
-  randomString = utils.getRandomId 5
+  randomString = utils.getRandomId 8
 
-  s3Filename = 'img_' + contact._id + '_' + imageIndex.toString() + '_' + randomString
+  s3Filename = 'img_' + contact._id + '_' + randomString
   s3Filename
 
 

@@ -17,17 +17,17 @@ Contact = new Schema
   middleNameLower: {type: String}
   lastName: {type: String}
   lastNameLower: {type: String}
-  images: {type: [String]}
+  imageS3Filenames: {type: [String]}
 
   timestamp: {type: Date, default: Date.now}
 
   #DUMMIES
-  numTouches: {type: Number}
+  numTouches: {}
 
   # Double purpose...
   #  Temporary storage for imageURLs (before we import them into s3)
   #  And signedURLs of images when we are about to display them
-  imageURLs: {type: [String]}
+  imageURLs: {}
 
 Contact.index {userId: 1, emails: 1}, {sparse: 1}
 Contact.index {userId: 1, lastNameLower: 1}, {sparse: 1}

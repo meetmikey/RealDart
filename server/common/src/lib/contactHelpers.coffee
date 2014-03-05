@@ -52,17 +52,23 @@ exports.saveContact = (contact, callback) ->
 
   # import images...
   contact.imageURLs ||= []
-  async.eachSeries contact.imageURLs, (imageURL, eachSeriesCallback) ->
-    imageUtils.importContactImage imageURL, contact, eachSeriesCallback
+  async.each contact.imageURLs, (imageURL, eachCallback) ->
+    imageUtils.importContactImage imageURL, contact, (error) ->
+      if error
+        eachCallback winston.makeError 'importContactImage failed',
+          contactId: contact._id
+          imageURL: imageURL
+          importError: error
+          contactImageURLs: contact.imageURLs
+          contact: contact
+      else
+        eachCallback()
   , (error) ->
     if error
       winston.handleError error
-      winston.doWarn 'contactHelpers.deleteContact: failed to delete contactImage',
-        contactId: contact._id
-        image: image
 
     contactHelpers.setLowerCaseFields contact
-    contactHelpers.cleanDummyFields contact
+    contact = contactHelpers.cleanDummyFields contact
 
     contact.save (mongoError) ->
       if mongoError then callback winston.makeMongoError mongoError; return
@@ -109,16 +115,19 @@ exports.deleteContact = (contact, callback) ->
   unless contact then callback winston.makeMissingParamError 'contact'; return
 
   # Delete images from s3
-  contact.images ||= []
-  async.each images, (image, eachCallback) ->
-    imageUtils.deleteContactImage image, eachCallback
-
+  contact.imageS3Filenames ||= []
+  async.each contact.imageS3Filenames, (imageS3Filename, eachCallback) ->
+    imageUtils.deleteContactImage imageS3Filename, (error) ->
+      if error
+        eachCallback winston.makeError 'deleteContactImage failed',
+          contactId: contact._id
+          imageS3Filename: imageS3Filename
+          deleteError: error
+      else
+        eachCallback()
   , (error) ->
     if error
       winston.handleError error
-      winston.doWarn 'contactHelpers.deleteContact: failed to delete contactImage',
-        contactId: contact._id
-        image: image
 
     contact.remove (error) ->
       if error then callback winston.makeMongoError error; return
@@ -217,7 +226,9 @@ exports.buildContact = (userId, service, contactServiceUser) ->
     contactData.firstName = contactServiceUser.first_name
     contactData.middleName = contactServiceUser.middle_name
     contactData.lastName = contactServiceUser.last_name
-    contactData.imageURLs.push fbHelpers.getImageURL contactServiceUser._id
+    fbImageURL = fbHelpers.getImageURL contactServiceUser._id
+    if fbImageURL
+      contactData.imageURLs.push fbImageURL
 
   else if service is constants.service.LINKED_IN
     contactData.liUserId = contactServiceUser._id
@@ -226,7 +237,8 @@ exports.buildContact = (userId, service, contactServiceUser) ->
       contactData.emails = emailUtils.normalizeEmailAddressArray [contactServiceUser.emailAddress]
     contactData.firstName = contactServiceUser.firstName
     contactData.lastName = contactServiceUser.lastName
-    contactData.imageURLs.push contactServiceUser.pictureUrl
+    if contactServiceUser.pictureUrl
+      contactData.imageURLs.push contactServiceUser.pictureUrl
 
   else if service is constants.service.SENT_MAIL_TOUCH
     if contactServiceUser.email
@@ -279,7 +291,7 @@ exports.mergeContacts = (existingContact, newContact) ->
 
   arrayMergeFields = [
     'emails'
-    'images'
+    'imageS3Filenames'
     'imageURLs'
   ]
 
@@ -461,7 +473,7 @@ exports.sanitizeContact = (contact) ->
     'firstNameLower'
     'middleNameLower'
     'lastNameLower'
-    'images'
+    'imageS3Filenames'
   ]
 
   for field in fieldsToRemove
@@ -513,9 +525,9 @@ exports.getAllContactsWithTouchCounts = (userId, callback) ->
 exports.signImageURLs = (contact) ->
   unless contact then wiston.doMissingParamError 'contact'; return
 
-  contact.images ||= []
+  contact.imageS3Filenames ||= []
   contact.imageURLs ||= []
-  for image in contact.images
-    s3Path = imageUtils.getContactImageS3Path image
+  for imageS3Filename in contact.imageS3Filenames
+    s3Path = imageUtils.getContactImageS3Path imageS3Filename
     imageURL = s3Utils.signedURL s3Path
     contact.imageURLs.push imageURL
