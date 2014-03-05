@@ -9,13 +9,6 @@
 - mongo
 - grunt
 
-### Environment
-- Add local environment variables to your ~/.bashrc file
-  - *export REAL_DART_HOME='/home/jdurack/source/RealDart'*
-  - *export AWS_PREFIX='justin'*
-- *cd* to server/web/app and create a symlink to /public with *ln -s ../../../public/ public*
-- Add *127.0.0.1 localhost local.realdart.com* to your */etc/hosts* file
-
 ### Building
 - Open a terminal and go to each of the following directores, and run *npm install*, then *grunt*.  Just leave grunt running to continuosly build changes.
   - client
@@ -33,6 +26,13 @@
   - Receive message wait time: 20 seconds
 - Add an s3 bucket named $AWS_PREFIX + '-realdart' (e.g. 'justin-realdart')
   - Then create a folder for each of the folders listed in *serverCommon/conf.aws.s3.folder*
+
+### Environment
+- Add local environment variables to your ~/.bashrc file
+  - *export REAL_DART_HOME='/home/jdurack/source/RealDart'*
+  - *export AWS_PREFIX='justin'*
+- *cd* to server/web/app and create a symlink to /public with *ln -s ../../../public/ public*
+- Add *127.0.0.1 localhost local.realdart.com* to your */etc/hosts* file
 
 ### Run it
 - Web: *cd* to /server and run *node web/app/app.js*
