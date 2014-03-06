@@ -8,6 +8,7 @@ commonConstants = require commonAppDir + '/constants'
 
 dataImportHelpers = require './lib/dataImportHelpers'
 mailDownloadHelpers = require './lib/mailDownloadHelpers'
+cleanupContactHelpers = require './lib/cleanupContactHelpers'
 
 constants = require './constants'
 
@@ -27,6 +28,7 @@ exports.startPolling = () ->
   if process.argv and process.argv.length > 2
     maxWorkers = process.argv[2]
 
+  sqsUtils.pollQueue commonConf.queue.cleanupContacts, cleanupContactHelpers.doCleanupContactsJob, maxWorkers
   sqsUtils.pollQueue commonConf.queue.dataImport, dataImportHelpers.doDataImportJob, maxWorkers
   sqsUtils.pollQueue commonConf.queue.mailDownload, mailDownloadHelpers.doMailDownloadJob, maxWorkers
   sqsUtils.pollQueue commonConf.queue.mailHeaderDownload, mailDownloadHelpers.doMailHeaderDownloadJob, maxWorkers

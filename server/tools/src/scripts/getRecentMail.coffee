@@ -35,36 +35,42 @@ run = (callback) ->
       callback()
       return
 
-    async.eachSeries googleUsers, (googleUser, eachSeriesCallback) ->
+    async.each googleUsers, (googleUser, eachCallback) ->
 
       winston.doInfo 'processing googleUser...',
         googleUserId: googleUser._id
         email: googleUser.email
 
       getUserAndEmailAccountState googleUser._id, (error, user, emailAccountState) ->
-        if error then eachSeriesCallback error; return
-        unless user then eachSeriesCallback winston.makeError 'no user'; return
+        if error then eachCallback error; return
+        unless user then eachCallback winston.makeError 'no user'; return
         unless emailAccountState
           winston.doWarn 'no emailAccountState',
             email: googleUser.email
-          eachSeriesCallback()
+          eachCallback()
           return
 
         minUID = emailAccountState.currentUIDNext
         maxUID = minUID + commonConstants.HEADER_BATCH_SIZE - 1
 
         emailImportUtils.importHeaders user._id, googleUser, minUID, maxUID, (error, uidNext) ->
-          if error then eachSeriesCallback error; return
-          unless uidNext then eachSeriesCallback winston.makeError 'no uidNext'; return
+          if error then eachCallback error; return
+          unless uidNext then eachCallback winston.makeError 'no uidNext'; return
+
+          #Didn't get any new mail
+          if uidNext is minUID then eachCallback(); return
 
           update =
             $set:
               currentUIDNext: uidNext
 
           EmailAccountStateModel.findByIdAndUpdate emailAccountState._id, update, (mongoError) ->
-            if mongoError then eachSeriesCallback winston.makeMongoError mongoError; return
+            if mongoError then eachCallback winston.makeMongoError mongoError; return
 
-            eachSeriesCallback()
+            # This is a little wasteful if we didn't actually add any new contacts, but it's ok for now...
+            cleanupContactsJob =
+              userId: userId
+            sqsUtils.addJobToQueue conf.queue.cleanupContacts, cleanupContactsJob, eachCallback
 
     , callback
 

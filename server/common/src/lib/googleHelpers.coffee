@@ -16,6 +16,7 @@ constants = require '../constants'
 
 googleHelpers = this
 
+
 exports.getUserJSONFromProfile = (profile) ->
   profileJSON = profile?._json || {}
 
@@ -31,6 +32,7 @@ exports.getUserJSONFromProfile = (profile) ->
     else
       userJSON[key] = value
   userJSON
+
 
 exports.getContactsJSONFromAPIData = (contactsAPIData) ->
   unless contactsAPIData then return {}
@@ -64,6 +66,7 @@ exports.getContactsJSONFromAPIData = (contactsAPIData) ->
 
   contacts
 
+
 exports.doDataImportJob = (job, callback) ->
   unless job then callback winston.makeMissingParamError 'job'; return
   unless job.userId then callback winston.makeMissingParamError 'job.userId'; return
@@ -73,11 +76,7 @@ exports.doDataImportJob = (job, callback) ->
   googleUserId = job.googleUserId
   GoogleUserModel.findById googleUserId, (mongoError, googleUser) ->
     if mongoError then callback winston.makeMongoError mongoError; return
-
-    unless googleUser
-      callback winston.makeError 'google user missing',
-        googleUserId: googleUserId
-      return
+    unless googleUser then callback winston.makeError 'no googleUser', {googleUserId: googleUserId}; return
 
     googleHelpers.getContacts userId, googleUser, (error) ->
       if error then callback error; return
@@ -86,7 +85,14 @@ exports.doDataImportJob = (job, callback) ->
         userId: userId
         googleUserId: googleUserId
 
-      sqsUtils.addJobToQueue conf.queue.mailDownload, mailDownloadJob, callback
+      sqsUtils.addJobToQueue conf.queue.mailDownload, mailDownloadJob, (error) ->
+        if error then callback error; return
+        
+        cleanupContactsJob =
+          userId: userId
+        
+        sqsUtils.addJobToQueue conf.queue.cleanupContacts, cleanupContactsJob, callback
+
 
 
 exports.getContacts = (userId, googleUser, callback) ->
@@ -109,14 +115,9 @@ exports.getContacts = (userId, googleUser, callback) ->
       if error then whilstCallback error; return
 
       rawContactsFromResponse = apiResonseData?.feed?.entry
-
       contactsData = googleHelpers.getContactsJSONFromAPIData rawContactsFromResponse
 
-      # async.eachSeries is slower but helps solve a document versioning problem I encountered.
-      # Google "versionerror: mongoose no matching document found" for more info.
-      # There's probably a better solution using better error handling
-      #   especially since this doesn't even guarantee safety with multiple workers.
-      async.eachSeries contactsData, (contactData, eachSeriesCallback) ->
+      async.each contactsData, (contactData, eachCallback) ->
         
         googleContact = new GoogleContactModel contactData
         googleContact.userId = userId
@@ -124,10 +125,10 @@ exports.getContacts = (userId, googleUser, callback) ->
 
         googleContact.save (mongoError) ->
           if mongoError and mongoError.code isnt constants.MONGO_ERROR_CODE_DUPLICATE
-            eachSeriesCallback winston.makeMongoError mongoError
+            eachCallback winston.makeMongoError mongoError
             return
 
-          contactHelpers.addContact userId, constants.service.GOOGLE, googleContact, eachSeriesCallback
+          contactHelpers.addContact userId, constants.service.GOOGLE, googleContact, eachCallback
 
       , (error) ->
         if rawContactsFromResponse and rawContactsFromResponse.length
@@ -157,7 +158,6 @@ exports.doAPIGet = (googleUser, path, extraData, callback) ->
     unless path.substring( 0, 1 ) is '/'
       url += '/'
     url += path + queryString
-
 
     utils.runWithRetries webUtils.webGet, constants.DEFAULT_API_CALL_ATTEMPTS
     , (error, buffer) ->

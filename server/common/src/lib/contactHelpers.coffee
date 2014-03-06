@@ -21,13 +21,23 @@ exports.addContact = (userId, service, contactServiceUser, callback) ->
   unless contactServiceUser then callback winston.makeMissingParamError 'contactServiceUser'; return
 
   newContact = contactHelpers.buildContact userId, service, contactServiceUser
+  contactHelpers.matchMergeSaveAndDeleteContact userId, newContact, false, callback
 
-  contactHelpers.matchExistingContacts userId, newContact, (error, existingContacts) ->
+
+# deleteThisContactOnMerge should be set to true if we're handling an existing contact...
+#  (e.g. during a cleanupContacts job)
+exports.matchMergeSaveAndDeleteContact = (userId, contact, deleteThisContactOnMerge, callback) ->
+  unless userId then callback winston.makeMissingParamError 'userId'; return
+  unless contact then callback winston.makeMissingParamError 'contact'; return
+
+  contactHelpers.matchExistingContacts userId, contact, (error, existingContacts) ->
     if error then callback error; return
 
-    contactsToDelete = []
-    contactToSave = newContact
+    contactsToDeleteOnMerge = []
+    contactToSave = contact
     if existingContacts and existingContacts.length
+      if deleteThisContactOnMerge
+        contactsToDeleteOnMerge.push contact
       contactToSave = existingContacts[0]
 
       #check for multi-merge (and delete) situation
@@ -35,14 +45,14 @@ exports.addContact = (userId, service, contactServiceUser, callback) ->
         for i in [1...existingContacts.length]
           existingContact = existingContacts[i]
           contactHelpers.mergeContacts contactToSave, existingContact
-          contactsToDelete.push existingContact
+          contactsToDeleteOnMerge.push existingContact
 
-      contactHelpers.mergeContacts contactToSave, newContact
+      contactHelpers.mergeContacts contactToSave, contact
 
     contactHelpers.saveContact contactToSave, (error) ->
       if error then callback error; return
 
-      contactHelpers.deleteContactsWithReplacement userId, contactsToDelete, contactToSave, (error) ->
+      contactHelpers.deleteContactsWithReplacement userId, contactsToDeleteOnMerge, contactToSave, (error) ->
         if error then callback error; return
         callback null, contactToSave
 
@@ -147,6 +157,8 @@ exports.matchExistingContacts = (userId, contact, callback) ->
   select =
     userId: userId
     '$or': []
+    _id:
+      '$ne': contact._id
 
   if contact.emails and contact.emails.length
     select['$or'].push
@@ -481,6 +493,7 @@ exports.sanitizeContact = (contact) ->
 
   contact
 
+
 exports.getAllContactsWithTouchCounts = (userId, callback) ->
   unless userId then callback winston.makeMissingParamError userId; return
 
@@ -531,3 +544,20 @@ exports.signImageURLs = (contact) ->
     s3Path = imageUtils.getContactImageS3Path imageS3Filename
     imageURL = s3Utils.signedURL s3Path
     contact.imageURLs.push imageURL
+
+
+exports.cleanupContacts = (userId, callback) ->
+  unless userId then callback winston.makeMissingParamError 'userId'; return
+
+  select =
+    userId: userId
+
+  ContactModel.find select, (mongoError, contacts) ->
+    if mongoError then callback winston.makeMongoError mongoError; return
+
+    contacts ||= []
+    #TODO: make sure this works if multiple cleanupContacts jobs are running at the same time...
+    async.eachSeries contacts, (contact, eachSeriesCallback) ->
+      contactHelpers.matchMergeSaveAndDeleteContact userId, contact, true, eachSeriesCallback
+
+    , callback

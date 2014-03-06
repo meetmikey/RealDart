@@ -33,9 +33,8 @@ exports.addTouchesFromEmail = (userId, emailJSON, callback) ->
   ContactModel.find select, (mongoError, foundContacts) ->
     if mongoError then callback winston.makeMongoError mongoError; return
 
-    #eachSeries is slower, but helps prevent contact conflicts
-    async.eachSeries recipients, (recipient, eachSeriesCallback) ->
-      touchHelpers.addTouchForEmailRecipient userId, emailJSON, recipient, foundContacts, eachSeriesCallback
+    async.each recipients, (recipient, eachCallback) ->
+      touchHelpers.addTouchForEmailRecipient userId, emailJSON, recipient, foundContacts, eachCallback
     , callback
 
 

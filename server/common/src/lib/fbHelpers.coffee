@@ -5,6 +5,7 @@ _ = require 'underscore'
 winston = require('./winstonWrapper').winston
 FBUserModel = require('../schema/fbUser').FBUserModel
 contactHelpers = require './contactHelpers'
+sqsUtils = require './sqsUtils'
 utils = require './utils'
 
 conf = require '../conf'
@@ -44,7 +45,13 @@ exports.doDataImportJob = (job, callback) ->
         fbUserId: fbUserId
       return
 
-    fbHelpers.fetchAndSaveFriendData userId, fbUser, callback
+    fbHelpers.fetchAndSaveFriendData userId, fbUser, (error) ->
+      if error then callback error; return
+
+      cleanupContactsJob =
+        userId: userId
+      
+      sqsUtils.addJobToQueue conf.queue.cleanupContacts, cleanupContactsJob, callback
 
 # get data on a user's friends and save it to the database
 exports.fetchAndSaveFriendData = (userId, fbUser, callback) ->
@@ -136,12 +143,8 @@ exports.saveFriendData = (userId, fbUser, friends, callback) ->
         else
           seriesCallback()
     (seriesCallback) ->
-      # async.eachSeries is slower but helps solve a document versioning problem I encountered.
-      # Google "versionerror: mongoose no matching document found" for more info.
-      # There's probably a better solution using better error handling
-      #   especially since this doesn't even guarantee safety with multiple workers.
-      async.eachSeries friends, (friend, eachSeriesCallback) ->
-        contactHelpers.addContact userId, constants.service.FACEBOOK, friend, eachSeriesCallback
+      async.each friends, (friend, eachCallback) ->
+        contactHelpers.addContact userId, constants.service.FACEBOOK, friend, eachCallback
       , (error) ->
         seriesCallback error
     ]

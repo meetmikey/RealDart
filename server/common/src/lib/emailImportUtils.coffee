@@ -39,10 +39,8 @@ exports.importHeaders = (userId, googleUser, minUID, maxUID, callback) ->
         imapHelpers.getHeaders userId, imapConnection, minUID, maxUID, (error, headersArray) ->
 
           headersArray ||= []
-
-          #eachSeries is slower, but helps prevent contact conflicts
-          async.eachSeries headersArray, (headers, eachSeriesCallback) ->
-            emailImportUtils.saveHeadersAndAddTouches userId, googleUser, headers, eachSeriesCallback
+          async.each headersArray, (headers, eachCallback) ->
+            emailImportUtils.saveHeadersAndAddTouches userId, googleUser, headers, eachCallback
 
           , (error) ->
             imapConnect.closeMailBoxAndLogout imapConnection, (imapLogoutError) ->

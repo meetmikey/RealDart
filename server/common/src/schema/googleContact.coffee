@@ -1,9 +1,6 @@
 mongoose = require 'mongoose'
 Schema = mongoose.Schema
 
-utils = require '../lib/utils'
-
-
 GoogleContact = new Schema
   userId: Schema.ObjectId
   googleUserId: {type: String}

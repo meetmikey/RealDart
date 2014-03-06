@@ -154,7 +154,13 @@ exports.doMailHeaderDownloadJob = (job, callback) ->
     emailImportUtils.importHeaders userId, googleUser, uidBatch.minUID, uidBatch.maxUID, (error) ->
       if error then callback error; return
 
-      mailDownloadHelpers.updateEmailAccountStateWithFinishedUIDBatch userId, googleUserId, uidBatch, callback
+      mailDownloadHelpers.updateEmailAccountStateWithFinishedUIDBatch userId, googleUserId, uidBatch, (error) ->
+        if error then callback error; return
+
+        cleanupContactsJob =
+          userId: userId
+        
+        sqsUtils.addJobToQueue commonConf.queue.cleanupContacts, cleanupContactsJob, callback
 
 
 exports.updateEmailAccountStateWithFinishedUIDBatch = (userId, googleUserId, uidBatch, callback) ->

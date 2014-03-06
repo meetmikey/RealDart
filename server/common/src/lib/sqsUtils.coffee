@@ -254,8 +254,11 @@ exports._addMessageToQueueNoRetry = ( queue, queueName, messageBodyJSON, delaySe
     sqsMessage['DelaySeconds'] = delaySeconds
 
   queue.call 'SendMessage', sqsMessage, ( sqsError, result ) ->
-    winston.doInfo 'Sent message to queue',
+
+    winston.doInfo 'added message to queue',
+      queueName: queueName
       messageBodyJSON: messageBodyJSON
+      
     if callback
       winstonError = null
       if sqsError
