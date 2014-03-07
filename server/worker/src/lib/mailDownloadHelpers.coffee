@@ -157,10 +157,10 @@ exports.doMailHeaderDownloadJob = (job, callback) ->
       mailDownloadHelpers.updateEmailAccountStateWithFinishedUIDBatch userId, googleUserId, uidBatch, (error) ->
         if error then callback error; return
 
-        cleanupContactsJob =
+        mergeContactsJob =
           userId: userId
         
-        sqsUtils.addJobToQueue commonConf.queue.cleanupContacts, cleanupContactsJob, callback
+        sqsUtils.addJobToQueue commonConf.queue.mergeContacts, mergeContactsJob, callback
 
 
 exports.updateEmailAccountStateWithFinishedUIDBatch = (userId, googleUserId, uidBatch, callback) ->

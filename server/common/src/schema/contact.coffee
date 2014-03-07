@@ -17,20 +17,22 @@ Contact = new Schema
   middleNameLower: {type: String}
   lastName: {type: String}
   lastNameLower: {type: String}
+  imageSourceURLs: {type: [String]}
   imageS3Filenames: {type: [String]}
+  sources: {type: [String]}
+
 
   timestamp: {type: Date, default: Date.now}
 
   #DUMMIES
   numTouches: {}
-
-  # Double purpose...
-  #  Temporary storage for imageURLs (before we import them into s3)
-  #  And signedURLs of images when we are about to display them
-  imageURLs: {}
+  imageURLs: {} # signed urls of images when we are about to display them
 
 Contact.index {userId: 1, emails: 1}, {sparse: 1}
 Contact.index {userId: 1, lastNameLower: 1}, {sparse: 1}
 
 mongoose.model 'Contact', Contact
 exports.ContactModel = mongoose.model 'Contact'
+
+mongoose.model 'SourceContact', Contact
+exports.SourceContactModel = mongoose.model 'SourceContact'

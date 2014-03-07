@@ -3,11 +3,13 @@ async = require 'async'
 fbHelpers = require './fbHelpers'
 imageUtils = require './imageUtils'
 ContactModel = require( '../schema/contact').ContactModel
+SourceContactModel = require( '../schema/contact').SourceContactModel
 TouchModel = require( '../schema/touch').TouchModel
 winston = require('./winstonWrapper').winston
 basicUtils = require './basicUtils'
 emailUtils = require './emailUtils'
 s3Utils = require './s3Utils'
+sqsUtils = require './sqsUtils'
 utils = require './utils'
 
 constants = require '../constants'
@@ -15,29 +17,56 @@ constants = require '../constants'
 contactHelpers = this
 
 
-exports.addContact = (userId, service, contactServiceUser, callback) ->
+exports.addSourceContact = (userId, contactSource, contactData, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
-  unless service then callback winston.makeMissingParamError 'service'; return
-  unless contactServiceUser then callback winston.makeMissingParamError 'contactServiceUser'; return
+  unless contactSource then callback winston.makeMissingParamError 'contactSource'; return
+  unless contactData then callback winston.makeMissingParamError 'contactData'; return
 
-  newContact = contactHelpers.buildContact userId, service, contactServiceUser
-  contactHelpers.matchMergeSaveAndDeleteContact userId, newContact, false, callback
+  sourceContact = contactHelpers.buildSourceContact userId, contactSource, contactData
+
+  select =
+    userId: userId
+    sources:
+      $in: [contactSource]
+
+  switch contactSource
+    when constants.contactSource.GOOGLE
+      select.googleContactId = sourceContact.googleContactId
+    when constants.contactSource.FACEBOOK
+      select.fbUserId = sourceContact.fbUserId
+    when constants.contactSource.LINKED_IN
+      select.liUserId = sourceContact.liUserId
+    when constants.contactSource.SENT_MAIL_TOUCH
+      select.primaryEmail = sourceContact.primaryEmail
+
+  update =
+    $set: sourceContact
+
+  options =
+    upsert: true
 
 
-# deleteThisContactOnMerge should be set to true if we're handling an existing contact...
-#  (e.g. during a cleanupContacts job)
-exports.matchMergeSaveAndDeleteContact = (userId, contact, deleteThisContactOnMerge, callback) ->
+  winston.doInfo 'addSourceContact',
+    select: select
+    update: update
+    options: options
+
+
+  SourceContactModel.update select, update, options, (mongoError) ->
+    if mongoError then callback winston.makeMongoError mongoError; return
+    callback()
+
+
+exports.mergeContactsFromSourceContact = (userId, sourceContact, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
-  unless contact then callback winston.makeMissingParamError 'contact'; return
+  unless sourceContact then callback winston.makeMissingParamError 'sourceContact'; return
 
-  contactHelpers.matchExistingContacts userId, contact, (error, existingContacts) ->
+  contactHelpers.matchExistingContacts userId, sourceContact, (error, existingContacts) ->
     if error then callback error; return
 
     contactsToDeleteOnMerge = []
-    contactToSave = contact
+    contactToSave = new ContactModel sourceContact
     if existingContacts and existingContacts.length
-      if deleteThisContactOnMerge
-        contactsToDeleteOnMerge.push contact
       contactToSave = existingContacts[0]
 
       #check for multi-merge (and delete) situation
@@ -60,29 +89,12 @@ exports.matchMergeSaveAndDeleteContact = (userId, contact, deleteThisContactOnMe
 exports.saveContact = (contact, callback) ->
   unless contact then callback winston.makeMissingParamError 'contact'; return
 
-  # import images...
-  contact.imageURLs ||= []
-  async.each contact.imageURLs, (imageURL, eachCallback) ->
-    imageUtils.importContactImage imageURL, contact, (error) ->
-      if error
-        eachCallback winston.makeError 'importContactImage failed',
-          contactId: contact._id
-          imageURL: imageURL
-          importError: error
-          contactImageURLs: contact.imageURLs
-          contact: contact
-      else
-        eachCallback()
-  , (error) ->
-    if error
-      winston.handleError error
+  contactHelpers.setLowerCaseFields contact
+  contact = contactHelpers.cleanDummyFields contact
 
-    contactHelpers.setLowerCaseFields contact
-    contact = contactHelpers.cleanDummyFields contact
-
-    contact.save (mongoError) ->
-      if mongoError then callback winston.makeMongoError mongoError; return
-      callback()
+  contact.save (mongoError) ->
+    if mongoError then callback winston.makeMongoError mongoError; return
+    callback()
 
 
 exports.cleanDummyFields = (contact) ->
@@ -144,6 +156,7 @@ exports.deleteContact = (contact, callback) ->
       callback()
 
 
+# NOTE: contact can be either a sourceContact or a normal contact
 exports.matchExistingContacts = (userId, contact, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
   unless contact then callback winston.makeMissingParamError 'contact'; return
@@ -215,51 +228,52 @@ exports.matchExistingContacts = (userId, contact, callback) ->
     callback null, matchedContacts
 
 
-exports.buildContact = (userId, service, contactServiceUser) ->
+exports.buildSourceContact = (userId, contactSource, contactData) ->
 
   contactData =
     userId: userId
-    imageURLs: []
+    imageSourceURLs: []
+    sources: [contactSource]
 
-  if service is constants.service.GOOGLE
-    contactData.googleContactId = contactServiceUser._id
-    contactData.googleUserId = contactServiceUser.googleUserId
-    contactData.primaryEmail = emailUtils.normalizeEmailAddress contactServiceUser.primaryEmail
-    contactData.emails = emailUtils.normalizeEmailAddressArray contactServiceUser.emails
-    contactData.firstName = contactServiceUser.firstName
-    contactData.middleName = contactServiceUser.middleName
-    contactData.lastName = contactServiceUser.lastName
+  if contactSource is constants.contactSource.GOOGLE
+    contactData.googleContactId = contactData._id
+    contactData.googleUserId = contactData.googleUserId
+    contactData.primaryEmail = emailUtils.normalizeEmailAddress contactData.primaryEmail
+    contactData.emails = emailUtils.normalizeEmailAddressArray contactData.emails
+    contactData.firstName = contactData.firstName
+    contactData.middleName = contactData.middleName
+    contactData.lastName = contactData.lastName
 
-  else if service is constants.service.FACEBOOK
-    contactData.fbUserId = contactServiceUser._id
-    if contactServiceUser.email
-      contactData.primaryEmail = emailUtils.normalizeEmailAddress contactServiceUser.email
-      contactData.emails = emailUtils.normalizeEmailAddressArray [contactServiceUser.email]
-    contactData.firstName = contactServiceUser.first_name
-    contactData.middleName = contactServiceUser.middle_name
-    contactData.lastName = contactServiceUser.last_name
-    fbImageURL = fbHelpers.getImageURL contactServiceUser._id
+  else if contactSource is constants.contactSource.FACEBOOK
+    contactData.fbUserId = contactData._id
+    if contactData.email
+      contactData.primaryEmail = emailUtils.normalizeEmailAddress contactData.email
+      contactData.emails = emailUtils.normalizeEmailAddressArray [contactData.email]
+    contactData.firstName = contactData.first_name
+    contactData.middleName = contactData.middle_name
+    contactData.lastName = contactData.last_name
+    fbImageURL = fbHelpers.getImageURL contactData._id
     if fbImageURL
-      contactData.imageURLs.push fbImageURL
+      contactData.imageSourceURLs.push fbImageURL
 
-  else if service is constants.service.LINKED_IN
-    contactData.liUserId = contactServiceUser._id
-    if contactServiceUser.emailAddress
-      contactData.primaryEmail = emailUtils.normalizeEmailAddress contactServiceUser.emailAddress
-      contactData.emails = emailUtils.normalizeEmailAddressArray [contactServiceUser.emailAddress]
-    contactData.firstName = contactServiceUser.firstName
-    contactData.lastName = contactServiceUser.lastName
-    if contactServiceUser.pictureUrl
-      contactData.imageURLs.push contactServiceUser.pictureUrl
+  else if contactSource is constants.contactSource.LINKED_IN
+    contactData.liUserId = contactData._id
+    if contactData.emailAddress
+      contactData.primaryEmail = emailUtils.normalizeEmailAddress contactData.emailAddress
+      contactData.emails = emailUtils.normalizeEmailAddressArray [contactData.emailAddress]
+    contactData.firstName = contactData.firstName
+    contactData.lastName = contactData.lastName
+    if contactData.pictureUrl
+      contactData.imageSourceURLs.push contactData.pictureUrl
 
-  else if service is constants.service.SENT_MAIL_TOUCH
-    if contactServiceUser.email
-      contactData.primaryEmail = emailUtils.normalizeEmailAddress contactServiceUser.email
-      contactData.emails = emailUtils.normalizeEmailAddressArray [contactServiceUser.email]
-    contactData.googleUserId = contactServiceUser.googleUserId
-    contactData.firstName = contactServiceUser.firstName
-    contactData.middleName = contactServiceUser.middleName
-    contactData.lastName = contactServiceUser.lastName
+  else if contactSource is constants.contactSource.SENT_MAIL_TOUCH
+    if contactData.email
+      contactData.primaryEmail = emailUtils.normalizeEmailAddress contactData.email
+      contactData.emails = emailUtils.normalizeEmailAddressArray [contactData.email]
+    contactData.googleUserId = contactData.googleUserId
+    contactData.firstName = contactData.firstName
+    contactData.middleName = contactData.middleName
+    contactData.lastName = contactData.lastName
 
   utils.removeNullFields contactData, true, true
   contact = new ContactModel contactData
@@ -304,7 +318,8 @@ exports.mergeContacts = (existingContact, newContact) ->
   arrayMergeFields = [
     'emails'
     'imageS3Filenames'
-    'imageURLs'
+    'imageSourceURLs'
+    'sources'
   ]
 
   for arrayMergeField in arrayMergeFields
@@ -546,18 +561,84 @@ exports.signImageURLs = (contact) ->
     contact.imageURLs.push imageURL
 
 
-exports.cleanupContacts = (userId, callback) ->
+exports.mergeContacts = (userId, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
 
-  select =
-    userId: userId
+  # Same lock for mergeContacts and importContactImages
+  lockKeyPrefix = constants.lock.keyPrefix.cleanupContacts
+  lockKey = lockKeyPrefix + userId
 
-  ContactModel.find select, (mongoError, contacts) ->
-    if mongoError then callback winston.makeMongoError mongoError; return
+  lockUtils.acquireLock lockKey, (error, success) ->
+    if error then callback error; return
+    unless success then callback winston.makeError 'failed to get cleanupContacts lock'; return
+  
+    select =
+      userId: userId
 
-    contacts ||= []
-    #TODO: make sure this works if multiple cleanupContacts jobs are running at the same time...
-    async.eachSeries contacts, (contact, eachSeriesCallback) ->
-      contactHelpers.matchMergeSaveAndDeleteContact userId, contact, true, eachSeriesCallback
+    SourceContactModel.find select, (mongoError, sourceContacts) ->
+      if mongoError
+        lockUtils.releaseLock lockKey, (error) ->
+          if error then winston.handleError error
+        callback winston.makeMongoError mongoError
+        return
 
-    , callback
+      sourceContacts ||= []
+      async.eachSeries sourceContacts, (sourceContact, eachSeriesCallback) ->
+        contactHelpers.mergeContactsFromSourceContact userId, sourceContact, eachSeriesCallback
+
+      , (error) ->
+        lockUtils.releaseLock lockKey, (error) ->
+          if error then winston.handleError error
+
+        if error then callback error; return
+
+        importContactImagesJob =
+          userId: userId
+
+        sqsUtils.addJobToQueue conf.queue.importContactImages, importContactImagesJob, callback
+
+
+exports.importContactImages = (userId, callback) ->
+  unless userId then callback winston.makeMissingParamError 'userId'; return
+
+  # Same lock for mergeContacts and importContactImages
+  lockKeyPrefix = constants.lock.keyPrefix.cleanupContacts
+  lockKey = lockKeyPrefix + userId
+
+  lockUtils.acquireLock lockKey, (error, success) ->
+    if error then callback error; return
+    unless success then callback winston.makeError 'failed to get cleanupContacts lock'; return
+
+    select =
+      userId: userId
+
+    ContactModel.find select, (mongoError, contacts) ->
+      if mongoError
+        lockUtils.releaseLock lockKey, (error) ->
+          if error then winston.handleError error
+        callback winston.makeMongoError mongoError
+        return
+
+      contacts ||= []
+      async.each contacts, (contact, eachCallback1) ->
+        
+        contact.imageSourceURLs ||= []
+        async.each contact.imageSourceURLs, (imageSourceURL, eachCallback2) ->
+
+          imageUtils.importContactImage imageSourceURL, contact, (error) ->
+            if error
+              eachCallback2 winston.makeError 'importContactImage failed',
+                contactId: contact._id
+                imageSourceURL: imageSourceURL
+                importError: error
+                contactImageURLs: contact.sourceImageURLs
+            else
+              eachCallback2()
+
+        , eachCallback1
+
+      , (error) ->
+        lockUtils.releaseLock lockKey, (error) ->
+          if error then winston.handleError error
+
+        callback error

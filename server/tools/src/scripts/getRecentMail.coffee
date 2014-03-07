@@ -68,9 +68,9 @@ run = (callback) ->
             if mongoError then eachCallback winston.makeMongoError mongoError; return
 
             # This is a little wasteful if we didn't actually add any new contacts, but it's ok for now...
-            cleanupContactsJob =
+            mergeContactsJob =
               userId: userId
-            sqsUtils.addJobToQueue conf.queue.cleanupContacts, cleanupContactsJob, eachCallback
+            sqsUtils.addJobToQueue conf.queue.mergeContacts, mergeContactsJob, eachCallback
 
     , callback
 

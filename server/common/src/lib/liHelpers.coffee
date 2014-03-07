@@ -51,10 +51,10 @@ exports.doDataImportJob = (job, callback) ->
     liHelpers.getConnections userId, liUser, (error) ->
       if error then callback error; return
 
-      cleanupContactsJob =
+      mergeContactsJob =
         userId: userId
       
-      sqsUtils.addJobToQueue conf.queue.cleanupContacts, cleanupContactsJob, callback
+      sqsUtils.addJobToQueue conf.queue.mergeContacts, mergeContactsJob, callback
 
 
 exports.getConnections = (userId, liUser, callback) ->
@@ -81,7 +81,7 @@ exports.getConnections = (userId, liUser, callback) ->
           eachCallback winston.makeMongoError mongoError
           return
 
-        contactHelpers.addContact userId, constants.service.LINKED_IN, connectionLIUser, eachCallback
+        contactHelpers.addSourceContact userId, constants.contactSource.LINKED_IN, connectionLIUser, eachCallback
 
     , callback
 

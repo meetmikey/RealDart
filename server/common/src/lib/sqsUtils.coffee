@@ -18,10 +18,12 @@ sqsUtils = this
 #  Public queue functions
 #  --------------------------------------
 
+
 exports.addJobToQueue = ( queueName, job, callback ) ->
   queue = sqsUtils._getQueue queueName
   unless queue then winston.doError 'missing queue', {queueName: queueName}; return
   sqsUtils._addMessageToQueue queue, queueName, job, 0, callback
+
 
 exports.pollQueue = ( queueName, handleMessage, maxWorkers, workerTimeout ) ->
   queue = sqsUtils._getQueue queueName
@@ -29,8 +31,10 @@ exports.pollQueue = ( queueName, handleMessage, maxWorkers, workerTimeout ) ->
   sqsUtils._pollQueue queue, queueName, handleMessage, maxWorkers, workerTimeout
 
 
+
 # Public special control functions
 # --------------------------------------
+
 
 exports.stopSignal = () ->
   sqsUtils._stopSignalReceived = true
@@ -38,6 +42,7 @@ exports.stopSignal = () ->
   winston.doInfo 'SQS: Received stop signal'
   if sqsUtils._getNumTotalWorkers() is 0
     winston.doInfo constants.message.SQS_ALL_WORKERS_DONE
+
 
 exports.setStopSignalForQueue = (queueName, reason) ->
   if sqsUtils._stopWorkForQueueReceived[queueName] then return
@@ -51,6 +56,7 @@ exports.setStopSignalForQueue = (queueName, reason) ->
 
   sesUtils.sendInternalNotificationEmail msg, subject, (error) ->
     if error then winston.handlError error
+
 
 #This is called by appInitUtils.
 # So for any app that will do worker jobs, just include the HANDLE_SQS_WORKERS initAction
@@ -78,8 +84,10 @@ exports.initWorkers = () ->
 # Private init and data functions
 # --------------------------------------
 
+
 exports._init = () ->
   sqsUtils._initQueues()
+
 
 exports._initQueues = () ->
   sqsUtils._queues = {}
@@ -92,12 +100,15 @@ exports._initQueues = () ->
     queue = aws.createSQSClient conf.aws.key, conf.aws.secret, queueOptions
     sqsUtils._queues[queueName] = queue
 
+
 exports._getQueue = (queueName) ->
   sqsUtils._queues?[queueName]
 
 
+
 #  Private SQS/Queue functions
 #  --------------------------------------
+
 
 exports._pollQueue = ( queue, queueName, handleMessage, maxWorkersInput, workerTimeoutInput ) ->
 
@@ -129,6 +140,7 @@ exports._pollQueue = ( queue, queueName, handleMessage, maxWorkersInput, workerT
 
 exports._getMessageFromQueue = ( queue, queueName, callback ) ->
   utils.runWithRetries sqsUtils._getMessageFromQueueNoRetry, constants.SQS_RETRIES, callback, queue, queueName
+
 
 exports._getMessageFromQueueNoRetry = ( queue, queueName, callback ) ->
 
@@ -207,6 +219,7 @@ exports._handleTooManyDequeues = (queue, queueName, sqsMessage, callback) ->
     sqsUtils._deleteMessageFromQueue queue, queueName, sqsMessage, () ->
       callback()
 
+
 exports._shouldDeleteFromQueue = (error) ->
   unless error
     return true
@@ -222,6 +235,7 @@ exports._shouldDeleteFromQueue = (error) ->
     return true
 
   return false
+
 
 exports._isTooManyDequeues = (sqsMessage) ->
   unless sqsMessage then return false
@@ -240,6 +254,7 @@ exports._isTooManyDequeues = (sqsMessage) ->
 
 exports._addMessageToQueue = ( queue, queueName, messageBodyJSON, delaySeconds, callback ) ->
   utils.runWithRetries sqsUtils._addMessageToQueueNoRetry, constants.SQS_RETRIES, callback, queue, queueName, messageBodyJSON, delaySeconds
+
 
 exports._addMessageToQueueNoRetry = ( queue, queueName, messageBodyJSON, delaySeconds, callback ) ->
   if not queue then callback winston.makeMissingParamError('queue'); return
@@ -268,8 +283,10 @@ exports._addMessageToQueueNoRetry = ( queue, queueName, messageBodyJSON, delaySe
           queueName: queueName
       callback winstonError, result
 
+
 exports._deleteMessageFromQueue = ( queue, queueName, sqsMessage, callback ) ->
   utils.runWithRetries sqsUtils._deleteMessageFromQueueNoRetry, constants.SQS_RETRIES, callback, queue, queueName, sqsMessage
+
 
 exports._deleteMessageFromQueueNoRetry = ( queue, queueName, sqsMessage, callback ) ->
   if not queue then callback winston.makeMissingParamError('queue'); return
@@ -301,6 +318,7 @@ exports._deleteMessageFromQueueNoRetry = ( queue, queueName, sqsMessage, callbac
         message: message
         queueName: queueName
       callback()
+
 
 exports._getSQSMessageAttribute = ( sqsMessage, attribute ) ->
   return sqsMessage?.ReceiveMessageResult?.Message?[attribute]
@@ -359,6 +377,7 @@ exports._workQueue = ( workerId, queue, queueName, maxWorkers, handleMessage, pr
           else
             winston.doError 'Double callback to _workQueue handleMessage'
 
+
 #A 'miss' is either an sqs error or 'no message'.
 exports._reworkQueue = ( workerId, queue, queueName, maxWorkers, handleMessage, isMiss, previousConsecutiveMisses ) ->
 
@@ -383,6 +402,7 @@ exports._reworkQueue = ( workerId, queue, queueName, maxWorkers, handleMessage, 
     sqsUtils._workQueue workerId, queue, queueName, maxWorkers, handleMessage, newConsecutiveMisses, maxWorkers
   , waitTime
 
+
 #consecutiveMisses should include the current miss.
 exports._getWorkQueueWaitTime = ( consecutiveMisses ) ->
   baseWait = constants.QUEUE_WAIT_TIME_BASE
@@ -392,6 +412,7 @@ exports._getWorkQueueWaitTime = ( consecutiveMisses ) ->
   if wait > constants.QUEUE_MAX_WAIT_TIME
     wait = constants.QUEUE_MAX_WAIT_TIME
   wait
+
 
 exports._checkWorkers = ( queue, queueName, handleMessage, maxWorkers, workerTimeout ) ->
 
@@ -436,6 +457,7 @@ exports._checkWorkers = ( queue, queueName, handleMessage, maxWorkers, workerTim
       newWorkersNeeded = maxWorkers - numWorkers
       sqsUtils._addNewWorkers newWorkersNeeded, queue, queueName, maxWorkers, handleMessage
 
+
 exports._addNewWorkers = ( numWorkers, queue, queueName, maxWorkers, handleMessage ) ->
 
   if not queue then winston.doMissingParamError('queue'); return
@@ -451,6 +473,7 @@ exports._addNewWorkers = ( numWorkers, queue, queueName, maxWorkers, handleMessa
     for [0...numWorkers]
       sqsUtils._addNewWorker queue, queueName, maxWorkers, handleMessage
 
+
 exports._addNewWorker = ( queue, queueName, maxWorkers, handleMessage ) ->
 
   if not queue then winston.doMissingParamError('queue'); return
@@ -460,6 +483,7 @@ exports._addNewWorker = ( queue, queueName, maxWorkers, handleMessage ) ->
 
   workerId = utils.getUniqueId()
   sqsUtils._addWorker workerId, queue, queueName, maxWorkers, handleMessage
+
 
 exports._addWorker = ( workerId, queue, queueName, maxWorkers, handleMessage ) ->
 
@@ -486,6 +510,7 @@ exports._addWorker = ( workerId, queue, queueName, maxWorkers, handleMessage ) -
     sqsUtils._workQueue workerId, queue, queueName, maxWorkers, handleMessage
   , 0
 
+
 exports._deleteWorker = ( queueName, workerId ) ->
 
   if not queueName then winston.doMissingParamError('queueName'); return
@@ -498,6 +523,7 @@ exports._deleteWorker = ( queueName, workerId ) ->
       clearInterval sqsUtils._checkWorkersIntervals[queueName]
       delete sqsUtils._checkWorkersIntervals[queueName]
     winston.doInfo constants.message.SQS_ALL_WORKERS_DONE
+
 
 #Assumes that the caller is already working, so he is included in the current count of workers.
 exports._isRoomToWork = ( queue, queueName, maxWorkers ) ->
@@ -524,6 +550,7 @@ exports._isRoomToWork = ( queue, queueName, maxWorkers ) ->
       
   return false
 
+
 exports._getNumWorkersOnQueue = ( queueName ) ->
   if not queueName then winston.doMissingParamError('queueName'); return 0
   numWorkersOnQueue = Object.keys( sqsUtils._workers[queueName] ).length
@@ -535,6 +562,7 @@ exports._getNumTotalWorkers = () ->
   for queueName of sqsUtils._workers
     totalWorkers += sqsUtils._getNumWorkersOnQueue queueName
   totalWorkers
+
 
 exports._updateWorkerLastContactTime = ( workerId, queue, queueName, maxWorkers, handleMessage, addIfMissing ) ->
   

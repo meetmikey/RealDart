@@ -48,10 +48,10 @@ exports.doDataImportJob = (job, callback) ->
     fbHelpers.fetchAndSaveFriendData userId, fbUser, (error) ->
       if error then callback error; return
 
-      cleanupContactsJob =
+      mergeContactsJob =
         userId: userId
       
-      sqsUtils.addJobToQueue conf.queue.cleanupContacts, cleanupContactsJob, callback
+      sqsUtils.addJobToQueue conf.queue.mergeContacts, mergeContactsJob, callback
 
 # get data on a user's friends and save it to the database
 exports.fetchAndSaveFriendData = (userId, fbUser, callback) ->
@@ -144,7 +144,7 @@ exports.saveFriendData = (userId, fbUser, friends, callback) ->
           seriesCallback()
     (seriesCallback) ->
       async.each friends, (friend, eachCallback) ->
-        contactHelpers.addContact userId, constants.service.FACEBOOK, friend, eachCallback
+        contactHelpers.addSourceContact userId, constants.contactSource.FACEBOOK, friend, eachCallback
       , (error) ->
         seriesCallback error
     ]

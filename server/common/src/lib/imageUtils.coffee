@@ -9,8 +9,8 @@ conf = require '../conf'
 imageUtils = this
 
 
-exports.importContactImage = (imageURL, contact, callback) ->
-  unless imageURL then callback winston.makeMissingParamError 'imageURL'; return
+exports.importContactImage = (imageSourceURL, contact, callback) ->
+  unless imageSourceURL then callback winston.makeMissingParamError 'imageSourceURL'; return
   unless contact then callback winston.makeMissingParamError 'contact'; return
 
   utils.runWithRetries webUtils.webGet, constants.DEFAULT_WEB_GET_ATTEMPTS
@@ -35,7 +35,7 @@ exports.importContactImage = (imageURL, contact, callback) ->
 
         callback null, s3Filename
 
-  , imageURL, false
+  , imageSourceURL, false
 
 
 exports.getS3FilenameForNewContactImage = (contact) ->

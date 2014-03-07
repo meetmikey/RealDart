@@ -43,9 +43,13 @@ module.exports =
     FACEBOOK: 'facebook'
     LINKED_IN: 'linkedIn'
     GOOGLE: 'google'
-    SENT_MAIL_TOUCH: 'sentMailTouch' #This is here because 'services' double as possible contact sources,
-                                     # one of which is finding the email in the sent mail
 
+  contactSource:
+    FACEBOOK: 'facebook'
+    LINKED_IN: 'linkedIn'
+    GOOGLE: 'google'
+    SENT_MAIL_TOUCH: 'sentMailTouch'
+    
   message:
     SQS_ALL_WORKERS_DONE: 'All workers done.'
 
@@ -61,10 +65,12 @@ module.exports =
     web:
       FOUR_OH_FOUR: '404'
 
-
-
-
-
+  lock:
+    BASE_WAIT_TIME: 10
+    MAX_WAIT_TIME: 1000 * 20
+    EXPIRE_TIME_SECONDS: 60 * 60 * 1 #1 hour
+    keyPrefix:
+      cleanupContacts: 'cleanupContacts-'
 
 
   #  NAME PARSING CONSTANTS

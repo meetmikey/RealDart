@@ -101,4 +101,4 @@ exports.getContactFromEmail = (userId, googleUserId, email, fullName, contacts, 
   if googleUserId
     userInfo.googleUserId = googleUserId
 
-  contactHelpers.addContact userId, constants.service.SENT_MAIL_TOUCH, userInfo, callback
+  contactHelpers.addSourceContact userId, constants.contactSource.SENT_MAIL_TOUCH, userInfo, callback

@@ -7,10 +7,20 @@ commonConstants = require commonAppDir + '/constants'
 
 cleanupContactHelpers = this
 
-exports.doCleanupContactsJob = (job, callback) ->
+
+exports.doMergeContactsJob = (job, callback) ->
   unless job then callback winston.makeMissingParamError 'job'; return
 
   userId = job.userId
   unless userId then callback winston.makeError 'no userId', {job: job}; return
 
-  contactHelpers.cleanupContacts userId, callback
+  contactHelpers.mergeContacts userId, callback
+
+
+exports.doImportContactImagesJob = (job, callback) ->
+  unless job then callback winston.makeMissingParamError 'job'; return
+
+  userId = job.userId
+  unless userId then callback winston.makeError 'no userId', {job: job}; return
+
+  contactHelpers.importContactImages userId, callback

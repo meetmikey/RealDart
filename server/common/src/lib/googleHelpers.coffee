@@ -88,10 +88,10 @@ exports.doDataImportJob = (job, callback) ->
       sqsUtils.addJobToQueue conf.queue.mailDownload, mailDownloadJob, (error) ->
         if error then callback error; return
         
-        cleanupContactsJob =
+        mergeContactsJob =
           userId: userId
         
-        sqsUtils.addJobToQueue conf.queue.cleanupContacts, cleanupContactsJob, callback
+        sqsUtils.addJobToQueue conf.queue.mergeContacts, mergeContactsJob, callback
 
 
 
@@ -128,7 +128,7 @@ exports.getContacts = (userId, googleUser, callback) ->
             eachCallback winston.makeMongoError mongoError
             return
 
-          contactHelpers.addContact userId, constants.service.GOOGLE, googleContact, eachCallback
+          contactHelpers.addSourceContact userId, constants.contactSource.GOOGLE, googleContact, eachCallback
 
       , (error) ->
         if rawContactsFromResponse and rawContactsFromResponse.length

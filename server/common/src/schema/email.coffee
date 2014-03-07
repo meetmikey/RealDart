@@ -13,6 +13,7 @@ Email = new Schema
   recipients: {type: [Recipient]}
   subject: {type: String}
   date: {type: Date}
+  timestamp: {type: Date, default: Date.now}
 
 Email.index {userId: 1, googleUserId: 1, uid: 1}, {unique : true}
 
