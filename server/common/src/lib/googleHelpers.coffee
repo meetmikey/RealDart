@@ -57,6 +57,17 @@ exports.getContactsJSONFromAPIData = (contactsAPIData) ->
   contacts
 
 
+exports.getGroupsJSONFromAPIData = (groupsAPIData) ->
+  unless groupsAPIData then return {}
+
+  groups = []
+  for groupDatum in groupsAPIData
+    systemGroupId = groupDatum?['gContact$systemGroup']?['id']
+    id = groupDatum.id?['$t']
+    title = groupDatum?['title']?['$t']
+    groups.push {systemGroupId : systemGroupId, title : title, id : id}
+  groups
+
 exports.addWebsites = (contact, apiData) ->
   unless contact then callback winston,makeMissingParamError 'contact'; return;
   unless apiData then callback winston,makeMissingParamError 'apiData'; return;
