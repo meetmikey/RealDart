@@ -56,8 +56,6 @@ exports.normalizeEmailAddress = (input) ->
     beforeAt = beforeAt.substring 0, plusIndex
 
 
-  console.log afterAt
-
   if afterAt == 'gmail.com'
     beforeAt = beforeAt.replace /\./g, ''
 

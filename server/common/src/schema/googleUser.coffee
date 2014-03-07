@@ -3,6 +3,11 @@ Schema = mongoose.Schema
 
 utils = require '../lib/utils'
 
+GoogleContactGroup = new Schema
+  systemGroupId : String,
+  title : String,
+  _id : {type : String, required : true, unique : true}
+
 GoogleUser = new Schema
   _id: {type: String, required: true, unique: true}
 
@@ -12,7 +17,6 @@ GoogleUser = new Schema
   accessTokenExpiresAt: {type: Date}
   refreshTokenEncrypted: {type: String}
   refreshTokenSalt: {type: String}
-
   email: {type: String}
   verified_email: {type: Boolean}
   name: {type: String}
@@ -21,7 +25,7 @@ GoogleUser = new Schema
   picture: {type: String}
   locale: {type: String}
   hd: {type: String}
-
+  contactGroups  : {type : [GoogleContactGroup]}
 
 GoogleUser.index {email: 1}, {unique : true}
 

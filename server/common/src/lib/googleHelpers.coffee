@@ -42,6 +42,8 @@ exports.getContactsJSONFromAPIData = (contactsAPIData) ->
     if title
       newContact.title = title
 
+    googleHelpers.addContactId(newContact, contactData)
+    googleHelpers.addContactGroupIds(newContact, contactData)
     googleHelpers.addName(newContact, contactData)
     googleHelpers.addEmails(newContact, contactData)
     googleHelpers.addPhoneNumbers(newContact, contactData)
@@ -51,11 +53,10 @@ exports.getContactsJSONFromAPIData = (contactsAPIData) ->
    
     #TODO: remove this check...
     #email is critical here, so only allow contacts with primaryEmail
-    if newContact.primaryEmail and emailUtils.isValidEmail newContact.primaryEmail
+    if (newContact.primaryEmail and emailUtils.isValidEmail newContact.primaryEmail) or newContact.phoneNumbers?.length
       contacts.push newContact
 
   contacts
-
 
 exports.getGroupsJSONFromAPIData = (groupsAPIData) ->
   unless groupsAPIData then return {}
@@ -63,22 +64,33 @@ exports.getGroupsJSONFromAPIData = (groupsAPIData) ->
   groups = []
   for groupDatum in groupsAPIData
     systemGroupId = groupDatum?['gContact$systemGroup']?['id']
-    id = groupDatum.id?['$t']
+    _id = groupDatum.id?['$t']?.split("/base/")[1]
     title = groupDatum?['title']?['$t']
-    groups.push {systemGroupId : systemGroupId, title : title, id : id}
+    groups.push {systemGroupId : systemGroupId, title : title, _id : _id}
   groups
 
-exports.addWebsites = (contact, apiData) ->
-  unless contact then callback winston,makeMissingParamError 'contact'; return;
-  unless apiData then callback winston,makeMissingParamError 'apiData'; return;
+exports.addContactId = (contact, apiData) ->
+  return unless contact and apiData
+  contact.contactId = apiData['id']?['$t']?.split("/base/")[1]
 
-  websites = apiData['gContact$website']  
+exports.addContactGroupIds = (contact, apiData) ->
+  return unless contact and apiData
+  groups = apiData['gContact$groupMembershipInfo']
+  if groups
+    contact.groupIds = []
+    for group in groups
+      newGroupId = group['href']?.split("/base/")[1]
+      contact.groupIds.push(newGroupId)
+
+exports.addWebsites = (contact, apiData) ->
+  return unless contact and apiData
+
+  websites = apiData['gContact$website']
   if websites
     contact.websites = websites
 
 exports.addAddresses = (contact, apiData) ->
-  unless contact then callback winston,makeMissingParamError 'contact'; return;
-  unless apiData then callback winston,makeMissingParamError 'apiData'; return;
+  return unless contact and apiData
 
   addressess = apiData['gd$structuredPostalAddress']
   if addressess
@@ -94,16 +106,14 @@ exports.addAddresses = (contact, apiData) ->
 
 
 exports.addBirthday = (contact, apiData) ->
-  unless contact then callback winston,makeMissingParamError 'contact'; return;
-  unless apiData then callback winston,makeMissingParamError 'apiData'; return;
+  return unless contact and apiData
 
   birthday = apiData['gContact$birthday']
   if birthday
     contact.birthday = birthday.when
 
 exports.addName = (contact, apiData) ->
-  unless contact then callback winston,makeMissingParamError 'contact'; return;
-  unless apiData then callback winston,makeMissingParamError 'apiData'; return;
+  return unless contact and apiData
 
   contactName = apiData['gd$name']
   contact.firstName = contactName?['gd$givenName']?['$t']
@@ -111,8 +121,7 @@ exports.addName = (contact, apiData) ->
   contact.lastName = contactName?['gd$familyName']?['$t']
 
 exports.addEmails = (contact, apiData) ->
-  unless contact then callback winston,makeMissingParamError 'contact'; return;
-  unless apiData then callback winston,makeMissingParamError 'apiData'; return;
+  return unless contact and apiData
 
   emailsData = apiData['gd$email']
   contact.emails = []
@@ -125,8 +134,7 @@ exports.addEmails = (contact, apiData) ->
       contact.emails.push emailAddress
 
 exports.addPhoneNumbers = (contact, apiData) ->
-  unless contact then callback winston,makeMissingParamError 'contact'; return;
-  unless apiData then callback winston,makeMissingParamError 'apiData'; return;
+  return unless contact and apiData
 
   phoneNumbers = apiData['gd$phoneNumber']
   if phoneNumbers
@@ -153,15 +161,35 @@ exports.doDataImportJob = (job, callback) ->
         googleUserId: googleUserId
       return
 
-    googleHelpers.getContacts userId, googleUser, (error) ->
+    googleHelpers.getContactGroups userId, googleUser, (error, groupsData) ->
       if error then callback error; return
 
-      mailDownloadJob =
-        userId: userId
-        googleUserId: googleUserId
+      console.log groupsData
+      #add the contact groups to the user
+      googleUser.contactGroups = groupsData
+      console.log googleUser
+      googleUser.save (error) ->
+        if error then callback error; return
 
-      sqsUtils.addJobToQueue conf.queue.mailDownload, mailDownloadJob, callback
+        googleHelpers.getContacts userId, googleUser, (error) ->
+          if error then callback error; return
 
+          mailDownloadJob =
+            userId: userId
+            googleUserId: googleUserId
+
+          sqsUtils.addJobToQueue conf.queue.mailDownload, mailDownloadJob, callback
+
+
+exports.getContactGroups = (userId, googleUser, callback) ->
+  unless userId then callback winston.makeMissingParamError 'userId'; return
+  unless googleUser then callback winston.makeMissingParamError 'googleUser'; return
+
+  path = '/groups/' + googleUser.email + '/full'
+  googleHelpers.doAPIGet googleUser, path, {}, (error, apiResponseData) ->
+    return callback error if error
+
+    callback null, googleHelpers.getGroupsJSONFromAPIData apiResponseData?.feed?.entry
 
 exports.getContacts = (userId, googleUser, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
