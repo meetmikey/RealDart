@@ -1,5 +1,4 @@
 bcrypt = require 'bcrypt'
-
 utils = require './utils'
 winston = require('./winstonWrapper').winston
 UserModel = require('../schema/user').UserModel

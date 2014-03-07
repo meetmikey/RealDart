@@ -1,0 +1,660 @@
+{
+    "feed": {
+        "category": [
+            {
+                "term": "http://schemas.google.com/contact/2008#contact", 
+                "scheme": "http://schemas.google.com/g/2005#kind"
+            }
+        ], 
+        "updated": {
+            "$t": "2014-03-07T01:13:59.825Z"
+        }, 
+        "xmlns$gd": "http://schemas.google.com/g/2005", 
+        "generator": {
+            "$t": "Contacts", 
+            "version": "1.0", 
+            "uri": "http://www.google.com/m8/feeds"
+        }, 
+        "title": {
+            "$t": "Sagar Mehta's Contacts"
+        }, 
+        "author": [
+            {
+                "name": {
+                    "$t": "Sagar Mehta"
+                }, 
+                "email": {
+                    "$t": "svmknicks33@gmail.com"
+                }
+            }
+        ], 
+        "openSearch$itemsPerPage": {
+            "$t": "10"
+        }, 
+        "xmlns$gContact": "http://schemas.google.com/contact/2008", 
+        "openSearch$startIndex": {
+            "$t": "1"
+        }, 
+        "xmlns$batch": "http://schemas.google.com/gdata/batch", 
+        "xmlns": "http://www.w3.org/2005/Atom", 
+        "link": [
+            {
+                "href": "http://www.google.com/", 
+                "type": "text/html", 
+                "rel": "alternate"
+            }, 
+            {
+                "href": "https://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/full?v=3.0", 
+                "type": "application/atom+xml", 
+                "rel": "http://schemas.google.com/g/2005#feed"
+            }, 
+            {
+                "href": "https://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/full?v=3.0", 
+                "type": "application/atom+xml", 
+                "rel": "http://schemas.google.com/g/2005#post"
+            }, 
+            {
+                "href": "https://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/full/batch?v=3.0", 
+                "type": "application/atom+xml", 
+                "rel": "http://schemas.google.com/g/2005#batch"
+            }, 
+            {
+                "href": "https://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/full?alt=json&start-index=1&max-results=10&v=3.0", 
+                "type": "application/atom+xml", 
+                "rel": "self"
+            }, 
+            {
+                "href": "https://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/full?alt=json&start-index=11&max-results=10&v=3.0", 
+                "type": "application/atom+xml", 
+                "rel": "next"
+            }
+        ], 
+        "xmlns$openSearch": "http://a9.com/-/spec/opensearch/1.1/", 
+        "gd$etag": "W/\"Dk8HSHY5fSt7I2A9Wh9XEUg.\"", 
+        "entry": [
+            {
+                "category": [
+                    {
+                        "term": "http://schemas.google.com/contact/2008#contact", 
+                        "scheme": "http://schemas.google.com/g/2005#kind"
+                    }
+                ], 
+                "updated": {
+                    "$t": "2014-03-07T01:13:28.018Z"
+                }, 
+                "gContact$groupMembershipInfo": [
+                    {
+                        "deleted": "false", 
+                        "href": "http://www.google.com/m8/feeds/groups/svmknicks33%40gmail.com/base/6"
+                    }
+                ], 
+                "gd$name": {
+                    "gd$familyName": {
+                        "$t": "Mehta"
+                    }, 
+                    "gd$givenName": {
+                        "$t": "Sahil"
+                    }, 
+                    "gd$fullName": {
+                        "$t": "Sahil Mehta"
+                    }
+                }, 
+                "title": {
+                    "$t": "Sahil Mehta"
+                }, 
+                "gd$structuredPostalAddress": [
+                    {
+                        "rel": "http://schemas.google.com/g/2005#home", 
+                        "gd$formattedAddress": {
+                            "$t": "41 E 8th Street \nChicago , Il 60605"
+                        }, 
+                        "gd$city": {
+                            "$t": "Chicago"
+                        }, 
+                        "gd$street": {
+                            "$t": "41 E 8th Street"
+                        }, 
+                        "gd$region": {
+                            "$t": "Il"
+                        }, 
+                        "gd$postcode": {
+                            "$t": "60605"
+                        }
+                    }
+                ], 
+                "gContact$website": [
+                    {
+                        "href": "http://www.google.com/profiles/116117910582161066588", 
+                        "rel": "profile"
+                    }
+                ], 
+                "link": [
+                    {
+                        "href": "https://www.google.com/m8/feeds/photos/media/svmknicks33%40gmail.com/2?v=3.0", 
+                        "type": "image/*", 
+                        "rel": "http://schemas.google.com/contacts/2008/rel#photo"
+                    }, 
+                    {
+                        "href": "https://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/full/2?v=3.0", 
+                        "type": "application/atom+xml", 
+                        "rel": "self"
+                    }, 
+                    {
+                        "href": "https://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/full/2?v=3.0", 
+                        "type": "application/atom+xml", 
+                        "rel": "edit"
+                    }
+                ], 
+                "gd$email": [
+                    {
+                        "primary": "true", 
+                        "rel": "http://schemas.google.com/g/2005#other", 
+                        "address": "svmehta@gmail.com"
+                    }, 
+                    {
+                        "rel": "http://schemas.google.com/g/2005#other", 
+                        "address": "svm2004@columbia.edu"
+                    }, 
+                    {
+                        "rel": "http://schemas.google.com/g/2005#other", 
+                        "address": "sahilspam@gmail.com"
+                    }
+                ], 
+                "gd$etag": "\"SX46cDVSLit7I2A9Wh9XEUgOTwQ.\"", 
+                "gd$phoneNumber": [
+                    {
+                        "$t": "516-301-7290", 
+                        "rel": "http://schemas.google.com/g/2005#mobile"
+                    }
+                ], 
+                "app$edited": {
+                    "xmlns$app": "http://www.w3.org/2007/app", 
+                    "$t": "2014-03-07T01:13:28.018Z"
+                }, 
+                "id": {
+                    "$t": "http://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/base/2"
+                }, 
+                "gContact$birthday": {
+                    "when": "1984-02-03"
+                }
+            }, 
+            {
+                "category": [
+                    {
+                        "term": "http://schemas.google.com/contact/2008#contact", 
+                        "scheme": "http://schemas.google.com/g/2005#kind"
+                    }
+                ], 
+                "updated": {
+                    "$t": "2013-05-11T10:25:58.856Z"
+                }, 
+                "gd$name": {
+                    "gd$givenName": {
+                        "$t": "svmknicks33@gmail.com"
+                    }, 
+                    "gd$fullName": {
+                        "$t": "svmknicks33@gmail.com"
+                    }
+                }, 
+                "title": {
+                    "$t": "svmknicks33@gmail.com"
+                }, 
+                "gContact$nickname": {
+                    "$t": "svmknicks33@gmail.com"
+                }, 
+                "link": [
+                    {
+                        "href": "https://www.google.com/m8/feeds/photos/media/svmknicks33%40gmail.com/3?v=3.0", 
+                        "type": "image/*", 
+                        "rel": "http://schemas.google.com/contacts/2008/rel#photo", 
+                        "gd$etag": "\"TGVOEHVAbCt7I2BaOxAbWgpcJEMCL2IiTDM.\""
+                    }, 
+                    {
+                        "href": "https://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/full/3?v=3.0", 
+                        "type": "application/atom+xml", 
+                        "rel": "self"
+                    }, 
+                    {
+                        "href": "https://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/full/3?v=3.0", 
+                        "type": "application/atom+xml", 
+                        "rel": "edit"
+                    }
+                ], 
+                "gd$email": [
+                    {
+                        "primary": "true", 
+                        "rel": "http://schemas.google.com/g/2005#other", 
+                        "address": "svmknicks33@gmail.com"
+                    }
+                ], 
+                "gd$etag": "\"SXY-fjVSLit7I2A9WhBbEksNTgE.\"", 
+                "app$edited": {
+                    "xmlns$app": "http://www.w3.org/2007/app", 
+                    "$t": "2013-05-11T10:25:58.856Z"
+                }, 
+                "id": {
+                    "$t": "http://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/base/3"
+                }
+            }, 
+            {
+                "category": [
+                    {
+                        "term": "http://schemas.google.com/contact/2008#contact", 
+                        "scheme": "http://schemas.google.com/g/2005#kind"
+                    }
+                ], 
+                "updated": {
+                    "$t": "2013-12-17T00:06:17.096Z"
+                }, 
+                "gContact$groupMembershipInfo": [
+                    {
+                        "deleted": "false", 
+                        "href": "http://www.google.com/m8/feeds/groups/svmknicks33%40gmail.com/base/6"
+                    }
+                ], 
+                "gd$name": {
+                    "gd$familyName": {
+                        "$t": "Kuncham"
+                    }, 
+                    "gd$givenName": {
+                        "$t": "Vivek"
+                    }, 
+                    "gd$fullName": {
+                        "$t": "Vivek Kuncham"
+                    }
+                }, 
+                "title": {
+                    "$t": "Vivek Kuncham"
+                }, 
+                "gContact$website": [
+                    {
+                        "href": "http://www.google.com/profiles/100863583587918785217", 
+                        "rel": "profile"
+                    }
+                ], 
+                "link": [
+                    {
+                        "href": "https://www.google.com/m8/feeds/photos/media/svmknicks33%40gmail.com/4?v=3.0", 
+                        "type": "image/*", 
+                        "rel": "http://schemas.google.com/contacts/2008/rel#photo"
+                    }, 
+                    {
+                        "href": "https://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/full/4?v=3.0", 
+                        "type": "application/atom+xml", 
+                        "rel": "self"
+                    }, 
+                    {
+                        "href": "https://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/full/4?v=3.0", 
+                        "type": "application/atom+xml", 
+                        "rel": "edit"
+                    }
+                ], 
+                "gd$email": [
+                    {
+                        "primary": "true", 
+                        "rel": "http://schemas.google.com/g/2005#home", 
+                        "address": "vivek.kuncham@gmail.com"
+                    }
+                ], 
+                "gd$etag": "\"Rn4yfjVSLit7I2A9Wh5UEk4CQAM.\"", 
+                "gd$phoneNumber": [
+                    {
+                        "$t": "516-286-8876", 
+                        "rel": "http://schemas.google.com/g/2005#mobile"
+                    }
+                ], 
+                "app$edited": {
+                    "xmlns$app": "http://www.w3.org/2007/app", 
+                    "$t": "2013-12-17T00:06:17.096Z"
+                }, 
+                "id": {
+                    "$t": "http://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/base/4"
+                }
+            }, 
+            {
+                "category": [
+                    {
+                        "term": "http://schemas.google.com/contact/2008#contact", 
+                        "scheme": "http://schemas.google.com/g/2005#kind"
+                    }
+                ], 
+                "updated": {
+                    "$t": "2010-01-27T20:08:10.643Z"
+                }, 
+                "gd$name": {
+                    "gd$familyName": {
+                        "$t": "Brock"
+                    }, 
+                    "gd$givenName": {
+                        "$t": "William"
+                    }, 
+                    "gd$nameSuffix": {
+                        "$t": "(Exchange)"
+                    }, 
+                    "gd$fullName": {
+                        "$t": "Brock, William (Exchange)"
+                    }
+                }, 
+                "title": {
+                    "$t": "Brock, William (Exchange)"
+                }, 
+                "link": [
+                    {
+                        "href": "https://www.google.com/m8/feeds/photos/media/svmknicks33%40gmail.com/5?v=3.0", 
+                        "type": "image/*", 
+                        "rel": "http://schemas.google.com/contacts/2008/rel#photo"
+                    }, 
+                    {
+                        "href": "https://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/full/5?v=3.0", 
+                        "type": "application/atom+xml", 
+                        "rel": "self"
+                    }, 
+                    {
+                        "href": "https://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/full/5?v=3.0", 
+                        "type": "application/atom+xml", 
+                        "rel": "edit"
+                    }
+                ], 
+                "gd$email": [
+                    {
+                        "primary": "true", 
+                        "rel": "http://schemas.google.com/g/2005#other", 
+                        "address": "wbrock@bear.com"
+                    }
+                ], 
+                "gd$etag": "\"QXg_ezVSLyt7I2A9WxBXFk8ITw0.\"", 
+                "app$edited": {
+                    "xmlns$app": "http://www.w3.org/2007/app", 
+                    "$t": "2010-01-27T20:08:10.643Z"
+                }, 
+                "id": {
+                    "$t": "http://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/base/5"
+                }
+            }, 
+            {
+                "category": [
+                    {
+                        "term": "http://schemas.google.com/contact/2008#contact", 
+                        "scheme": "http://schemas.google.com/g/2005#kind"
+                    }
+                ], 
+                "updated": {
+                    "$t": "2007-09-27T06:31:27.993Z"
+                }, 
+                "title": {
+                    "$t": ""
+                }, 
+                "link": [
+                    {
+                        "href": "https://www.google.com/m8/feeds/photos/media/svmknicks33%40gmail.com/a?v=3.0", 
+                        "type": "image/*", 
+                        "rel": "http://schemas.google.com/contacts/2008/rel#photo"
+                    }, 
+                    {
+                        "href": "https://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/full/a?v=3.0", 
+                        "type": "application/atom+xml", 
+                        "rel": "self"
+                    }, 
+                    {
+                        "href": "https://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/full/a?v=3.0", 
+                        "type": "application/atom+xml", 
+                        "rel": "edit"
+                    }
+                ], 
+                "gd$email": [
+                    {
+                        "primary": "true", 
+                        "rel": "http://schemas.google.com/g/2005#other", 
+                        "address": "college@fas.harvard.edu"
+                    }
+                ], 
+                "gd$etag": "\"RncyezVSLit7I2A9WB9TGEoOQQw.\"", 
+                "app$edited": {
+                    "xmlns$app": "http://www.w3.org/2007/app", 
+                    "$t": "2007-09-27T06:31:27.993Z"
+                }, 
+                "id": {
+                    "$t": "http://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/base/a"
+                }
+            }, 
+            {
+                "category": [
+                    {
+                        "term": "http://schemas.google.com/contact/2008#contact", 
+                        "scheme": "http://schemas.google.com/g/2005#kind"
+                    }
+                ], 
+                "updated": {
+                    "$t": "2007-09-27T06:31:27.993Z"
+                }, 
+                "title": {
+                    "$t": ""
+                }, 
+                "link": [
+                    {
+                        "href": "https://www.google.com/m8/feeds/photos/media/svmknicks33%40gmail.com/d?v=3.0", 
+                        "type": "image/*", 
+                        "rel": "http://schemas.google.com/contacts/2008/rel#photo"
+                    }, 
+                    {
+                        "href": "https://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/full/d?v=3.0", 
+                        "type": "application/atom+xml", 
+                        "rel": "self"
+                    }, 
+                    {
+                        "href": "https://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/full/d?v=3.0", 
+                        "type": "application/atom+xml", 
+                        "rel": "edit"
+                    }
+                ], 
+                "gd$email": [
+                    {
+                        "primary": "true", 
+                        "rel": "http://schemas.google.com/g/2005#other", 
+                        "address": "Alomar1732@yahoo.com"
+                    }
+                ], 
+                "gd$etag": "\"RncyezVSLit7I2A9WB9TGEoOQQw.\"", 
+                "app$edited": {
+                    "xmlns$app": "http://www.w3.org/2007/app", 
+                    "$t": "2007-09-27T06:31:27.993Z"
+                }, 
+                "id": {
+                    "$t": "http://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/base/d"
+                }
+            }, 
+            {
+                "category": [
+                    {
+                        "term": "http://schemas.google.com/contact/2008#contact", 
+                        "scheme": "http://schemas.google.com/g/2005#kind"
+                    }
+                ], 
+                "updated": {
+                    "$t": "2007-09-27T06:31:27.993Z"
+                }, 
+                "title": {
+                    "$t": ""
+                }, 
+                "link": [
+                    {
+                        "href": "https://www.google.com/m8/feeds/photos/media/svmknicks33%40gmail.com/e?v=3.0", 
+                        "type": "image/*", 
+                        "rel": "http://schemas.google.com/contacts/2008/rel#photo"
+                    }, 
+                    {
+                        "href": "https://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/full/e?v=3.0", 
+                        "type": "application/atom+xml", 
+                        "rel": "self"
+                    }, 
+                    {
+                        "href": "https://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/full/e?v=3.0", 
+                        "type": "application/atom+xml", 
+                        "rel": "edit"
+                    }
+                ], 
+                "gd$email": [
+                    {
+                        "primary": "true", 
+                        "rel": "http://schemas.google.com/g/2005#other", 
+                        "address": "idledesi@gmail.com"
+                    }
+                ], 
+                "gd$etag": "\"RncyezVSLit7I2A9WB9TGEoOQQw.\"", 
+                "app$edited": {
+                    "xmlns$app": "http://www.w3.org/2007/app", 
+                    "$t": "2007-09-27T06:31:27.993Z"
+                }, 
+                "id": {
+                    "$t": "http://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/base/e"
+                }
+            }, 
+            {
+                "category": [
+                    {
+                        "term": "http://schemas.google.com/contact/2008#contact", 
+                        "scheme": "http://schemas.google.com/g/2005#kind"
+                    }
+                ], 
+                "updated": {
+                    "$t": "2007-09-27T06:31:27.993Z"
+                }, 
+                "title": {
+                    "$t": ""
+                }, 
+                "link": [
+                    {
+                        "href": "https://www.google.com/m8/feeds/photos/media/svmknicks33%40gmail.com/f?v=3.0", 
+                        "type": "image/*", 
+                        "rel": "http://schemas.google.com/contacts/2008/rel#photo"
+                    }, 
+                    {
+                        "href": "https://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/full/f?v=3.0", 
+                        "type": "application/atom+xml", 
+                        "rel": "self"
+                    }, 
+                    {
+                        "href": "https://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/full/f?v=3.0", 
+                        "type": "application/atom+xml", 
+                        "rel": "edit"
+                    }
+                ], 
+                "gd$email": [
+                    {
+                        "primary": "true", 
+                        "rel": "http://schemas.google.com/g/2005#other", 
+                        "address": "vk201@optonline.net"
+                    }
+                ], 
+                "gd$etag": "\"RncyezVSLit7I2A9WB9TGEoOQQw.\"", 
+                "app$edited": {
+                    "xmlns$app": "http://www.w3.org/2007/app", 
+                    "$t": "2007-09-27T06:31:27.993Z"
+                }, 
+                "id": {
+                    "$t": "http://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/base/f"
+                }
+            }, 
+            {
+                "category": [
+                    {
+                        "term": "http://schemas.google.com/contact/2008#contact", 
+                        "scheme": "http://schemas.google.com/g/2005#kind"
+                    }
+                ], 
+                "updated": {
+                    "$t": "2007-09-27T06:31:27.993Z"
+                }, 
+                "title": {
+                    "$t": ""
+                }, 
+                "link": [
+                    {
+                        "href": "https://www.google.com/m8/feeds/photos/media/svmknicks33%40gmail.com/10?v=3.0", 
+                        "type": "image/*", 
+                        "rel": "http://schemas.google.com/contacts/2008/rel#photo"
+                    }, 
+                    {
+                        "href": "https://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/full/10?v=3.0", 
+                        "type": "application/atom+xml", 
+                        "rel": "self"
+                    }, 
+                    {
+                        "href": "https://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/full/10?v=3.0", 
+                        "type": "application/atom+xml", 
+                        "rel": "edit"
+                    }
+                ], 
+                "gd$email": [
+                    {
+                        "primary": "true", 
+                        "rel": "http://schemas.google.com/g/2005#other", 
+                        "address": "admission@stanford.edu"
+                    }
+                ], 
+                "gd$etag": "\"RncyezVSLit7I2A9WB9TGEoOQQw.\"", 
+                "app$edited": {
+                    "xmlns$app": "http://www.w3.org/2007/app", 
+                    "$t": "2007-09-27T06:31:27.993Z"
+                }, 
+                "id": {
+                    "$t": "http://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/base/10"
+                }
+            }, 
+            {
+                "category": [
+                    {
+                        "term": "http://schemas.google.com/contact/2008#contact", 
+                        "scheme": "http://schemas.google.com/g/2005#kind"
+                    }
+                ], 
+                "updated": {
+                    "$t": "2007-09-27T06:31:27.993Z"
+                }, 
+                "title": {
+                    "$t": ""
+                }, 
+                "link": [
+                    {
+                        "href": "https://www.google.com/m8/feeds/photos/media/svmknicks33%40gmail.com/11?v=3.0", 
+                        "type": "image/*", 
+                        "rel": "http://schemas.google.com/contacts/2008/rel#photo"
+                    }, 
+                    {
+                        "href": "https://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/full/11?v=3.0", 
+                        "type": "application/atom+xml", 
+                        "rel": "self"
+                    }, 
+                    {
+                        "href": "https://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/full/11?v=3.0", 
+                        "type": "application/atom+xml", 
+                        "rel": "edit"
+                    }
+                ], 
+                "gd$email": [
+                    {
+                        "primary": "true", 
+                        "rel": "http://schemas.google.com/g/2005#other", 
+                        "address": "heaphery@stanford.edu"
+                    }
+                ], 
+                "gd$etag": "\"RncyezVSLit7I2A9WB9TGEoOQQw.\"", 
+                "app$edited": {
+                    "xmlns$app": "http://www.w3.org/2007/app", 
+                    "$t": "2007-09-27T06:31:27.993Z"
+                }, 
+                "id": {
+                    "$t": "http://www.google.com/m8/feeds/contacts/svmknicks33%40gmail.com/base/11"
+                }
+            }
+        ], 
+        "openSearch$totalResults": {
+            "$t": "1593"
+        }, 
+        "id": {
+            "$t": "svmknicks33@gmail.com"
+        }
+    }, 
+    "version": "1.0", 
+    "encoding": "UTF-8"
+}

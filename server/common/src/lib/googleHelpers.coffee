@@ -34,35 +34,98 @@ exports.getUserJSONFromProfile = (profile) ->
 
 exports.getContactsJSONFromAPIData = (contactsAPIData) ->
   unless contactsAPIData then return {}
-
   contacts = []
-  for contactAPIData in contactsAPIData
-    contact = {}
+  for contactData in contactsAPIData
+    newContact = {}
     
-    title = contactAPIData?.title?['$t']
+    title = contactData?.title?['$t']
     if title
-      contact.title = title
+      newContact.title = title
 
-    parsedTitle = contactHelpers.parseFullName title
-    contact.firstName = parsedTitle.firstName
-    contact.middleName = parsedTitle.middleName
-    contact.lastName = parsedTitle.lastName
-
-    emailsData = contactAPIData?['gd$email']
-    contact.emails = []
-    if emailsData
-      for emailData in emailsData
-        emailAddress = emailData?.address
-        unless emailAddress then continue
-        if emailData?.primary is 'true'
-          contact.primaryEmail = emailAddress
-        contact.emails.push emailAddress
-
+    googleHelpers.addName(newContact, contactData)
+    googleHelpers.addEmails(newContact, contactData)
+    googleHelpers.addPhoneNumbers(newContact, contactData)
+    googleHelpers.addAddresses(newContact, contactData)
+    googleHelpers.addBirthday(newContact, contactData)
+    googleHelpers.addWebsites(newContact, contactData)
+   
+    #TODO: remove this check...
     #email is critical here, so only allow contacts with primaryEmail
-    if contact.primaryEmail and emailUtils.isValidEmail contact.primaryEmail
-      contacts.push contact
+    if newContact.primaryEmail and emailUtils.isValidEmail newContact.primaryEmail
+      contacts.push newContact
 
   contacts
+
+
+exports.addWebsites = (contact, apiData) ->
+  unless contact then callback winston,makeMissingParamError 'contact'; return;
+  unless apiData then callback winston,makeMissingParamError 'apiData'; return;
+
+  websites = apiData['gContact$website']  
+  if websites
+    contact.websites = websites
+
+exports.addAddresses = (contact, apiData) ->
+  unless contact then callback winston,makeMissingParamError 'contact'; return;
+  unless apiData then callback winston,makeMissingParamError 'apiData'; return;
+
+  addressess = apiData['gd$structuredPostalAddress']
+  if addressess
+    contact.addressess = []
+    for address in addressess
+      newAddress = {}
+      newAddress['formattedAddress'] = address?['gd$formattedAddress']?['$t']
+      newAddress['city'] = address?['gd$formattedAddress']?['$t']
+      newAddress['street'] = address?['gd$street']?['$t']
+      newAddress['region'] = address?['gd$region']?['$t']
+      newAddress['postcode'] = address?['gd$postcode']?['$t']
+      contact.addressess.push(newAddress)
+
+
+exports.addBirthday = (contact, apiData) ->
+  unless contact then callback winston,makeMissingParamError 'contact'; return;
+  unless apiData then callback winston,makeMissingParamError 'apiData'; return;
+
+  birthday = apiData['gContact$birthday']
+  if birthday
+    contact.birthday = birthday.when
+
+exports.addName = (contact, apiData) ->
+  unless contact then callback winston,makeMissingParamError 'contact'; return;
+  unless apiData then callback winston,makeMissingParamError 'apiData'; return;
+
+  contactName = apiData['gd$name']
+  contact.firstName = contactName?['gd$givenName']?['$t']
+  contact.middleName = contactName?['gd$additionalName']?['$t']
+  contact.lastName = contactName?['gd$familyName']?['$t']
+
+exports.addEmails = (contact, apiData) ->
+  unless contact then callback winston,makeMissingParamError 'contact'; return;
+  unless apiData then callback winston,makeMissingParamError 'apiData'; return;
+
+  emailsData = apiData['gd$email']
+  contact.emails = []
+  if emailsData
+    for emailData in emailsData
+      emailAddress = emailData?.address
+      unless emailAddress then continue
+      if emailData?.primary is 'true'
+        contact.primaryEmail = emailAddress
+      contact.emails.push emailAddress
+
+exports.addPhoneNumbers = (contact, apiData) ->
+  unless contact then callback winston,makeMissingParamError 'contact'; return;
+  unless apiData then callback winston,makeMissingParamError 'apiData'; return;
+
+  phoneNumbers = apiData['gd$phoneNumber']
+  if phoneNumbers
+    contact.phoneNumbers = []
+    for number in phoneNumbers
+      digits = number?['$t']
+      relSplit = number?.rel?.split("#")
+      type = relSplit[1] if relSplit.length > 0
+      unless digits then continue
+      contact.phoneNumbers.push {'number' : digits, 'type' : type}
 
 exports.doDataImportJob = (job, callback) ->
   unless job then callback winston.makeMissingParamError 'job'; return
@@ -149,6 +212,7 @@ exports.doAPIGet = (googleUser, path, extraData, callback) ->
     unless accessToken then callback winston.makeError 'no accessToken'; return
 
     data = extraData || {}
+    data.v = '3.0'
     data.alt = 'json'
     data.access_token = accessToken
 
@@ -158,6 +222,7 @@ exports.doAPIGet = (googleUser, path, extraData, callback) ->
       url += '/'
     url += path + queryString
 
+    winston.doInfo(url)
 
     utils.runWithRetries webUtils.webGet, constants.DEFAULT_API_CALL_ATTEMPTS
     , (error, buffer) ->
