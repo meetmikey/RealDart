@@ -27,7 +27,7 @@ exports.addSourceContact = (userId, contactSource, contactData, callback) ->
   select =
     userId: userId
     sources:
-      $in: [contactSource]
+      $in: sourceContact.sources
 
   switch contactSource
     when constants.contactSource.GOOGLE
@@ -45,15 +45,26 @@ exports.addSourceContact = (userId, contactSource, contactData, callback) ->
   options =
     upsert: true
 
-
   winston.doInfo 'addSourceContact',
     select: select
     update: update
-    options: options
 
+  SourceContactModel.findOneAndUpdate select, update, options, (mongoError) ->
+    if mongoError
 
-  SourceContactModel.update select, update, options, (mongoError) ->
-    if mongoError then callback winston.makeMongoError mongoError; return
+      #TEMP
+      winston.doInfo 'addSourceContact mongoError',
+        select: select
+        update: update
+        options: options
+        mongoError: mongoError
+
+      console.log 'mongoError: ', mongoError
+
+      winston.doMongoError mongoError
+
+      callback winston.makeMongoError mongoError
+      return
     callback()
 
 
@@ -228,7 +239,7 @@ exports.matchExistingContacts = (userId, contact, callback) ->
     callback null, matchedContacts
 
 
-exports.buildSourceContact = (userId, contactSource, contactData) ->
+exports.buildSourceContact = (userId, contactSource, sourceContactData) ->
 
   contactData =
     userId: userId
@@ -236,44 +247,44 @@ exports.buildSourceContact = (userId, contactSource, contactData) ->
     sources: [contactSource]
 
   if contactSource is constants.contactSource.GOOGLE
-    contactData.googleContactId = contactData._id
-    contactData.googleUserId = contactData.googleUserId
-    contactData.primaryEmail = emailUtils.normalizeEmailAddress contactData.primaryEmail
-    contactData.emails = emailUtils.normalizeEmailAddressArray contactData.emails
-    contactData.firstName = contactData.firstName
-    contactData.middleName = contactData.middleName
-    contactData.lastName = contactData.lastName
+    contactData.googleContactId = sourceContactData._id
+    contactData.googleUserId = sourceContactData.googleUserId
+    contactData.primaryEmail = emailUtils.normalizeEmailAddress sourceContactData.primaryEmail
+    contactData.emails = emailUtils.normalizeEmailAddressArray sourceContactData.emails
+    contactData.firstName = sourceContactData.firstName
+    contactData.middleName = sourceContactData.middleName
+    contactData.lastName = sourceContactData.lastName
 
   else if contactSource is constants.contactSource.FACEBOOK
-    contactData.fbUserId = contactData._id
-    if contactData.email
-      contactData.primaryEmail = emailUtils.normalizeEmailAddress contactData.email
-      contactData.emails = emailUtils.normalizeEmailAddressArray [contactData.email]
-    contactData.firstName = contactData.first_name
-    contactData.middleName = contactData.middle_name
-    contactData.lastName = contactData.last_name
-    fbImageURL = fbHelpers.getImageURL contactData._id
+    contactData.fbUserId = sourceContactData._id
+    if sourceContactData.email
+      contactData.primaryEmail = emailUtils.normalizeEmailAddress sourceContactData.email
+      contactData.emails = emailUtils.normalizeEmailAddressArray [sourceContactData.email]
+    contactData.firstName = sourceContactData.first_name
+    contactData.middleName = sourceContactData.middle_name
+    contactData.lastName = sourceContactData.last_name
+    fbImageURL = fbHelpers.getImageURL sourceContactData._id
     if fbImageURL
       contactData.imageSourceURLs.push fbImageURL
 
   else if contactSource is constants.contactSource.LINKED_IN
-    contactData.liUserId = contactData._id
-    if contactData.emailAddress
-      contactData.primaryEmail = emailUtils.normalizeEmailAddress contactData.emailAddress
-      contactData.emails = emailUtils.normalizeEmailAddressArray [contactData.emailAddress]
-    contactData.firstName = contactData.firstName
-    contactData.lastName = contactData.lastName
-    if contactData.pictureUrl
-      contactData.imageSourceURLs.push contactData.pictureUrl
+    contactData.liUserId = sourceContactData._id
+    if sourceContactData.emailAddress
+      contactData.primaryEmail = emailUtils.normalizeEmailAddress sourceContactData.emailAddress
+      contactData.emails = emailUtils.normalizeEmailAddressArray [sourceContactData.emailAddress]
+    contactData.firstName = sourceContactData.firstName
+    contactData.lastName = sourceContactData.lastName
+    if sourceContactData.pictureUrl
+      contactData.imageSourceURLs.push sourceContactData.pictureUrl
 
   else if contactSource is constants.contactSource.SENT_MAIL_TOUCH
-    if contactData.email
-      contactData.primaryEmail = emailUtils.normalizeEmailAddress contactData.email
-      contactData.emails = emailUtils.normalizeEmailAddressArray [contactData.email]
-    contactData.googleUserId = contactData.googleUserId
-    contactData.firstName = contactData.firstName
-    contactData.middleName = contactData.middleName
-    contactData.lastName = contactData.lastName
+    if sourceContactData.email
+      contactData.primaryEmail = emailUtils.normalizeEmailAddress sourceContactData.email
+      contactData.emails = emailUtils.normalizeEmailAddressArray [sourceContactData.email]
+    contactData.googleUserId = sourceContactData.googleUserId
+    contactData.firstName = sourceContactData.firstName
+    contactData.middleName = sourceContactData.middleName
+    contactData.lastName = sourceContactData.lastName
 
   utils.removeNullFields contactData, true, true
   contact = new ContactModel contactData

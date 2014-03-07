@@ -1,12 +1,11 @@
 
 aws = require 'aws-lib'
 os = require 'os'
-sesUtils = require './sesUtils'
-
-winston = require('./winstonWrapper').winston
-utils = require('./utils')
 
 QueueFailModel = require('../schema/queueFail').QueueFailModel
+winston = require('./winstonWrapper').winston
+sesUtils = require './sesUtils'
+utils = require './utils'
 
 constants = require '../constants'
 conf = require '../conf'
@@ -315,8 +314,8 @@ exports._deleteMessageFromQueueNoRetry = ( queue, queueName, sqsMessage, callbac
     else
       message = sqsUtils._getSQSMessageAttribute sqsMessage, 'Body'
       winston.doInfo 'deleted message from queue',
-        message: message
         queueName: queueName
+        message: message
       callback()
 
 
@@ -365,6 +364,11 @@ exports._workQueue = ( workerId, queue, queueName, maxWorkers, handleMessage, pr
         sqsUtils._reworkQueue workerId, queue, queueName, maxWorkers, handleMessage, true, previousConsecutiveMisses
 
       else
+
+        winston.doInfo 'got message from queue',
+          queueName: queueName
+          messageBodyJSON: messageBodyJSON
+
         sqsUtils._workers[queueName][workerId]['messageBodyJSON'] = messageBodyJSON
         handleMessage messageBodyJSON, (error) ->
           if sqsUtils._workers[queueName][workerId]
@@ -427,13 +431,17 @@ exports._checkWorkers = ( queue, queueName, handleMessage, maxWorkers, workerTim
       queueName: queueName
 
   else
-    numWorkers = 0
+    numWorkersAlive = 0
+    numWorkersOnJobs = 0
     for workerId, workerInfo of sqsUtils._workers[queueName]
       workerInfo = sqsUtils._workers[queueName][workerId]
 
       lastContactTime = workerInfo['lastContactTime']
       elapsedTime = Date.now() - lastContactTime
       messageBodyJSON = workerInfo['messageBodyJSON']
+
+      if utils.isNonEmptyObject messageBodyJSON
+        numWorkersOnJobs++
 
       if elapsedTime > workerTimeout
         errorData =
@@ -447,14 +455,15 @@ exports._checkWorkers = ( queue, queueName, handleMessage, maxWorkers, workerTim
         sqsUtils._deleteWorker queueName, workerId
 
       else
-        numWorkers++
+        numWorkersAlive++
 
     winston.doInfo '_checkWorkers',
       queueName: queueName
-      numWorkers: numWorkers
+      numWorkersAlive: numWorkersAlive
+      numWorkersOnJobs: numWorkersOnJobs
 
-    if not ( sqsUtils._stopSignalReceived or sqsUtils._stopWorkForQueueReceived[queueName] ) and ( numWorkers < maxWorkers )
-      newWorkersNeeded = maxWorkers - numWorkers
+    if not ( sqsUtils._stopSignalReceived or sqsUtils._stopWorkForQueueReceived[queueName] ) and ( numWorkersAlive < maxWorkers )
+      newWorkersNeeded = maxWorkers - numWorkersAlive
       sqsUtils._addNewWorkers newWorkersNeeded, queue, queueName, maxWorkers, handleMessage
 
 

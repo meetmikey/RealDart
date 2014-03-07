@@ -21,7 +21,6 @@ Contact = new Schema
   imageS3Filenames: {type: [String]}
   sources: {type: [String]}
 
-
   timestamp: {type: Date, default: Date.now}
 
   #DUMMIES

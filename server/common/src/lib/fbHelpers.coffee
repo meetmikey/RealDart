@@ -58,8 +58,6 @@ exports.fetchAndSaveFriendData = (userId, fbUser, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
   unless fbUser then callback winston.makeMissingParamError 'fbUser'; return
 
-  winston.doInfo 'fetchAndSaveFriendData'
-
   query =
     friends: 'SELECT 
       about_me, 
@@ -121,8 +119,6 @@ exports.getFriendsFromFQLResponse = (fqlResponse) ->
 exports.saveFriendData = (userId, fbUser, friends, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
 
-  winston.doInfo 'saveFriendData'
-
   for friend in friends
     utils.removeNullFields friend, true, true
 
@@ -155,8 +151,6 @@ exports.saveFriendData = (userId, fbUser, friends, callback) ->
 exports.getFacebookFriends = (user, callback) ->
   unless user then callback winston.makeMissingParamError 'user'; return
   unless user.fbUserId then callback winston.makeMissingParamError 'user.fbUserId'; return
-
-  winston.doInfo 'getFacebookFriends'
 
   FBUserModel.findById user.fbUserId, (mongoError, fbUser) ->
     if mongoError then callback winston.makeMongoError mongoError; return

@@ -1,3 +1,11 @@
+a = {}
+if a and a.
+  console.log 'IT IS TRUE'
+else
+  console.log 'IT IS FALSE'
+
+
+
 commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
 
 lockUtils = require commonAppDir + '/lib/lockUtils'

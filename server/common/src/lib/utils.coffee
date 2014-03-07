@@ -26,6 +26,14 @@ exports.isObject = ( input ) ->
   return false
 
 
+exports.isNonEmptyObject = ( input ) ->
+  unless utils.isObject input then return false
+  
+  for key, value of input
+    return true
+  return false
+
+
 exports.convertToInt = (strNumber) ->
   if typeof strNumber is 'string'
     number = Number strNumber
