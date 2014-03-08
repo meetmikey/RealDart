@@ -1,6 +1,6 @@
 async = require 'async'
 OAuth2 = require('oauth').OAuth2
-
+_ = require 'underscore'
 winston = require('../lib/winstonWrapper').winston
 GoogleUserModel = require('../schema/googleUser').GoogleUserModel
 GoogleContactModel = require('../schema/googleContact').GoogleContactModel
@@ -86,14 +86,14 @@ exports.addWebsites = (contact, apiData) ->
   return unless contact and apiData
 
   websites = apiData['gContact$website']
-  if websites
+  if websites && websites.length > 0
     contact.websites = websites
 
 exports.addAddresses = (contact, apiData) ->
   return unless contact and apiData
 
   addressess = apiData['gd$structuredPostalAddress']
-  if addressess
+  if addressess and addressess.length > 0
     contact.addressess = []
     for address in addressess
       newAddress = {}
@@ -146,6 +146,17 @@ exports.addPhoneNumbers = (contact, apiData) ->
       unless digits then continue
       contact.phoneNumbers.push {'number' : digits, 'type' : type}
 
+
+exports.addIsMyContact = (googleContact, googleUser) ->
+  return unless googleContact and googleUser
+
+  if googleUser and googleUser.contactGroups?.length
+    myContactsGroup = _.find(googleUser.contactGroups, (group) -> group.systemGroupId == 'Contacts')
+    myContactsGroupId = myContactsGroup?._id
+    match = _.find(googleContact.groupIds, (groupId) -> myContactsGroupId == groupId)
+    if match
+      googleContact.isMyContact = true
+
 exports.doDataImportJob = (job, callback) ->
   unless job then callback winston.makeMissingParamError 'job'; return
   unless job.userId then callback winston.makeMissingParamError 'job.userId'; return
@@ -164,10 +175,9 @@ exports.doDataImportJob = (job, callback) ->
     googleHelpers.getContactGroups userId, googleUser, (error, groupsData) ->
       if error then callback error; return
 
-      console.log groupsData
       #add the contact groups to the user
       googleUser.contactGroups = groupsData
-      console.log googleUser
+
       googleUser.save (error) ->
         if error then callback error; return
 
@@ -223,6 +233,8 @@ exports.getContacts = (userId, googleUser, callback) ->
         googleContact = new GoogleContactModel contactData
         googleContact.userId = userId
         googleContact.googleUserId = googleUser._id
+
+        googleHelpers.addIsMyContact(googleContact, googleUser)
 
         googleContact.save (mongoError) ->
           if mongoError and mongoError.code isnt constants.MONGO_ERROR_CODE_DUPLICATE

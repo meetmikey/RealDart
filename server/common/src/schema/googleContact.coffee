@@ -21,6 +21,7 @@ GoogleContactPhoneNumber = new Schema
 GoogleContact = new Schema
   contactId : {type : String}
   groupIds : {type : String}
+  isMyContact : {type : Boolean}
   userId: Schema.ObjectId
   googleUserId: {type: String}
   primaryEmail: {type: String}
