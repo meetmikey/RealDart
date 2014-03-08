@@ -171,5 +171,6 @@ module.exports =
     'reservations@',
     'reservation@',
     'confirmation@',
-    'contact@'
+    'contact@',
+    'craigslist'
   ]
