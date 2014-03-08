@@ -3,10 +3,18 @@ mimelib = require 'mimelib'
 winston = require('./winstonWrapper').winston
 basicUtils = require './basicUtils'
 utils = require './utils'
-
+constants = require '../constants'
 conf = require '../conf'
 
 emailUtils = this
+
+exports.isEmailContactBlacklisted = (emailAddress) ->
+  isBlacklisted = false
+  constants.EMAIL_CONTACT_BLACKLIST.forEach (item) ->
+    if emailAddress.indexOf(item) != -1
+      isBlacklisted = true
+      return
+  isBlacklisted
 
 exports.getAllRecipients = (headers) ->
   toRecipients = []

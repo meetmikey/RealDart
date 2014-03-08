@@ -129,9 +129,11 @@ exports.addEmails = (contact, apiData) ->
     for emailData in emailsData
       emailAddress = emailData?.address
       unless emailAddress then continue
-      if emailData?.primary is 'true'
-        contact.primaryEmail = emailAddress
-      contact.emails.push emailAddress
+      if not emailUtils.isEmailContactBlacklisted(emailAddress)
+        if emailData?.primary is 'true'
+          contact.primaryEmail = emailAddress
+        contact.emails.push emailAddress
+
 
 exports.addPhoneNumbers = (contact, apiData) ->
   return unless contact and apiData

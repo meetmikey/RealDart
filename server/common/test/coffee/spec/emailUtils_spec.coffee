@@ -46,6 +46,16 @@ describe 'getCleanSubject', () ->
     expect( emailUtils.getCleanSubject( 're: fwd: FWD: aB' ) ).toBe( 'aB' )
 
 
+describe 'isEmailContactBlacklisted', () ->
+  it 'true', () ->
+    expect( emailUtils.isEmailContactBlacklisted ('support@mikeyteam.com')).toBe(true)
+    expect( emailUtils.isEmailContactBlacklisted ('do-not-reply@mikeyteam.com')).toBe(true)
+    expect( emailUtils.isEmailContactBlacklisted ('noreply@mikeyteam.com')).toBe(true)
+  it 'false', () ->
+    expect( emailUtils.isEmailContactBlacklisted ('sagar@mikeyteam.com')).toBe(false)
+    expect( emailUtils.isEmailContactBlacklisted ('justin@mikeyteam.com')).toBe(false)
+    expect( emailUtils.isEmailContactBlacklisted ('boom@gmailsupport.com')).toBe(false)
+
 describe 'isValidEmail', () ->
   it 'fail case', () ->
     expect( emailUtils.isValidEmail() ).toBe( false )
