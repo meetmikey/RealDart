@@ -160,6 +160,7 @@ exports.addIsMyContact = (googleContact, googleUser) ->
       googleContact.isMyContact = true
 
 exports.doDataImportJob = (job, callback) ->
+  console.log 'doDataImportJob', job
   unless job then callback winston.makeMissingParamError 'job'; return
   unless job.userId then callback winston.makeMissingParamError 'job.userId'; return
   unless job.googleUserId then callback winston.makeMissingParamError 'job.googleUserId'; return
@@ -179,9 +180,10 @@ exports.doDataImportJob = (job, callback) ->
 
       #add the contact groups to the user
       googleUser.contactGroups = groupsData
+      console.log groupsData
 
       googleUser.save (error) ->
-        if error then callback error; return
+        if error then callback winston.makeMongoError(error); return
 
         googleHelpers.getContacts userId, googleUser, (error) ->
           if error then callback error; return
@@ -274,8 +276,6 @@ exports.doAPIGet = (googleUser, path, extraData, callback) ->
     unless path.substring( 0, 1 ) is '/'
       url += '/'
     url += path + queryString
-
-    winston.doInfo(url)
 
     utils.runWithRetries webUtils.webGet, constants.DEFAULT_API_CALL_ATTEMPTS
     , (error, buffer) ->

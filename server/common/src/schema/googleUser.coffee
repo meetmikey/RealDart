@@ -6,7 +6,7 @@ utils = require '../lib/utils'
 GoogleContactGroup = new Schema
   systemGroupId : String,
   title : String,
-  _id : {type : String, required : true, unique : true}
+  _id : {type : String, required : true}
 
 GoogleUser = new Schema
   _id: {type: String, required: true, unique: true}

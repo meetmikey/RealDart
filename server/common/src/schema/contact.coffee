@@ -1,6 +1,11 @@
 mongoose = require 'mongoose'
 Schema = mongoose.Schema
 
+PhoneNumber = new Schema
+  number : {type : String}
+  type : {type : String}
+  { _id : false }
+
 Contact = new Schema
   userId: {type: Schema.ObjectId} # userId of the person whose contact this is
   googleUserId: {type: String} # Optional: if it's a google contact, let's also save the googleUserId
@@ -18,7 +23,8 @@ Contact = new Schema
   lastName: {type: String}
   lastNameLower: {type: String}
   imageS3Filenames: {type: [String]}
-
+  isMyContactForGoogle : {type : Boolean}
+  phoneNumbers : {type : [PhoneNumber]}
   timestamp: {type: Date, default: Date.now}
 
   #DUMMIES
