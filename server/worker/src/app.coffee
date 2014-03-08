@@ -1,5 +1,7 @@
 commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
 
+async = require 'async'
+
 appInitUtils = require commonAppDir + '/lib/appInitUtils'
 winston = require(commonAppDir + '/lib/winstonWrapper').winston
 sqsUtils = require commonAppDir + '/lib/sqsUtils'
@@ -19,19 +21,22 @@ initActions = [
 
 serverWorkerApp = this
 
-exports.postInit = () ->
-  serverWorkerApp.startPolling()
+exports.postInit = (callback) ->
+  serverWorkerApp.startPolling callback
 
-exports.startPolling = () ->
+exports.startPolling = (callback) ->
 
   maxWorkers = constants.MAX_WORKERS_PER_QUEUE
   if process.argv and process.argv.length > 2
     maxWorkers = process.argv[2]
 
-  sqsUtils.pollQueue commonConf.queue.mergeContacts, cleanupContactHelpers.doMergeContactsJob, maxWorkers
+  async.parallel [
+  ], callback
+
+  #sqsUtils.pollQueue commonConf.queue.mergeContacts, cleanupContactHelpers.doMergeContactsJob, maxWorkers
   sqsUtils.pollQueue commonConf.queue.importContactImages, cleanupContactHelpers.doImportContactImagesJob, maxWorkers
-  sqsUtils.pollQueue commonConf.queue.dataImport, dataImportHelpers.doDataImportJob, maxWorkers
-  sqsUtils.pollQueue commonConf.queue.mailDownload, mailDownloadHelpers.doMailDownloadJob, maxWorkers
-  sqsUtils.pollQueue commonConf.queue.mailHeaderDownload, mailDownloadHelpers.doMailHeaderDownloadJob, maxWorkers
+  #sqsUtils.pollQueue commonConf.queue.dataImport, dataImportHelpers.doDataImportJob, maxWorkers
+  #sqsUtils.pollQueue commonConf.queue.mailDownload, mailDownloadHelpers.doMailDownloadJob, maxWorkers
+  #sqsUtils.pollQueue commonConf.queue.mailHeaderDownload, mailDownloadHelpers.doMailHeaderDownloadJob, maxWorkers
 
 appInitUtils.initApp 'workerApp', initActions, serverWorkerApp.postInit

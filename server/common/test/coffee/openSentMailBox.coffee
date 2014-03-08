@@ -3,7 +3,6 @@ commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
 imapConnect = require commonAppDir + '/lib/imapConnect'
 appInitUtils = require commonAppDir + '/lib/appInitUtils'
 winston = require( commonAppDir + '/lib/winstonWrapper' ).winston
-mongoose = require( commonAppDir + '/lib/mongooseConnect' ).mongoose
 UserModel = require( commonAppDir + '/schema/user' ).UserModel
 GoogleUserModel = require( commonAppDir + '/schema/googleUser' ).GoogleUserModel
 
@@ -68,10 +67,4 @@ getUserAndGoogleUser = (userId, googleUserIdIndex, callback) ->
       callback null, user, googleUser
 
 
-postInit = () ->
-  run (error) ->
-    if error then winston.handleError error
-    mongoose.disconnect()
-    winston.doInfo 'Done.'
-
-appInitUtils.initApp 'openSentMailBox', initActions, postInit
+appInitUtils.initApp 'openSentMailBox', initActions, run

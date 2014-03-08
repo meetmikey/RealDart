@@ -2,8 +2,6 @@ commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
 
 ContactModel = require(commonAppDir + '/schema/contact').ContactModel
 winston = require(commonAppDir + '/lib/winstonWrapper').winston
-mongooseConnect = require commonAppDir + '/lib/mongooseConnect'
-utils = require commonAppDir + '/lib/utils'
 imageUtils = require commonAppDir + '/lib/imageUtils'
 s3Utils = require commonAppDir + '/lib/s3Utils'
 appInitUtils = require commonAppDir + '/lib/appInitUtils'
@@ -33,10 +31,5 @@ run = (callback) ->
 
       callback()
 
-postInit = () ->
-  run (error) ->
-    if error then winston.handleError error
-    mongooseConnect.disconnect()
-    winston.doInfo 'Done.'
 
-appInitUtils.initApp 'importContactImage', initActions, postInit
+appInitUtils.initApp 'importContactImage', initActions, run

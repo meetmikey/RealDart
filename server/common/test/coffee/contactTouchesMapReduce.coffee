@@ -1,10 +1,5 @@
 commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
 
-ContactModel = require(commonAppDir + '/schema/contact').ContactModel
-TouchModel = require(commonAppDir + '/schema/touch').TouchModel
-winston = require(commonAppDir + '/lib/winstonWrapper').winston
-mongooseConnect = require commonAppDir + '/lib/mongooseConnect'
-utils = require commonAppDir + '/lib/utils'
 contactHelpers = require commonAppDir + '/lib/contactHelpers'
 appInitUtils = require commonAppDir + '/lib/appInitUtils'
 
@@ -27,11 +22,4 @@ run = (callback) ->
     callback()
   
 
-
-postInit = () ->
-  run (error) ->
-    if error then winston.handleError error
-    mongooseConnect.disconnect()
-    winston.doInfo 'Done.'
-
-appInitUtils.initApp 'contactTouchesMapReduce', initActions, postInit
+appInitUtils.initApp 'contactTouchesMapReduce', initActions, run

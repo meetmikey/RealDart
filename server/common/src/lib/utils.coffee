@@ -300,12 +300,12 @@ exports.streamToBuffer = ( stream, capBuffer, callback ) ->
         err: err
 
 
-exports.removeNullFields = (object, removeEmptyStrings, removeEmptyArrays) ->
+exports.removeEmptyFields = (object, removeEmptyStrings, removeEmptyArrays) ->
   unless object then return object
 
   for key, value of object
     
-    if value is null
+    if value is null or value is undefined
       object[key] = undefined
       delete object[key]
       continue

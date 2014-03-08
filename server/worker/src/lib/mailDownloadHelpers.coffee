@@ -28,10 +28,6 @@ exports.doMailDownloadJob = (job, callback) ->
   userId = job.userId
   googleUserId = job.googleUserId
 
-  winston.doInfo 'doMailDownloadJob',
-    userId: userId
-    googleUserId: googleUserId
-
   GoogleUserModel.findById googleUserId, (error, googleUser) ->
     if error then callback winston.makeMongoError error; return
 
@@ -141,11 +137,6 @@ exports.doMailHeaderDownloadJob = (job, callback) ->
   userId = job.userId
   googleUserId = job.googleUserId
   uidBatch = job.uidBatch
-
-  winston.doInfo 'doMailHeaderDownloadJob',
-    userId: userId
-    googleUserId: googleUserId
-    uidBatch: uidBatch
 
   GoogleUserModel.findById googleUserId, (error, googleUser) ->
     if error then callback winston.makeMongoError error; return

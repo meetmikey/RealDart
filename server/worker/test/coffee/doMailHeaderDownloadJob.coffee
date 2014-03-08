@@ -3,7 +3,6 @@ workerAppDir = commonAppDir + '/../../worker/app'
 
 appInitUtils = require commonAppDir + '/lib/appInitUtils'
 winston = require( commonAppDir + '/lib/winstonWrapper' ).winston
-mongoose = require( commonAppDir + '/lib/mongooseConnect' ).mongoose
 UserModel = require( commonAppDir + '/schema/user' ).UserModel
 GoogleUserModel = require( commonAppDir + '/schema/googleUser' ).GoogleUserModel
 
@@ -30,10 +29,5 @@ mailHeaderDownloadJob =
 run = (callback) ->
   mailDownloadHelpers.doMailHeaderDownloadJob mailHeaderDownloadJob, callback
 
-postInit = () ->
-  run (error) ->
-    if error then winston.handleError error
-    mongoose.disconnect()
-    winston.doInfo 'Done.'
 
-appInitUtils.initApp 'doMailHeaderDownloadJob', initActions, postInit
+appInitUtils.initApp 'doMailHeaderDownloadJob', initActions, run

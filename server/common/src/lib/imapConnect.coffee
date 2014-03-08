@@ -62,9 +62,11 @@ exports.openMailBox = (imapConnection, mailBoxType, callback) ->
   imapConnection.once 'error', (err) ->
     imapConnect.handleOpenMailBoxError err, imapConnection, callbackWrapper
 
+  ###
   imapConnection.once 'end', ->
     winston.doInfo 'Connection ended for user',
       email: imapConnection.email
+  ###
 
   imapConnection.on 'alert', (msg) ->
     winston.doWarn 'Imap alert',

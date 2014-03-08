@@ -2,7 +2,6 @@ commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
 
 ContactModel = require(commonAppDir + '/schema/contact').ContactModel
 winston = require(commonAppDir + '/lib/winstonWrapper').winston
-mongooseConnect = require commonAppDir + '/lib/mongooseConnect'
 utils = require commonAppDir + '/lib/utils'
 appInitUtils = require commonAppDir + '/lib/appInitUtils'
 
@@ -20,7 +19,7 @@ run = (callback) ->
   winston.doInfo 'c1',
     c1: c1
 
-  utils.removeNullFields c1, true, true
+  utils.removeEmptyFields c1, true, true
 
   winston.doInfo 'c1 no nulls',
     c1: c1
@@ -31,7 +30,7 @@ run = (callback) ->
   winston.doInfo 'c2',
     c2: c2
 
-  utils.removeNullFields c2, true, true
+  utils.removeEmptyFields c2, true, true
 
   winston.doInfo 'c2 no nulls',
     c2: c2
@@ -42,11 +41,4 @@ run = (callback) ->
     callback()
 
 
-
-postInit = () ->
-  run (error) ->
-    if error then winston.handleError error
-    mongooseConnect.disconnect()
-    winston.doInfo 'Done.'
-
-appInitUtils.initApp 'mongooseSave', initActions, postInit
+appInitUtils.initApp 'mongooseSave', initActions, run

@@ -6,7 +6,6 @@ async = require 'async'
 
 utils = require '../lib/utils'
 winston = require('../lib/winstonWrapper').winston
-mongooseConnect = require('../lib/mongooseConnect')
 appInitUtils = require '../lib/appInitUtils'
 emailUtils = require '../lib/emailUtils'
 
@@ -29,13 +28,6 @@ else
 
 winston.doInfo 'digestDate',
   digestDate: digestDate
-
-postInit = () ->
-  run (error) ->
-    if error
-      winston.handleError error
-    mongooseConnect.disconnect()
-    winston.doInfo 'Done.'
 
 
 run = (callback) ->
@@ -91,6 +83,4 @@ sendEventDigestEmail = (eventDigest, user, callback) ->
         callback()
 
 
-#initApp() will not callback an error.
-#If something fails, it will just exit the process.
-appInitUtils.initApp 'CreateAndSendEventDigests', initActions, postInit
+appInitUtils.initApp 'CreateAndSendEventDigests', initActions, run

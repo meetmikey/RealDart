@@ -1,3 +1,4 @@
+async = require 'async'
 
 LockModel = require('../schema/lock').LockModel
 winston = require('./winstonWrapper').winston
@@ -5,6 +6,8 @@ winston = require('./winstonWrapper').winston
 constants = require '../constants'
 
 lockUtils = this
+
+lockCount = {}
 
 
 exports.acquireLock = (key, callback) ->
@@ -56,15 +59,42 @@ exports.acquireLockAttempt = (key, callback) ->
       return
 
     # OK, we made the lock.  callback with the key to signal that we got it.
+    if lockCount[key] is 0 or lockCount[key] > 0
+      lockCount[key]++
+    else
+      lockCount[key] = 1
     callback null, true
 
 
 exports.releaseLock = (key, callback) ->
-
   select =
     key: key
 
-  LockModel.findOneAndRemove select, (mongoError) ->
+  LockModel.findOneAndRemove select, (mongoError, removedLock) ->
     if mongoError then callback winston.makeMongoError mongoError; return
+    if removedLock
+      unless lockCount[key] and lockCount[key] > 0
+        winston.doWarn 'released a lock, but invalid lock count',
+          key: key
+          lockCountForKey: lockCount[key]
+      else
+        lockCount[key]--
 
     callback()
+
+
+exports.releaseAllProcessLocks = (callback) ->
+  keys = Object.keys lockCount
+  async.each keys, (key, eachCallback) ->
+    unless lockCount[key] and lockCount[key] > 0
+      eachCallback()
+      return
+
+    unless lockCount[key] is 1
+      winston.doWarn 'unsupported multiple locks for key',
+        key: key
+        lockCountKey: lockCount[key]
+
+    lockUtils.releaseLock key, eachCallback
+  , callback
+    

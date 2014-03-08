@@ -14,7 +14,7 @@ exports.doMergeContactsJob = (job, callback) ->
   userId = job.userId
   unless userId then callback winston.makeError 'no userId', {job: job}; return
 
-  contactHelpers.mergeContacts userId, callback
+  contactHelpers.mergeAllContacts userId, callback
 
 
 exports.doImportContactImagesJob = (job, callback) ->

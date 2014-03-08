@@ -120,7 +120,7 @@ exports.saveFriendData = (userId, fbUser, friends, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
 
   for friend in friends
-    utils.removeNullFields friend, true, true
+    utils.removeEmptyFields friend, true, true
 
   async.series([
     (seriesCallback) ->

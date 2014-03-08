@@ -40,7 +40,7 @@ exports.importHeaders = (userId, googleUser, minUID, maxUID, callback) ->
 
           headersArray ||= []
           async.each headersArray, (headers, eachCallback) ->
-            emailImportUtils.saveHeadersAndAddTouches userId, googleUser, headers, eachCallback
+            emailImportUtils.saveHeaders userId, googleUser, headers, eachCallback
 
           , (error) ->
             imapConnect.closeMailBoxAndLogout imapConnection, (imapLogoutError) ->
@@ -50,7 +50,7 @@ exports.importHeaders = (userId, googleUser, minUID, maxUID, callback) ->
               callback error, uidNext
 
 
-exports.saveHeadersAndAddTouches = (userId, googleUser, headers, callback) ->
+exports.saveHeaders = (userId, googleUser, headers, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
   unless googleUser then callback winston.makeMissingParamError 'googleUser'; return
   unless headers then callback winston.makeMissingParamError 'headers'; return
@@ -69,12 +69,8 @@ exports.saveHeadersAndAddTouches = (userId, googleUser, headers, callback) ->
 
   options =
     upsert: true
-    new: false
 
-  EmailModel.findOneAndUpdate select, update, options, (mongoError, existingEmailModel) ->
+  EmailModel.findOneAndUpdate select, update, options, (mongoError) ->
     if mongoError then callback winston.makeMongoError mongoError; return
 
-    if existingEmailModel
-      callback()
-    else
-      touchHelpers.addTouchesFromEmail userId, emailJSON, callback
+    callback()

@@ -1,7 +1,6 @@
 commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
 
 winston = require(commonAppDir + '/lib/winstonWrapper').winston
-mongooseConnect = require commonAppDir + '/lib/mongooseConnect'
 appInitUtils = require commonAppDir + '/lib/appInitUtils'
 FBUserModel = require(commonAppDir + '/schema/fbUser').FBUserModel
 fbHelpers = require commonAppDir + '/lib/fbHelpers'
@@ -11,21 +10,6 @@ initActions = [
   commonConstants.initAction.CONNECT_MONGO
 ]
 
-postInit = () ->
-  run (error) ->
-    if error then winston.handleError error
-
-    mongooseConnect.disconnect()
-    winston.doInfo 'Done.'
-
-getFBUserId = () ->
-  if process.argv.length < 3
-    winston.doError 'missing input'
-    winston.doInfo 'usage: node getFBUser.js <fbUserId>'
-    process.exit 1
-
-  fbUserId = process.argv[2]
-  fbUserId
 
 run = (callback) ->
 
@@ -48,6 +32,15 @@ run = (callback) ->
 
     #callback()
 
-#initApp() will not callback an error.
-#If something fails, it will just exit the process.
-appInitUtils.initApp 'getFBUser', initActions, postInit
+
+getFBUserId = () ->
+  if process.argv.length < 3
+    winston.doError 'missing input'
+    winston.doInfo 'usage: node getFBUser.js <fbUserId>'
+    process.exit 1
+
+  fbUserId = process.argv[2]
+  fbUserId
+
+
+appInitUtils.initApp 'getFBUser', initActions, run

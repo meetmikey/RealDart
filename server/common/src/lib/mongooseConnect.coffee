@@ -120,5 +120,7 @@ exports.getConnectionOptions = ( useSSL ) =>
   options
 
 
-exports.disconnect = () =>
-  mongoose.disconnect()
+exports.disconnect = (callback) =>
+  mongoose.disconnect (mongoError) ->
+    if mongoError then callback winston.makeMongoError mongoError; return
+    callback()
