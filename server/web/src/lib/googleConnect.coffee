@@ -45,11 +45,11 @@ exports.saveUserAndQueueImport = (userId, accessToken, refreshToken, params, pro
 
   accessTokenEncryptedInfo = utils.encryptSymmetric accessToken
   googleUserJSON.accessTokenEncrypted = accessTokenEncryptedInfo.encrypted
-  googleUserJSON.accessTokenSalt = accessTokenEncryptedInfo.salt
+  googleUserJSON.accessTokenIV = accessTokenEncryptedInfo.iv
   if refreshToken
     refreshTokenEncryptedInfo = utils.encryptSymmetric refreshToken
     googleUserJSON.refreshTokenEncrypted = refreshTokenEncryptedInfo.encrypted
-    googleUserJSON.refreshTokenSalt = refreshTokenEncryptedInfo.salt
+    googleUserJSON.refreshTokenIV = refreshTokenEncryptedInfo.iv
 
   googleUserId = googleUserJSON._id
   delete googleUserJSON._id

@@ -9,9 +9,7 @@ LIUser = new Schema
 
   #tokens
   accessTokenEncrypted: {type: String}
-  accessTokenSalt: {type: String}
-  refreshTokenEncrypted: {type: String}
-  refreshTokenSalt: {type: String}
+  accessTokenIV: {type: String}
   
   #profile data
   educations: Schema.Types.Mixed
@@ -40,19 +38,10 @@ LIUser = new Schema
 LIUser.virtual('accessToken').set (input) ->
   encryptedInfo = utils.encryptSymmetric input
   this.accessTokenEncrypted = encryptedInfo.encrypted
-  this.accessTokenSalt = encryptedInfo.salt
+  this.accessTokenIV = encryptedInfo.iv
 
 LIUser.virtual('accessToken').get () ->
-  decrypted = utils.decryptSymmetric this.accessTokenEncrypted, this.accessTokenSalt
-  decrypted
-
-LIUser.virtual('refreshToken').set (input) ->
-  encryptedInfo = utils.encryptSymmetric input
-  this.refreshTokenEncrypted = encryptedInfo.encrypted
-  this.refreshTokenSalt = encryptedInfo.salt
-
-LIUser.virtual('refreshToken').get () ->
-  decrypted = utils.decryptSymmetric this.refreshTokenEncrypted, this.refreshTokenSalt
+  decrypted = utils.decryptSymmetric this.accessTokenEncrypted, this.accessTokenIV
   decrypted
 
 mongoose.model 'LIUser', LIUser

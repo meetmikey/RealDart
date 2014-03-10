@@ -185,37 +185,35 @@ exports.getRetryWaitTime = ( numFails ) ->
   waitTime
 
 
-# returns {encrypted: <encrypted value>, salt: <salt>}
+# returns {encrypted: <encrypted value>, iv: <iv>}
 exports.encryptSymmetric = (input) ->
   output =
     encrypted: null
-    salt: null
+    iv: null
 
   unless input
     #winston.doInfo 'utils.encryptSymmetric: input missing'
     return output
 
-  cipher = crypto.createCipher conf.crypto.aes.scheme, conf.crypto.aes.secret
-  salt = crypto.randomBytes(8).toString 'hex'
-  encrypted = cipher.update salt + input, 'utf8', 'hex'
+  iv = crypto.randomBytes(8).toString 'hex'
+  cipher = crypto.createCipheriv conf.crypto.aes.scheme, conf.crypto.aes.secret, iv
+  encrypted = cipher.update input, 'utf8', 'hex'
   encrypted += cipher.final 'hex'
   output.encrypted = encrypted
-  output.salt = salt
+  output.iv = iv
   output
 
 
 # returns the decrypted value
-exports.decryptSymmetric = (input, salt) ->
+exports.decryptSymmetric = (input, iv) ->
   unless input 
     #winston.doInfo 'utils.decryptSymmetric: no input'
     return null
-  salt = salt || ''
+  iv = iv || ''
 
-  decipher = crypto.createDecipher conf.crypto.aes.scheme, conf.crypto.aes.secret
-  tokenAndSalt = decipher.update input, 'hex', 'utf8'
-  tokenAndSalt += decipher.final 'utf8'
-  saltLen = salt.length
-  decrypted = tokenAndSalt.substring saltLen, tokenAndSalt.length
+  decipher = crypto.createDecipheriv conf.crypto.aes.scheme, conf.crypto.aes.secret, iv
+  decrypted = decipher.update input, 'hex', 'utf8'
+  decrypted += decipher.final 'utf8'
   decrypted
 
 

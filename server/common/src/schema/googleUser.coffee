@@ -13,10 +13,11 @@ GoogleUser = new Schema
 
   #tokens
   accessTokenEncrypted: {type: String}
-  accessTokenSalt: {type: String}
+  accessTokenIV: {type: String}
   accessTokenExpiresAt: {type: Date}
   refreshTokenEncrypted: {type: String}
-  refreshTokenSalt: {type: String}
+  refreshTokenIV: {type: String}
+
   email: {type: String}
   verified_email: {type: Boolean}
   name: {type: String}
@@ -33,20 +34,20 @@ GoogleUser.index {email: 1}, {unique : true}
 GoogleUser.virtual('accessToken').set (input) ->
   encryptedInfo = utils.encryptSymmetric input
   this.accessTokenEncrypted = encryptedInfo.encrypted
-  this.accessTokenSalt = encryptedInfo.salt
+  this.accessTokenIV = encryptedInfo.iv
 
 GoogleUser.virtual('accessToken').get () ->
-  decrypted = utils.decryptSymmetric this.accessTokenEncrypted, this.accessTokenSalt
+  decrypted = utils.decryptSymmetric this.accessTokenEncrypted, this.accessTokenIV
   decrypted
 
 
 GoogleUser.virtual('refreshToken').set (input) ->
   encryptedInfo = utils.encryptSymmetric input
   this.refreshTokenEncrypted = encryptedInfo.encrypted
-  this.refreshTokenSalt = encryptedInfo.salt
+  this.refreshTokenIV = encryptedInfo.iv
 
 GoogleUser.virtual('refreshToken').get () ->
-  decrypted = utils.decryptSymmetric this.refreshTokenEncrypted, this.refreshTokenSalt
+  decrypted = utils.decryptSymmetric this.refreshTokenEncrypted, this.refreshTokenIV
   decrypted
 
 mongoose.model 'GoogleUser', GoogleUser

@@ -48,11 +48,11 @@ exports.saveUserAndQueueImport = (userId, accessToken, refreshToken, profile, ca
 
   accessTokenEncryptedInfo = utils.encryptSymmetric accessToken
   liUserJSON.accessTokenEncrypted = accessTokenEncryptedInfo.encrypted
-  liUserJSON.accessTokenSalt = accessTokenEncryptedInfo.salt
+  liUserJSON.accessTokenIV = accessTokenEncryptedInfo.iv
   if refreshToken
     refreshTokenEncryptedInfo = utils.encryptSymmetric refreshToken
     liUserJSON.refreshTokenEncrypted = refreshTokenEncryptedInfo.encrypted
-    liUserJSON.refreshTokenSalt = refreshTokenEncryptedInfo.salt
+    liUserJSON.refreshTokenIV = refreshTokenEncryptedInfo.iv
 
   liUserId = liUserJSON._id
   delete liUserJSON._id

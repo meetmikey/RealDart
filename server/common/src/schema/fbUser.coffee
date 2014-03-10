@@ -18,9 +18,7 @@ FBUser = new Schema
   
   #tokens
   accessTokenEncrypted: {type: String}
-  accessTokenSalt: {type: String}
-  refreshTokenEncrypted: {type: String}
-  refreshTokenSalt: {type: String}
+  accessTokenIV: {type: String}
 
   age_range : {type: String}
   bio: {type: String}
@@ -65,20 +63,10 @@ FBUser = new Schema
 FBUser.virtual('accessToken').set (input) ->
   encryptedInfo = utils.encryptSymmetric input
   this.accessTokenEncrypted = encryptedInfo.encrypted
-  this.accessTokenSalt = encryptedInfo.salt
+  this.accessTokenIV = encryptedInfo.iv
 
 FBUser.virtual('accessToken').get () ->
-  decrypted = utils.decryptSymmetric this.accessTokenEncrypted, this.accessTokenSalt
-  decrypted
-
-
-FBUser.virtual('refreshToken').set (input) ->
-  encryptedInfo = utils.encryptSymmetric input
-  this.refreshTokenEncrypted = encryptedInfo.encrypted
-  this.refreshTokenSalt = encryptedInfo.salt
-
-FBUser.virtual('refreshToken').get () ->
-  decrypted = utils.decryptSymmetric this.refreshTokenEncrypted, this.refreshTokenSalt
+  decrypted = utils.decryptSymmetric this.accessTokenEncrypted, this.accessTokenIV
   decrypted
 
 mongoose.model 'FBUser', FBUser
