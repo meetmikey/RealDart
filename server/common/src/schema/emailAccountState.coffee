@@ -12,6 +12,7 @@ EmailAccountState = new Schema
   outstandingInitialUIDBatches: {type: [EmailAccountStateUIDBatch]}
   originalUIDNext: {type: Number}
   currentUIDNext: {type: Number}
+  highestEmailIdForAddingTouches: {type: Schema.ObjectId}
 
 
 EmailAccountState.index {userId: 1, googleUserId: 1}, {sparse: 1}

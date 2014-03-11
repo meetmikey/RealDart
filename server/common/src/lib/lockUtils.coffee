@@ -24,11 +24,11 @@ exports.acquireLock = (key, callback) ->
 
       numFails++
       timeElapsed = Date.now() - startTime
-      if timeElapsed > constants.lock.MAX_WAIT_TIME
+      if timeElapsed > constants.lock.MAX_WAIT_TIME_MS
         callback()
         return
 
-      newTimeout = constants.lock.BASE_WAIT_TIME * Math.pow 2, ( numFails - 1 )
+      newTimeout = constants.lock.BASE_WAIT_TIME_MS * Math.pow 2, ( numFails - 1 )
       setTimeout doAndCheckAcquireLockAttempt, newTimeout
 
   setTimeout doAndCheckAcquireLockAttempt, 0

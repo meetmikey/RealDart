@@ -1,6 +1,10 @@
 #!/bin/sh
 
+echo "gruntAll: starting..."
+
 cd $REAL_DART_HOME
+
+./killGrunts.sh
 
 cd client
 grunt &
@@ -21,3 +25,5 @@ cd -
 cd server/worker
 grunt &
 cd -
+
+echo "gruntAll: done."

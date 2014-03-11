@@ -15,7 +15,7 @@ initActions = [
 ]
 
 minUID = 1
-maxUID = minUID + commonConstants.HEADER_BATCH_SIZE - 1
+maxUID = minUID + commonConstants.HEADER_DOWNLOAD_BATCH_SIZE - 1
 #maxUID = 30
 
 mailHeaderDownloadJob = 

@@ -105,7 +105,7 @@ exports.getUIDBatches = ( minUID, maxUID, batchSizeInput ) ->
       maxUID: maxUID
     return uidBatches
 
-  batchSize = commonConstants.HEADER_BATCH_SIZE
+  batchSize = commonConstants.HEADER_DOWNLOAD_BATCH_SIZE
   if batchSizeInput
     batchSize = batchSizeInput
 
@@ -145,11 +145,24 @@ exports.doMailHeaderDownloadJob = (job, callback) ->
     emailImportUtils.importHeaders userId, googleUser, uidBatch.minUID, uidBatch.maxUID, (error) ->
       if error then callback error; return
 
-      mailDownloadHelpers.updateEmailAccountStateWithFinishedUIDBatch userId, googleUserId, uidBatch, (error) ->
+      mailDownloadHelpers.updateEmailAccountStateWithFinishedUIDBatch userId, googleUserId, uidBatch, (error, emailAccountState) ->
         if error then callback error; return
 
+        unless emailAccountState
+          winston.doError 'no emailAccountState',
+            userId: userId
+            googleUserId: googleUserId
+
+        if emailAccountState?.outstandingInitialUIDBatches and emailAccountState.outstandingInitialUIDBatches.length > 0
+          # There are still outstanding uid batches.  We should wait before doing the mergeContacts + addEmailTouches jobs.
+          callback()
+          return
+        
+        # This was the last uid batch!  Kick off a merge job, and tell it to do an addTouchesJob when done.
         mergeContactsJob =
           userId: userId
+          createAddEmailTouchesJob: true
+          googleUserId: googleUserId
         
         sqsUtils.addJobToQueue commonConf.queue.mergeContacts, mergeContactsJob, callback
 
@@ -170,7 +183,7 @@ exports.updateEmailAccountStateWithFinishedUIDBatch = (userId, googleUserId, uid
         minUID: uidBatch.minUID
         maxUID: uidBatch.maxUID
 
-  EmailAccountStateModel.findOneAndUpdate select, update, (mongoError) ->
+  EmailAccountStateModel.findOneAndUpdate select, update, (mongoError, emailAccountState) ->
     if mongoError then callback winston.makeMongoError mongoError; return
 
-    callback()
+    callback null, emailAccountState

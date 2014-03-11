@@ -30,8 +30,9 @@ run = (callback) ->
 
     async.each googleUsers, (googleUser, eachCallback) ->
 
+      googleUserId = googleUser._id
       winston.doInfo 'processing googleUser...',
-        googleUserId: googleUser._id
+        googleUserId: googleUserId
         email: googleUser.email
 
       getUserAndEmailAccountState googleUser._id, (error, user, emailAccountState) ->
@@ -44,7 +45,7 @@ run = (callback) ->
           return
 
         minUID = emailAccountState.currentUIDNext
-        maxUID = minUID + commonConstants.HEADER_BATCH_SIZE - 1
+        maxUID = minUID + commonConstants.HEADER_DOWNLOAD_BATCH_SIZE - 1
 
         emailImportUtils.importHeaders user._id, googleUser, minUID, maxUID, (error, uidNext) ->
           if error then eachCallback error; return
@@ -63,6 +64,9 @@ run = (callback) ->
             # This is a little wasteful if we didn't actually add any new contacts, but it's ok for now...
             mergeContactsJob =
               userId: userId
+              createAddEmailTouchesJob: true
+              googleUserId: googleUserId
+
             sqsUtils.addJobToQueue conf.queue.mergeContacts, mergeContactsJob, eachCallback
 
     , callback

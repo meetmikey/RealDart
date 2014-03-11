@@ -39,7 +39,7 @@ exports.addSourceContact = (userId, contactSource, sourceContactInputData, callb
       select.fbUserId = sourceContactData.fbUserId
     when constants.contactSource.LINKED_IN
       select.liUserId = sourceContactData.liUserId
-    when constants.contactSource.SENT_MAIL_TOUCH
+    when constants.contactSource.EMAIL_HEADER
       select.primaryEmail = sourceContactData.primaryEmail
 
   update =
@@ -65,6 +65,7 @@ exports.mergeContactsFromSourceContact = (userId, sourceContact, callback) ->
 
     contactToSave = new ContactModel sourceContact
     contactToSave._id = new mongoose.Types.ObjectId()
+
     if existingContacts and existingContacts.length
       contactToSave = existingContacts[0]
 
@@ -77,12 +78,20 @@ exports.mergeContactsFromSourceContact = (userId, sourceContact, callback) ->
 
       contactHelpers.mergeContacts contactToSave, sourceContact
 
+    contactToSave.mappedContacts ||= []
+    sourceContactId = sourceContact._id
+    if contactToSave.mappedContacts.indexOf( sourceContactId ) is -1
+      contactToSave.mappedContacts.push sourceContactId
+
     contactHelpers.saveContact contactToSave, (error) ->
       if error then callback error; return
 
-      contactHelpers.deleteContactsWithReplacement userId, contactsToDeleteOnMerge, contactToSave, (error) ->
+      contactHelpers.setContactIdMappingOnSourceContact sourceContact, contactToSave._id, (error) ->
         if error then callback error; return
-        callback null, contactToSave
+
+        contactHelpers.deleteContactsWithReplacement userId, contactsToDeleteOnMerge, contactToSave, (error) ->
+          if error then callback error; return
+          callback null, contactToSave
 
 
 exports.saveContact = (contact, callback) ->
@@ -93,6 +102,23 @@ exports.saveContact = (contact, callback) ->
 
   contact.save (mongoError) ->
     if mongoError then callback winston.makeMongoError mongoError; return
+    callback()
+
+
+exports.setContactIdMappingOnSourceContact = (sourceContact, contactId, callback) ->
+  unless sourceContact then callback winston.makeMongoError 'sourceContact'; return
+  unless contactId then callback winston.makeMongoError 'contactId'; return
+
+  sourceContact.mappedContacts ||= []
+  if ( sourceContact.mappedContacts.length > 0 ) and ( sourceContact.mappedContacts[0] is contactId )
+    # Nice.  It's already set.
+    callback()
+    return
+
+  sourceContact.mappedContacts = [contactId]
+  sourceContact.save (mongoError) ->
+    if mongoError then callback winston.makeMongoError mongoError; return
+
     callback()
 
 
@@ -272,7 +298,7 @@ exports.buildContactData = (userId, contactSource, inputData) ->
     if inputData.pictureUrl
       contactData.imageSourceURLs.push inputData.pictureUrl
 
-  else if contactSource is constants.contactSource.SENT_MAIL_TOUCH
+  else if contactSource is constants.contactSource.EMAIL_HEADER
     if inputData.email
       contactData.primaryEmail = emailUtils.normalizeEmailAddress inputData.email
       contactData.emails = emailUtils.normalizeEmailAddressArray [inputData.email]
@@ -342,6 +368,49 @@ exports.mergeContacts = (existingContact, newContact) ->
 
   contactHelpers.setLowerCaseFields existingContact
   existingContact
+
+
+exports.addSourceContactsFromEmail = (userId, emailJSON, callback) ->
+  unless userId then callback winston.makeMissingParamError 'userId'; return
+  unless emailJSON then callback winston.makeMissingParamError 'emailJSON'; return
+
+  recipients = emailJSON.recipients
+  unless recipients and recipients.length
+    winston.doWarn 'no recipients in emailJSON',
+      emailJSON: emailJSON
+    callback()
+    return
+
+  googleUserId = emailJSON.googleUserId
+
+  recipients ||= []
+  async.each recipients, (recipient, eachCallback) ->
+    touchHelpers.addEmailHeaderSourceContact userId, googleUserId, recipient.email, recipient.name, eachCallback
+  , callback
+
+
+exports.addEmailHeaderSourceContact = (userId, googleUserId, emailAddress, fullName, callback) ->
+  unless userId then callback winston.makeMissingParamError 'userId'; return
+  unless googleUserId then callback winston.makeMissingParamError 'googleUserId'; return
+  unless emailAddress then callback winston.makeMissingParamError 'emailAddress'; return
+
+  googleUserId = emailJSON.googleUserId
+
+  unless emailAddress and emailUtils.isValidEmail emailAddress
+    winston.doWarn 'invalid emailAddress', {emailAddress: emailAddress}
+    callback()
+    return
+
+  parsedName = contactHelpers.parseFullName fullName
+  # Don't worry about empty fields.  They get removed later in contactHelpers.
+  souceContactData =
+    email: emailAddress
+    googleUserId: googleUserId
+    firstName: parsedName.firstName
+    middleName: parsedName.middleName
+    lastName: parsedName.lastName
+
+  contactHelpers.addSourceContact userId, constants.contactSource.EMAIL_HEADER, souceContactData, callback
 
 
 exports.parseFullName = (fullName) ->
@@ -571,12 +640,12 @@ exports.mergeAllContacts = (userId, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
 
   # Same lock for mergeContacts and importContactImages
-  lockKeyPrefix = constants.lock.keyPrefix.cleanupContacts
+  lockKeyPrefix = constants.lock.keyPrefix.contacts
   lockKey = lockKeyPrefix + userId
 
   lockUtils.acquireLock lockKey, (error, success) ->
     if error then callback error; return
-    unless success then callback winston.makeError 'failed to get cleanupContacts lock'; return
+    unless success then callback winston.makeError 'failed to get contacts lock'; return
   
     select =
       userId: userId
@@ -608,12 +677,12 @@ exports.importContactImages = (userId, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
 
   # Same lock for mergeContacts and importContactImages
-  lockKeyPrefix = constants.lock.keyPrefix.cleanupContacts
+  lockKeyPrefix = constants.lock.keyPrefix.contacts
   lockKey = lockKeyPrefix + userId
 
   lockUtils.acquireLock lockKey, (error, success) ->
     if error then callback error; return
-    unless success then callback winston.makeError 'failed to get cleanupContacts lock'; return
+    unless success then callback winston.makeError 'failed to get contacts lock'; return
 
     select =
       userId: userId

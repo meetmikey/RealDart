@@ -21,7 +21,13 @@ Contact = new Schema
   imageS3Filenames: {type: [String]}
   sources: {type: [String]}
 
+  # For SourceContacts, this is the single Contact that this source contributed to.
+  # For Contacts, this is one or more SourceContacts that contributed to it.
+  mappedContacts: {type: [Schema.ObjectId]}
+
   timestamp: {type: Date, default: Date.now}
+
+
 
   #DUMMIES
   numTouches: {}

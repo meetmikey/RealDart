@@ -5,6 +5,7 @@ Touch = new Schema
   userId: {type: Schema.ObjectId}
   contactId: {type: Schema.ObjectId}
   type: {type: String, enum: ['email']}
+  emailId: {type: Schema.ObjectId}
   emailSubject: {type: String}
   date: {type: Date}
   timestamp: {type: Date, default: Date.now}

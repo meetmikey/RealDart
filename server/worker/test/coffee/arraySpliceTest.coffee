@@ -1,4 +1,4 @@
-HEADER_BATCH_SIZE = 2
+HEADER_DOWNLOAD_BATCH_SIZE = 2
 
 uids = [
   'a'
@@ -12,6 +12,6 @@ uidBatches = []
 
 while uids and uids.length
   console.log 'in loop, uids: ', uids, ', uidBatches: ', uidBatches
-  uidBatches.push uids.splice 0, HEADER_BATCH_SIZE
+  uidBatches.push uids.splice 0, HEADER_DOWNLOAD_BATCH_SIZE
 
 console.log uidBatches

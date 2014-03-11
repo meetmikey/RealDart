@@ -18,7 +18,8 @@ module.exports =
   MONGO_ERROR_CODE_DUPLICATE: 11000
   DEFAULT_API_CALL_ATTEMPTS: 3
   DEFAULT_WEB_GET_ATTEMPTS: 3
-  HEADER_BATCH_SIZE: 1000
+  HEADER_DOWNLOAD_BATCH_SIZE: 1000
+  ADD_EMAIL_TOUCHES_EMAIL_BATCH_SIZE: 1000
 
   S3_DEFAULT_LINK_EXPIRE_MINUTES: 30
 
@@ -48,7 +49,7 @@ module.exports =
     FACEBOOK: 'facebook'
     LINKED_IN: 'linkedIn'
     GOOGLE: 'google'
-    SENT_MAIL_TOUCH: 'sentMailTouch'
+    EMAIL_HEADER: 'emailHeader'
     
   message:
     SQS_ALL_WORKERS_DONE: 'All workers done.'
@@ -66,11 +67,11 @@ module.exports =
       FOUR_OH_FOUR: '404'
 
   lock:
-    BASE_WAIT_TIME: 10
-    MAX_WAIT_TIME: 1000 * 20
+    BASE_WAIT_TIME_MS: 10
+    MAX_WAIT_TIME_MS: 1000 * 60 * 1 #1 minute
     EXPIRE_TIME_SECONDS: 60 * 60 * 1 #1 hour
     keyPrefix:
-      cleanupContacts: 'cleanupContacts-'
+      contacts: 'contacts-'
 
 
   #  NAME PARSING CONSTANTS
