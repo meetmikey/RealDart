@@ -48,19 +48,40 @@ exports.addTouchesForEmail = (userId, email, callback) ->
           eachCallback()
           return
 
-        touch = new TouchModel
-          userId: userId
-          contactId: contact._id
-          type: 'email'
-          emailId: email._id
-          emailSubject: emailUtils.getCleanSubject email.subject
-          date: email.date
-
-        touch.save (mongoError) ->
-          if mongoError then eachCallback winston.makeMongoError mongoError; return
-          eachCallback()
+          touchHelpers.addEmailTouch userId, email, contact, eachCallback
 
     , callback
+
+
+exports.addEmailTouch = (userId, email, contact, callback) ->
+  unless userId then callback winston.makeMissingParamError 'userId'; return
+  unless email then callback winston.makeMissingParamError 'email'; return
+  unless contact then callback winston.makeMissingParamError 'contact'; return
+
+  touchType = constants.touch.type.EMAIL
+
+  select =
+    userId: userId
+    contactId: contact._id
+    type: touchType
+    emailId: email._id    
+
+  update =
+    $set:
+      userId: userId
+      contactId: contact._id
+      type: touchType
+      emailId: email._id
+      emailSubject: emailUtils.getCleanSubject email.subject
+      date: email.date
+
+  options =
+    upsert: true
+
+  TouchModel.findOneAndUpdate select, update, options, (mongoError) ->
+    if mongoError then callback winston.makeMongoError mongoError; return
+
+    callback()
 
 
 exports.getContactByEmailFromArray = (userId, email, contacts, callback) ->

@@ -10,6 +10,7 @@ Touch = new Schema
   date: {type: Date}
   timestamp: {type: Date, default: Date.now}
 
+# Unique so we don't duplicate touches for emails
 Touch.index {userId: 1, contactId: 1}
 
 mongoose.model 'Touch', Touch

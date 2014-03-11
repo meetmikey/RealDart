@@ -73,6 +73,10 @@ module.exports =
     keyPrefix:
       contacts: 'contacts-'
 
+  touch:
+    type:
+      EMAIL: 'email'
+
 
   #  NAME PARSING CONSTANTS
   ##################################################

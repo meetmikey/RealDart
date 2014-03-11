@@ -101,10 +101,10 @@ exports.getContacts = (userId, googleUser, callback) ->
 
   startIndex = 1
   path = 'contacts/' + googleUser.email + '/full'
-  done = false
+  isDone = false
 
   async.whilst () ->
-    not done
+    not isDone
   , (whilstCallback) ->
 
     queryParams =
@@ -134,7 +134,7 @@ exports.getContacts = (userId, googleUser, callback) ->
         if rawContactsFromResponse and rawContactsFromResponse.length
           startIndex += rawContactsFromResponse.length
         else
-          done = true
+          isDone = true
 
         whilstCallback error
 
