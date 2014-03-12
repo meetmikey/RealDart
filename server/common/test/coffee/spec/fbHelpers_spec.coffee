@@ -1,4 +1,5 @@
 commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
+fs = require 'fs'
 
 fbHelpers = require commonAppDir + '/lib/fbHelpers'
 
@@ -36,3 +37,18 @@ describe "getFriendsFromFQLResponse", ()->
     result = JSON.stringify(fbHelpers.getFriendsFromFQLResponse(fqlData))
     expectedResult = JSON.stringify(fqlData[0].fql_result_set)
     expect(result).toBe(expectedResult)
+
+describe "getCurrentLocationFromFBUser", () ->
+  it "test generic case", () ->
+    fbUserJson = JSON.parse(fs.readFileSync('../data/sampleFBUser.json'))
+    expectedResult = {
+      "lat" : 40.7167,
+      "lng" : -74,
+      "city" : "New York",
+      "state" : "NY",
+      "country" : "United States",
+      "source" : "facebook_current_location"
+    }
+    expectedResult = JSON.stringify(expectedResult)
+    location = JSON.stringify(fbHelpers.getCurrentLocationFromFBUser fbUserJson)
+    expect(location).toBe(expectedResult)

@@ -208,6 +208,7 @@ exports.buildContact = (userId, service, contactServiceUser) ->
   contactData =
     userId: userId
     imageURLs: []
+    locations : []
 
   if service is constants.service.GOOGLE
     contactData.googleContactId = contactServiceUser._id
@@ -231,6 +232,9 @@ exports.buildContact = (userId, service, contactServiceUser) ->
     fbImageURL = fbHelpers.getImageURL contactServiceUser._id
     if fbImageURL
       contactData.imageURLs.push fbImageURL
+
+    if contactServiceUser.current_location
+      contactData.locations.push fbHelpers.getCurrentLocationFromFBUser(contactServiceUser)
 
   else if service is constants.service.LINKED_IN
     contactData.liUserId = contactServiceUser._id
