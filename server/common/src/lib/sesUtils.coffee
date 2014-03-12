@@ -1,35 +1,44 @@
-aws = require 'aws-lib'
+AWS = require('./awsSDKWrapper').AWS
+winston = require('./winstonWrapper').winston
 
 conf = require '../conf'
-winston = require('./winstonWrapper').winston
 
 sesUtils = this
 
+
 exports._init = () ->
-  sesUtils._client = aws.createSESClient conf.aws.key, conf.aws.secret
+  sesUtils._initAWS()
+
+
+exports._initAWS = () ->
+  sesUtils._ses = new AWS.SES
+    apiVersion: conf.aws.ses.apiVersion
+
 
 exports.sendEmail = (recipients, sender, text, html, subject, callback) ->
-  sendArgs =
-    'Message.Body.Text.Charset': 'UTF-8'
-    'Message.Body.Text.Data': text
-    'Message.Subject.Charset': 'UTF-8'
-    'Message.Subject.Data': subject
-    'Source': sender
+  charSet = conf.aws.ses.charSet
+  emailParams =
+    Destination:
+      ToAddresses: recipients
+    Message:
+      Body:
+        Html:
+          Data: html
+          Charset: charSet
+        Text:
+          Data: test
+          Charset: charSet
+      Subject:
+        Data: subject
+        Charset: charSet
+    Source: sender
 
-  n = 1
-  recipients.forEach (rec) ->
-    sendArgs['Destination.ToAddresses.member.' + n] = rec
-    n += 1
-
-  if html
-    sendArgs['Message.Body.Html.Data'] = html
-    sendArgs['Message.Body.Html.Charset'] = 'UTF-8'
-
-  sesUtils._client.call 'SendEmail', sendArgs, (sesError, result) ->
+  sesUtils._ses.sendEmail emailParams, (sesError, result) ->
     if sesError
       callback winston.makeError 'sesError: ' + sesError
     else
       callback()
+
 
 exports.sendInternalNotificationEmail = (text, subject, callback) ->
   sesUtils.sendEmail [conf.email.itAddress], conf.email.noReplyAddress, text, text, subject + ' on ' + os.hostname(), callback
