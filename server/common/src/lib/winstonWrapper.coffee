@@ -61,6 +61,7 @@ winston.doWarn = (log, extraInput) ->
 #----------------------------------
 
 winston.doError = (log, extraInput, res) ->
+  console.log(log)
   winston.handleError winston.makeError(log, extraInput, 3), res
 
 winston.doResponseError = (res, log, responseCode, userMessage, extraInput) ->

@@ -1,6 +1,6 @@
 async = require 'async'
 OAuth2 = require('oauth').OAuth2
-
+_ = require 'underscore'
 winston = require('../lib/winstonWrapper').winston
 GoogleUserModel = require('../schema/googleUser').GoogleUserModel
 GoogleContactModel = require('../schema/googleContact').GoogleContactModel
@@ -36,35 +36,130 @@ exports.getUserJSONFromProfile = (profile) ->
 
 exports.getContactsJSONFromAPIData = (contactsAPIData) ->
   unless contactsAPIData then return {}
-
   contacts = []
-  for contactAPIData in contactsAPIData
-    contact = {}
+  for contactData in contactsAPIData
+    newContact = {}
     
-    title = contactAPIData?.title?['$t']
+    title = contactData?.title?['$t']
     if title
-      contact.title = title
+      newContact.title = title
 
-    parsedTitle = contactHelpers.parseFullName title
-    contact.firstName = parsedTitle.firstName
-    contact.middleName = parsedTitle.middleName
-    contact.lastName = parsedTitle.lastName
+    googleHelpers.addContactId(newContact, contactData)
+    googleHelpers.addContactGroupIds(newContact, contactData)
+    googleHelpers.addName(newContact, contactData)
+    googleHelpers.addEmails(newContact, contactData)
+    googleHelpers.addPhoneNumbers(newContact, contactData)
+    googleHelpers.addAddresses(newContact, contactData)
+    googleHelpers.addBirthday(newContact, contactData)
+    googleHelpers.addWebsites(newContact, contactData)
+   
+    #TODO: remove this check...
+    #email is critical here, so only allow contacts with primaryEmail
+    if (newContact.primaryEmail and emailUtils.isValidEmail newContact.primaryEmail) or newContact.phoneNumbers?.length
+      contacts.push newContact
 
-    emailsData = contactAPIData?['gd$email']
-    contact.emails = []
-    if emailsData
-      for emailData in emailsData
-        emailAddress = emailData?.address
-        unless emailAddress then continue
+  contacts
+
+exports.getGroupsJSONFromAPIData = (groupsAPIData) ->
+  unless groupsAPIData then return {}
+
+  groups = []
+  for groupDatum in groupsAPIData
+    systemGroupId = groupDatum?['gContact$systemGroup']?['id']
+    _id = groupDatum.id?['$t']?.split("/base/")[1]
+    title = groupDatum?['title']?['$t']
+    groups.push {systemGroupId : systemGroupId, title : title, _id : _id}
+  groups
+
+exports.addContactId = (contact, apiData) ->
+  return unless contact and apiData
+  contact.contactId = apiData['id']?['$t']?.split("/base/")[1]
+
+exports.addContactGroupIds = (contact, apiData) ->
+  return unless contact and apiData
+  groups = apiData['gContact$groupMembershipInfo']
+  if groups
+    contact.groupIds = []
+    for group in groups
+      newGroupId = group['href']?.split("/base/")[1]
+      contact.groupIds.push(newGroupId)
+
+exports.addWebsites = (contact, apiData) ->
+  return unless contact and apiData
+
+  websites = apiData['gContact$website']
+  if websites && websites.length > 0
+    contact.websites = websites
+
+exports.addAddresses = (contact, apiData) ->
+  return unless contact and apiData
+
+  addressess = apiData['gd$structuredPostalAddress']
+  if addressess and addressess.length > 0
+    contact.addressess = []
+    for address in addressess
+      newAddress = {}
+      newAddress['formattedAddress'] = address?['gd$formattedAddress']?['$t']
+      newAddress['city'] = address?['gd$formattedAddress']?['$t']
+      newAddress['street'] = address?['gd$street']?['$t']
+      newAddress['region'] = address?['gd$region']?['$t']
+      newAddress['postcode'] = address?['gd$postcode']?['$t']
+      contact.addressess.push(newAddress)
+
+
+exports.addBirthday = (contact, apiData) ->
+  return unless contact and apiData
+
+  birthday = apiData['gContact$birthday']
+  if birthday
+    contact.birthday = birthday.when
+
+exports.addName = (contact, apiData) ->
+  return unless contact and apiData
+
+  contactName = apiData['gd$name']
+  contact.firstName = contactName?['gd$givenName']?['$t']
+  contact.middleName = contactName?['gd$additionalName']?['$t']
+  contact.lastName = contactName?['gd$familyName']?['$t']
+
+exports.addEmails = (contact, apiData) ->
+  return unless contact and apiData
+
+  emailsData = apiData['gd$email']
+  contact.emails = []
+  if emailsData
+    for emailData in emailsData
+      emailAddress = emailData?.address
+      unless emailAddress then continue
+      if not emailUtils.isEmailContactBlacklisted(emailAddress)
         if emailData?.primary is 'true'
           contact.primaryEmail = emailAddress
         contact.emails.push emailAddress
 
-    #email is critical here, so only allow contacts with primaryEmail
-    if contact.primaryEmail and emailUtils.isValidEmail contact.primaryEmail
-      contacts.push contact
 
-  contacts
+exports.addPhoneNumbers = (contact, apiData) ->
+  return unless contact and apiData
+
+  phoneNumbers = apiData['gd$phoneNumber']
+  if phoneNumbers
+    contact.phoneNumbers = []
+    for number in phoneNumbers
+      digits = number?['$t']
+      relSplit = number?.rel?.split("#")
+      type = relSplit[1] if relSplit.length > 0
+      unless digits then continue
+      contact.phoneNumbers.push {'number' : digits, 'type' : type}
+
+
+exports.addIsMyContact = (googleContact, googleUser) ->
+  return unless googleContact and googleUser
+
+  if googleUser and googleUser.contactGroups?.length
+    myContactsGroup = _.find(googleUser.contactGroups, (group) -> group.systemGroupId == 'Contacts')
+    myContactsGroupId = myContactsGroup?._id
+    match = _.find(googleContact.groupIds, (groupId) -> myContactsGroupId == groupId)
+    if match
+      googleContact.isMyContact = true
 
 
 exports.doDataImportJob = (job, callback) ->
@@ -78,22 +173,39 @@ exports.doDataImportJob = (job, callback) ->
     if mongoError then callback winston.makeMongoError mongoError; return
     unless googleUser then callback winston.makeError 'no googleUser', {googleUserId: googleUserId}; return
 
-    googleHelpers.getContacts userId, googleUser, (error) ->
+    googleHelpers.getContactGroups userId, googleUser, (error, groupsData) ->
       if error then callback error; return
 
-      mailDownloadJob =
-        userId: userId
-        googleUserId: googleUserId
+      #add the contact groups to the user
+      googleUser.contactGroups = groupsData
+      googleUser.save (error) ->
+        if error then callback winston.makeMongoError(error); return
 
-      sqsUtils.addJobToQueue conf.queue.mailDownload, mailDownloadJob, (error) ->
-        if error then callback error; return
-        
-        mergeContactsJob =
-          userId: userId
-        
-        sqsUtils.addJobToQueue conf.queue.mergeContacts, mergeContactsJob, callback
+        googleHelpers.getContacts userId, googleUser, (error) ->
+          if error then callback error; return
+
+          mailDownloadJob =
+            userId: userId
+            googleUserId: googleUserId
+
+          sqsUtils.addJobToQueue conf.queue.mailDownload, mailDownloadJob, (error) ->
+            if error then callback error; return
+            
+            mergeContactsJob =
+              userId: userId
+            
+            sqsUtils.addJobToQueue conf.queue.mergeContacts, mergeContactsJob, callback
 
 
+exports.getContactGroups = (userId, googleUser, callback) ->
+  unless userId then callback winston.makeMissingParamError 'userId'; return
+  unless googleUser then callback winston.makeMissingParamError 'googleUser'; return
+
+  path = '/groups/' + googleUser.email + '/full'
+  googleHelpers.doAPIGet googleUser, path, {}, (error, apiResponseData) ->
+    return callback error if error
+
+    callback null, googleHelpers.getGroupsJSONFromAPIData apiResponseData?.feed?.entry
 
 exports.getContacts = (userId, googleUser, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
@@ -123,6 +235,8 @@ exports.getContacts = (userId, googleUser, callback) ->
         googleContact.userId = userId
         googleContact.googleUserId = googleUser._id
 
+        googleHelpers.addIsMyContact(googleContact, googleUser)
+
         googleContact.save (mongoError) ->
           if mongoError and mongoError.code isnt constants.MONGO_ERROR_CODE_DUPLICATE
             eachCallback winston.makeMongoError mongoError
@@ -150,6 +264,7 @@ exports.doAPIGet = (googleUser, path, extraData, callback) ->
     unless accessToken then callback winston.makeError 'no accessToken'; return
 
     data = extraData || {}
+    data.v = '3.0'
     data.alt = 'json'
     data.access_token = accessToken
 

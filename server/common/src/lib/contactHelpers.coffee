@@ -275,6 +275,8 @@ exports.buildContactData = (userId, contactSource, inputData) ->
     contactData.firstName = inputData.firstName
     contactData.middleName = inputData.middleName
     contactData.lastName = inputData.lastName
+    contactData.phoneNumbers = inputData.phoneNumbers
+    contactData.isMyContactForGoogle = inputData.isMyContact
 
   else if contactSource is constants.contactSource.FACEBOOK
     contactData.fbUserId = inputData._id
@@ -341,6 +343,7 @@ exports.mergeContacts = (existingContact, newContact) ->
     'firstName'
     'middleName'
     'lastName'
+    'isMyContactForGoogle'
   ]
 
   for mergeField in mergeFields
@@ -349,9 +352,10 @@ exports.mergeContacts = (existingContact, newContact) ->
 
   arrayMergeFields = [
     'emails'
-    'imageS3Filenames'
     'imageSourceURLs'
+    'imageS3Filenames'
     'sources'
+    'phoneNumbers'
   ]
 
   for arrayMergeField in arrayMergeFields

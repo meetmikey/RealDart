@@ -1,6 +1,11 @@
 mongoose = require 'mongoose'
 Schema = mongoose.Schema
 
+PhoneNumber = new Schema
+  number : {type : String}
+  type : {type : String}
+  { _id : false }
+
 Contact = new Schema
   userId: {type: Schema.ObjectId} # userId of the person whose contact this is
   googleUserId: {type: String} # Optional: if it's a google contact, let's also save the googleUserId
@@ -19,6 +24,8 @@ Contact = new Schema
   lastNameLower: {type: String}
   imageSourceURLs: {type: [String]}
   imageS3Filenames: {type: [String]}
+  isMyContactForGoogle : {type : Boolean}
+  phoneNumbers : {type : [PhoneNumber]}
   sources: {type: [String]}
 
   # For SourceContacts, this is the single Contact that this source contributed to.
@@ -28,8 +35,8 @@ Contact = new Schema
   timestamp: {type: Date, default: Date.now}
 
 
-
-  #DUMMIES
+  # DUMMIES
+  #############
   numTouches: {}
   imageURLs: {} # signed urls of images when we are about to display them
 

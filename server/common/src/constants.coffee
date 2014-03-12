@@ -168,3 +168,20 @@ module.exports =
   LAST_NAME_PREFIXES: [
     'el'
   ]
+
+  EMAIL_CONTACT_BLACKLIST: [
+    'support@',
+    'notification@',
+    'notifications@',
+    'noreply@',
+    'no-reply@',
+    'do-not-reply@',
+    'mailer-daemon@',
+    'alerts@',
+    'alert@',
+    'reservations@',
+    'reservation@',
+    'confirmation@',
+    'contact@',
+    'craigslist'
+  ]

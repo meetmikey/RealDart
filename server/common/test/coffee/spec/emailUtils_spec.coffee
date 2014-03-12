@@ -17,10 +17,10 @@ describe 'normalizeEmailAddress', () ->
     expect( emailUtils.normalizeEmailAddress( 'a@a.com' ) ).toBe( 'a@a.com' )
     expect( emailUtils.normalizeEmailAddress( 'A@a.COM' ) ).toBe( 'a@a.com' )
     expect( emailUtils.normalizeEmailAddress( 'abcd@a.com' ) ).toBe( 'abcd@a.com' )
-    expect( emailUtils.normalizeEmailAddress( 'a.b.c.d@a.com' ) ).toBe( 'abcd@a.com' )
-    expect( emailUtils.normalizeEmailAddress( 'a.b.c.d+asdf@a.com' ) ).toBe( 'abcd@a.com' )
-    expect( emailUtils.normalizeEmailAddress( 'a.B.C.d+aSDf@a.com' ) ).toBe( 'abcd@a.com' )
-    expect( emailUtils.normalizeEmailAddress( 'a.B.C....d+a...SDf@a.com' ) ).toBe( 'abcd@a.com' )
+    expect( emailUtils.normalizeEmailAddress( 'a.b.c.d@a.com' ) ).toBe( 'a.b.c.d@a.com' )
+    expect( emailUtils.normalizeEmailAddress( 'a.b.c.d+asdf@a.com' ) ).toBe( 'a.b.c.d@a.com' )
+    expect( emailUtils.normalizeEmailAddress( 'a.B.C.d+aSDf@gmail.com' ) ).toBe( 'abcd@gmail.com' )
+    expect( emailUtils.normalizeEmailAddress( 'a.B.C....d+a...SDf@gmail.com' ) ).toBe( 'abcd@gmail.com' )
 
 describe 'getCleanSubject', () ->
   it 'fail', () ->
@@ -45,6 +45,16 @@ describe 'getCleanSubject', () ->
     expect( emailUtils.getCleanSubject( 'Re:FWD: aB' ) ).toBe( 'aB' )
     expect( emailUtils.getCleanSubject( 're: fwd: FWD: aB' ) ).toBe( 'aB' )
 
+
+describe 'isEmailContactBlacklisted', () ->
+  it 'true', () ->
+    expect( emailUtils.isEmailContactBlacklisted ('support@mikeyteam.com')).toBe(true)
+    expect( emailUtils.isEmailContactBlacklisted ('do-not-reply@mikeyteam.com')).toBe(true)
+    expect( emailUtils.isEmailContactBlacklisted ('noreply@mikeyteam.com')).toBe(true)
+  it 'false', () ->
+    expect( emailUtils.isEmailContactBlacklisted ('sagar@mikeyteam.com')).toBe(false)
+    expect( emailUtils.isEmailContactBlacklisted ('justin@mikeyteam.com')).toBe(false)
+    expect( emailUtils.isEmailContactBlacklisted ('boom@gmailsupport.com')).toBe(false)
 
 describe 'isValidEmail', () ->
   it 'fail case', () ->

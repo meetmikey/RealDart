@@ -83,11 +83,11 @@ exports.saveUserAndQueueImport = (userId, accessToken, refreshToken, profile, ca
 
   accessTokenEncryptedInfo = utils.encryptSymmetric accessToken
   fbUserJSON.accessTokenEncrypted = accessTokenEncryptedInfo.encrypted
-  fbUserJSON.accessTokenSalt = accessTokenEncryptedInfo.salt
+  fbUserJSON.accessTokenIV = accessTokenEncryptedInfo.iv
   if refreshToken
     refreshTokenEncryptedInfo = utils.encryptSymmetric refreshToken
     fbUserJSON.refreshTokenEncrypted = refreshTokenEncryptedInfo.encrypted
-    fbUserJSON.refreshTokenSalt = refreshTokenEncryptedInfo.salt
+    fbUserJSON.refreshTokenIV = refreshTokenEncryptedInfo.iv
 
   fbUserId = fbUserJSON._id
   delete fbUserJSON._id

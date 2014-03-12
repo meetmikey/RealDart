@@ -1,0 +1,241 @@
+{
+    "feed": {
+        "category": [
+            {
+                "term": "http://schemas.google.com/contact/2008#group", 
+                "scheme": "http://schemas.google.com/g/2005#kind"
+            }
+        ], 
+        "updated": {
+            "$t": "2014-03-07T02:23:45.972Z"
+        }, 
+        "xmlns$gd": "http://schemas.google.com/g/2005", 
+        "generator": {
+            "$t": "Contacts", 
+            "version": "1.0", 
+            "uri": "http://www.google.com/m8/feeds"
+        }, 
+        "title": {
+            "$t": "Sagar Mehta's Contact Groups"
+        }, 
+        "author": [
+            {
+                "name": {
+                    "$t": "Sagar Mehta"
+                }, 
+                "email": {
+                    "$t": "svmknicks33@gmail.com"
+                }
+            }
+        ], 
+        "openSearch$itemsPerPage": {
+            "$t": "50"
+        }, 
+        "xmlns$gContact": "http://schemas.google.com/contact/2008", 
+        "openSearch$startIndex": {
+            "$t": "1"
+        }, 
+        "xmlns$batch": "http://schemas.google.com/gdata/batch", 
+        "xmlns": "http://www.w3.org/2005/Atom", 
+        "link": [
+            {
+                "href": "http://www.google.com/", 
+                "type": "text/html", 
+                "rel": "alternate"
+            }, 
+            {
+                "href": "https://www.google.com/m8/feeds/groups/svmknicks33%40gmail.com/full?v=3.0", 
+                "type": "application/atom+xml", 
+                "rel": "http://schemas.google.com/g/2005#feed"
+            }, 
+            {
+                "href": "https://www.google.com/m8/feeds/groups/svmknicks33%40gmail.com/full?v=3.0", 
+                "type": "application/atom+xml", 
+                "rel": "http://schemas.google.com/g/2005#post"
+            }, 
+            {
+                "href": "https://www.google.com/m8/feeds/groups/svmknicks33%40gmail.com/full/batch?v=3.0", 
+                "type": "application/atom+xml", 
+                "rel": "http://schemas.google.com/g/2005#batch"
+            }, 
+            {
+                "href": "https://www.google.com/m8/feeds/groups/svmknicks33%40gmail.com/full?alt=json&start-index=1&max-results=50&v=3.0", 
+                "type": "application/atom+xml", 
+                "rel": "self"
+            }
+        ], 
+        "xmlns$openSearch": "http://a9.com/-/spec/opensearch/1.1/", 
+        "gd$etag": "W/\"A0cGRHc8eit7I2A9Wh9XEUg.\"", 
+        "entry": [
+            {
+                "category": [
+                    {
+                        "term": "http://schemas.google.com/contact/2008#group", 
+                        "scheme": "http://schemas.google.com/g/2005#kind"
+                    }
+                ], 
+                "gContact$systemGroup": {
+                    "id": "Contacts"
+                }, 
+                "updated": {
+                    "$t": "1970-01-01T00:00:00.000Z"
+                }, 
+                "title": {
+                    "$t": "System Group: My Contacts"
+                }, 
+                "content": {
+                    "$t": "System Group: My Contacts"
+                }, 
+                "link": [
+                    {
+                        "href": "https://www.google.com/m8/feeds/groups/svmknicks33%40gmail.com/full/6?v=3.0", 
+                        "type": "application/atom+xml", 
+                        "rel": "self"
+                    }
+                ], 
+                "gd$etag": "\"YDwreyM.\"", 
+                "id": {
+                    "$t": "http://www.google.com/m8/feeds/groups/svmknicks33%40gmail.com/base/6"
+                }
+            }, 
+            {
+                "category": [
+                    {
+                        "term": "http://schemas.google.com/contact/2008#group", 
+                        "scheme": "http://schemas.google.com/g/2005#kind"
+                    }
+                ], 
+                "gContact$systemGroup": {
+                    "id": "Friends"
+                }, 
+                "updated": {
+                    "$t": "1970-01-01T00:00:00.000Z"
+                }, 
+                "title": {
+                    "$t": "System Group: Friends"
+                }, 
+                "content": {
+                    "$t": "System Group: Friends"
+                }, 
+                "link": [
+                    {
+                        "href": "https://www.google.com/m8/feeds/groups/svmknicks33%40gmail.com/full/d?v=3.0", 
+                        "type": "application/atom+xml", 
+                        "rel": "self"
+                    }
+                ], 
+                "gd$etag": "\"YDwreyM.\"", 
+                "id": {
+                    "$t": "http://www.google.com/m8/feeds/groups/svmknicks33%40gmail.com/base/d"
+                }
+            }, 
+            {
+                "category": [
+                    {
+                        "term": "http://schemas.google.com/contact/2008#group", 
+                        "scheme": "http://schemas.google.com/g/2005#kind"
+                    }
+                ], 
+                "gContact$systemGroup": {
+                    "id": "Family"
+                }, 
+                "updated": {
+                    "$t": "1970-01-01T00:00:00.000Z"
+                }, 
+                "title": {
+                    "$t": "System Group: Family"
+                }, 
+                "content": {
+                    "$t": "System Group: Family"
+                }, 
+                "link": [
+                    {
+                        "href": "https://www.google.com/m8/feeds/groups/svmknicks33%40gmail.com/full/e?v=3.0", 
+                        "type": "application/atom+xml", 
+                        "rel": "self"
+                    }
+                ], 
+                "gd$etag": "\"YDwreyM.\"", 
+                "id": {
+                    "$t": "http://www.google.com/m8/feeds/groups/svmknicks33%40gmail.com/base/e"
+                }
+            }, 
+            {
+                "category": [
+                    {
+                        "term": "http://schemas.google.com/contact/2008#group", 
+                        "scheme": "http://schemas.google.com/g/2005#kind"
+                    }
+                ], 
+                "gContact$systemGroup": {
+                    "id": "Coworkers"
+                }, 
+                "updated": {
+                    "$t": "1970-01-01T00:00:00.000Z"
+                }, 
+                "title": {
+                    "$t": "System Group: Coworkers"
+                }, 
+                "content": {
+                    "$t": "System Group: Coworkers"
+                }, 
+                "link": [
+                    {
+                        "href": "https://www.google.com/m8/feeds/groups/svmknicks33%40gmail.com/full/f?v=3.0", 
+                        "type": "application/atom+xml", 
+                        "rel": "self"
+                    }
+                ], 
+                "gd$etag": "\"YDwreyM.\"", 
+                "id": {
+                    "$t": "http://www.google.com/m8/feeds/groups/svmknicks33%40gmail.com/base/f"
+                }
+            }, 
+            {
+                "category": [
+                    {
+                        "term": "http://schemas.google.com/contact/2008#group", 
+                        "scheme": "http://schemas.google.com/g/2005#kind"
+                    }
+                ], 
+                "updated": {
+                    "$t": "2009-11-26T01:16:13.703Z"
+                }, 
+                "title": {
+                    "$t": "Starred in Android"
+                }, 
+                "content": {
+                    "$t": "Starred in Android"
+                }, 
+                "link": [
+                    {
+                        "href": "https://www.google.com/m8/feeds/groups/svmknicks33%40gmail.com/full/6e2345640c805e2c?v=3.0", 
+                        "type": "application/atom+xml", 
+                        "rel": "self"
+                    }, 
+                    {
+                        "href": "https://www.google.com/m8/feeds/groups/svmknicks33%40gmail.com/full/6e2345640c805e2c?v=3.0", 
+                        "type": "application/atom+xml", 
+                        "rel": "edit"
+                    }
+                ], 
+                "gd$etag": "\"Qnk7ezVSLyt7I2A9WxNaEUQCRgM.\"", 
+                "app$edited": {
+                    "xmlns$app": "http://www.w3.org/2007/app", 
+                    "$t": "2009-11-26T01:16:13.703Z"
+                }, 
+                "id": {
+                    "$t": "http://www.google.com/m8/feeds/groups/svmknicks33%40gmail.com/base/6e2345640c805e2c"
+                }
+            }
+        ], 
+        "openSearch$totalResults": {
+            "$t": "5"
+        }, 
+        "id": {
+            "$t": "svmknicks33@gmail.com"
+        }
+    }, 
+    "version": "1.0", 
+    "encoding": "UTF-8"
+}
