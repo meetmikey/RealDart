@@ -29,8 +29,8 @@ run = (callback) ->
         if item['State Abbreviation'] of commonConstants.US_STATE_CODES
           newZipCode = new ZipCodeModel
             _id : item['Postal Code']
-            latitude : parseFloat(item['Latitude'])
-            longitude : parseFloat(item['Longitude'])
+            lat : parseFloat(item['Latitude'])
+            lng : parseFloat(item['Longitude'])
             state  : item['State Abbreviation']
             county : item['County']
             city  : item['Place Name']

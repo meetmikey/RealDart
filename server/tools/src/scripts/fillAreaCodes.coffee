@@ -5,6 +5,7 @@ csv = require 'csv'
 async = require 'async'
 winston = require(commonAppDir + '/lib/winstonWrapper').winston
 mongooseConnect = require commonAppDir + '/lib/mongooseConnect'
+googleGeocoding = require commonAppDir + '/lib/googleGeocoding'
 appInitUtils = require commonAppDir + '/lib/appInitUtils'
 AreaCodeModel = require(commonAppDir + '/schema/areaCode').AreaCodeModel
 commonConstants = require commonAppDir + '/constants'
@@ -43,7 +44,7 @@ run = (callback) ->
   csv().from.string(dataCSV.toString('utf-8'), {columns : true})
     .to.array (data) ->
       
-      async.each data, (item, eachCb) ->
+      async.eachSeries data, (item, eachCb) ->
         normalizeAreaCodeDatum(item)
 
         if item['State Code']
@@ -53,13 +54,21 @@ run = (callback) ->
             state  : item['State Code']
             majorCities  : item['Cities']
 
-          newAreaCode.save (err) ->
-            if err
-              eachCb(winston.makeMongoError err)
-            else
-              eachCb()
+          if newAreaCode.majorCities && newAreaCode.majorCities.length
+            #TODO: get better geocode from whtiepages??
+            googleGeocoding.getGeocode newAreaCode.majorCities[0], newAreaCode.state, (err, geocode) ->
+              return eachCb(err) if err
+
+              newAreaCode.lat = geocode.lat
+              newAreaCode.lng = geocode.lng
+
+              newAreaCode.save (err) ->
+                if err
+                  eachCb(winston.makeMongoError err)
+                else
+                  eachCb()
         else
-          console.log 'not processing', item
+          winston.doInfo 'not processing', {item : item}
           eachCb()
  
       , (err) ->

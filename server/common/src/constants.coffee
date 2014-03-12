@@ -179,7 +179,7 @@ module.exports =
   US_STATE_CODES : {
     'WA':'Washington',
     'DE':'Delaware',
-    'DC':'District of Columbia',
+    'DC':'District Of Columbia',
     'WI':'Wisconsin',
     'WV':'West Virginia',
     'HI':'Hawaii',

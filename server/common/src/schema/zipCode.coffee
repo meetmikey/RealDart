@@ -6,8 +6,8 @@ stateCodes = Object.keys(constants.US_STATE_CODES)
 
 ZipCode = new Schema
   _id : {type : String, unique : true}
-  latitude : {type : Number}
-  longitude : {type : Number}
+  lat : {type : Number}
+  lng : {type : Number}
   state  : {type : String, enum : stateCodes}
   county : {type : String}
   city  : {type : String}
