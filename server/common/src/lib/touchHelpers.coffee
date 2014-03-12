@@ -34,7 +34,6 @@ exports.addTouchesForEmail = (userId, email, callback) ->
     if mongoError then callback winston.makeMongoError mongoError; return
 
     async.each recipients, (recipient, eachCallback) ->
-
       recipientEmail = recipient.email
       touchHelpers.getContactByEmailFromArray userId, recipientEmail, foundContacts, (error, contact) ->
         if error then eachCallback error; return
@@ -48,7 +47,7 @@ exports.addTouchesForEmail = (userId, email, callback) ->
           eachCallback()
           return
 
-          touchHelpers.addEmailTouch userId, email, contact, eachCallback
+        touchHelpers.addEmailTouch userId, email, contact, eachCallback
 
     , callback
 

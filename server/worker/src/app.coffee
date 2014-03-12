@@ -22,17 +22,14 @@ initActions = [
 
 serverWorkerApp = this
 
-exports.postInit = (callback) ->
-  serverWorkerApp.startPolling callback
+exports.run = (callback) ->
+  serverWorkerApp.startPolling()
 
-exports.startPolling = (callback) ->
+exports.startPolling = () ->
 
   maxWorkers = constants.MAX_WORKERS_PER_QUEUE
   if process.argv and process.argv.length > 2
     maxWorkers = process.argv[2]
-
-  async.parallel [
-  ], callback
 
   sqsUtils.pollQueue commonConf.queue.addEmailTouches, addTouchesHelpers.doAddEmailTouchesJob, maxWorkers
   sqsUtils.pollQueue commonConf.queue.mergeContacts, cleanupContactHelpers.doMergeContactsJob, maxWorkers
@@ -41,4 +38,4 @@ exports.startPolling = (callback) ->
   sqsUtils.pollQueue commonConf.queue.mailDownload, mailDownloadHelpers.doMailDownloadJob, maxWorkers
   sqsUtils.pollQueue commonConf.queue.mailHeaderDownload, mailDownloadHelpers.doMailHeaderDownloadJob, maxWorkers
 
-appInitUtils.initApp 'workerApp', initActions, serverWorkerApp.postInit
+appInitUtils.initApp 'workerApp', initActions, serverWorkerApp.run

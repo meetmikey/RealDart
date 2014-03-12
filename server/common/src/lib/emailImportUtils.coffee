@@ -5,6 +5,7 @@ googleHelpers = require './googleHelpers'
 imapConnect = require './imapConnect'
 imapHelpers = require './imapHelpers'
 touchHelpers = require './touchHelpers'
+contactHelpers = require './contactHelpers'
 EmailModel = require('../schema/email').EmailModel
 
 constants = require '../constants'
@@ -73,4 +74,4 @@ exports.saveHeaders = (userId, googleUser, headers, callback) ->
   EmailModel.findOneAndUpdate select, update, options, (mongoError) ->
     if mongoError then callback winston.makeMongoError mongoError; return
 
-    callback()
+    contactHelpers.addSourceContactsFromEmail userId, emailJSON, callback

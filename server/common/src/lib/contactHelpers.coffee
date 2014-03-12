@@ -385,7 +385,7 @@ exports.addSourceContactsFromEmail = (userId, emailJSON, callback) ->
 
   recipients ||= []
   async.each recipients, (recipient, eachCallback) ->
-    touchHelpers.addEmailHeaderSourceContact userId, googleUserId, recipient.email, recipient.name, eachCallback
+    contactHelpers.addEmailHeaderSourceContact userId, googleUserId, recipient.email, recipient.name, eachCallback
   , callback
 
 
@@ -393,8 +393,6 @@ exports.addEmailHeaderSourceContact = (userId, googleUserId, emailAddress, fullN
   unless userId then callback winston.makeMissingParamError 'userId'; return
   unless googleUserId then callback winston.makeMissingParamError 'googleUserId'; return
   unless emailAddress then callback winston.makeMissingParamError 'emailAddress'; return
-
-  googleUserId = emailJSON.googleUserId
 
   unless emailAddress and emailUtils.isValidEmail emailAddress
     winston.doWarn 'invalid emailAddress', {emailAddress: emailAddress}
@@ -639,7 +637,7 @@ exports.signImageURLs = (contact) ->
 exports.mergeAllContacts = (userId, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
 
-  # Same lock for mergeContacts and importContactImages
+  # Same lock for mergeContacts, importContactImages, and addEmailTouches
   lockKeyPrefix = constants.lock.keyPrefix.contacts
   lockKey = lockKeyPrefix + userId
 
@@ -676,7 +674,7 @@ exports.mergeAllContacts = (userId, callback) ->
 exports.importContactImages = (userId, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
 
-  # Same lock for mergeContacts and importContactImages
+  # Same lock for mergeContacts, importContactImages, and addEmailTouches
   lockKeyPrefix = constants.lock.keyPrefix.contacts
   lockKey = lockKeyPrefix + userId
 

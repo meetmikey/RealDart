@@ -2,8 +2,9 @@ commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
 
 winston = require(commonAppDir + '/lib/winstonWrapper').winston
 contactHelpers = require commonAppDir + '/lib/contactHelpers'
+sqsUtils = require commonAppDir + '/lib/sqsUtils'
 
-commonConstants = require commonAppDir + '/constants'
+commonConf = require commonAppDir + '/conf'
 
 cleanupContactHelpers = this
 
@@ -12,14 +13,14 @@ exports.doMergeContactsJob = (job, callback) ->
   unless job then callback winston.makeMissingParamError 'job'; return
 
   userId = job.userId
-  createAddTouchesJob = job.createAddTouchesJob
+  createAddEmailTouchesJob = job.createAddEmailTouchesJob
   googleUserId = job.googleUserId
   unless userId then callback winston.makeError 'no userId', {job: job}; return
 
   contactHelpers.mergeAllContacts userId, (error) ->
     if error then callback error; return
 
-    unless createAddTouchesJob and googleUserId
+    unless createAddEmailTouchesJob and googleUserId
       # Nothing special to do.
       callback()
       return
@@ -32,7 +33,7 @@ exports.doMergeContactsJob = (job, callback) ->
       userId: userId
       googleUserId: googleUserId
 
-    sqsUtils.addJobToQueue conf.queue.addEmailTouches, addEmailTouchesJob, callback
+    sqsUtils.addJobToQueue commonConf.queue.addEmailTouches, addEmailTouchesJob, callback
 
 
 exports.doImportContactImagesJob = (job, callback) ->

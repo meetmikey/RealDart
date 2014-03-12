@@ -66,7 +66,8 @@ exports._doInitAction = (action, callback) =>
       callback()
     
     else
-      callback 'invalid init action: ' + action
+      callback winston.makeError 'invalid init action',
+        action: action
 
 
 exports._doShutdownAction = (action, callback) ->

@@ -6,6 +6,7 @@ EmailAccountStateModel = require(commonAppDir + '/schema/emailAccountState').Ema
 EmailModel = require(commonAppDir + '/schema/email').EmailModel
 winston = require(commonAppDir + '/lib/winstonWrapper').winston
 touchHelpers = require commonAppDir + '/lib/touchHelpers'
+lockUtils = require commonAppDir + '/lib/lockUtils'
 
 commonConstants = require commonAppDir + '/constants'
 
@@ -32,6 +33,21 @@ exports.doAddEmailTouchesJob = (job, callback) ->
       callback()
       return
 
+    addTouchesHelpers.addEmailTouches userId, googleUserId, emailAccountState, callback
+
+
+exports.addEmailTouches = (userId, googleUserId, emailAccountState, callback) ->
+  unless userId then callback winston.makeMissingParamError 'userId'; return
+  unless googleUserId then callback winston.makeMissingParamError 'googleUserId'; return
+  unless emailAccountState then callback winston.makeMissingParamError 'emailAccountState'; return
+
+  lockKeyPrefix = commonConstants.lock.keyPrefix.contacts
+  lockKey = lockKeyPrefix + userId
+
+  lockUtils.acquireLock lockKey, (error, success) ->
+    if error then callback error; return
+    unless success then callback winston.makeError 'failed to get contacts lock'; return
+
     highestEmailId = emailAccountState.highestEmailIdForAddingTouches
     isDone = false
     async.whilst () ->
@@ -46,15 +62,22 @@ exports.doAddEmailTouchesJob = (job, callback) ->
           whilstCallback()
 
     , (error) ->
-      if error then callback error; return
+      if error 
+        lockUtils.releaseLock lockKey, (error) ->
+          if error then winston.handleError error
+        callback error
+        return
 
-      addTouchesHelpers.updateEmailAccountStateHighestEmailId emailAccountState, highestEmailId, callback
+      addTouchesHelpers.updateEmailAccountStateHighestEmailId emailAccountState, highestEmailId, (error) ->
+        lockUtils.releaseLock lockKey, (error) ->
+          if error then winston.handleError error
+        callback error
 
 
 exports.updateEmailAccountStateHighestEmailId = (emailAccountState, highestEmailId, callback) ->
   unless emailAccountState then callback winston.makeMissingParamError 'emailAccountState'; return
 
-  unless emailAccountState.highestEmailIdForAddingTouches is highestEmailId
+  if emailAccountState.highestEmailIdForAddingTouches is highestEmailId
     callback()
     return
 
@@ -97,7 +120,7 @@ exports.addEmailTouchesBatch = (userId, googleUserId, highestEmailId, callback) 
       if email._id > newHighestEmailId
         newHighestEmailId = email._id
 
-      touchHelpers.addTouchesForEmail userId, googleUserId, email, eachCallback
+      touchHelpers.addTouchesForEmail userId, email, eachCallback
 
     , (error) ->
         if error then callback error; return
