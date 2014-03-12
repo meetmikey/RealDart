@@ -302,6 +302,8 @@ exports.buildContactData = (userId, contactSource, inputData) ->
     contactData.lastName = inputData.lastName
     if inputData.pictureUrl
       contactData.imageSourceURLs.push inputData.pictureUrl
+    if inputData.location
+      contactData.locations.push inputData.location
 
   else if contactSource is constants.contactSource.EMAIL_HEADER
     if inputData.email

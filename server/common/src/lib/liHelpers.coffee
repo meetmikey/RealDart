@@ -77,12 +77,18 @@ exports.getConnections = (userId, liUser, callback) ->
         eachCallback()
         return
 
-      connectionLIUser.save (mongoError) ->
-        if mongoError and mongoError.code isnt constants.MONGO_ERROR_CODE_DUPLICATE
-          eachCallback winston.makeMongoError mongoError
-          return
+      liHelpers.getCurrentLocationFromLIUser connectionLIUser, (err, location) ->
+        if err
+          winston.handleError err
+        else
+          connectionLIUser.location = location
 
-        contactHelpers.addSourceContact userId, constants.contactSource.LINKED_IN, connectionLIUser, eachCallback
+        connectionLIUser.save (mongoError) ->
+          if mongoError and mongoError.code isnt constants.MONGO_ERROR_CODE_DUPLICATE
+            eachCallback winston.makeMongoError mongoError
+            return
+
+          contactHelpers.addSourceContact userId, constants.contactSource.LINKED_IN, connectionLIUser, eachCallback
 
     , callback
 
