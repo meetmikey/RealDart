@@ -53,7 +53,8 @@ run = (callback) ->
 
           if newAreaCode.majorCities && newAreaCode.majorCities.length
             #TODO: get better geocode from whtiepages??
-            googleGeocoding.getGeocode newAreaCode.majorCities[0], newAreaCode.state, (err, geocode) ->
+            address = newAreaCode.majorCities[0] + ', ' + newAreaCode.state
+            googleGeocoding.getGeocode address, 'us', (err, geocode) ->
               return eachCb(err) if err
 
               newAreaCode.lat = geocode.lat

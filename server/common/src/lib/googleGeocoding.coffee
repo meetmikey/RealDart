@@ -9,23 +9,22 @@ BASE_URL = 'https://maps.googleapis.com/maps/api/geocode/json'
 
 googleGeocoding = this
 
-exports.getGeocode = (city, state, callback) ->
-  unless state then callback winston.makeMissingParamError 'state'; return
-  unless city then callback winston.makeMissingParamError 'city'; return
+exports.getGeocode = (address, country, callback) ->
+  unless address then callback winston.makeMissingParamError 'address'; return
+  unless country then callback winston.makeMissingParamError 'country'; return
 
-  googleGeocoding.doAPIGet city, state, (err, data) ->
+  googleGeocoding.doAPIGet address, country, (err, data) ->
     return callback err if err
     geocode = googleGeocoding.getCoordinatesFromResponse(data)
     callback(null, geocode)
 
-exports.doAPIGet = (city, state, callback) ->
-  unless state then callback winston.makeMissingParamError 'state'; return
-  unless city then callback winston.makeMissingParamError 'city'; return
+exports.doAPIGet = (address, country, callback) ->
+  unless address then callback winston.makeMissingParamError 'address'; return
+  unless country then callback winston.makeMissingParamError 'country'; return
 
-  address = city + ', ' + state
   data =
     address : address
-    componenets : 'country:US'
+    components : 'country:' + country
     key : conf.google_apis.key
     sensor : false
 

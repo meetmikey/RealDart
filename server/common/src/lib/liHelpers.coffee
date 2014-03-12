@@ -7,6 +7,7 @@ contactHelpers = require './contactHelpers'
 webUtils = require './webUtils'
 sqsUtils = require './sqsUtils'
 urlUtils = require './urlUtils'
+googleGeocoding = require './googleGeocoding'
 
 conf = require '../conf'
 constants = require '../constants'
@@ -112,3 +113,33 @@ exports.doAPIGet = (liUser, path, callback) ->
         exceptionMessage: exception.message
 
     callback null, dataJSON
+
+exports.getCurrentLocationFromLIUser = (liUser, callback) ->
+  return callback winston.makeMissingParamError 'liUser' if not liUser
+  location = {}
+  location.country = liUser?.location?.country?.code
+  location.readableLocation = liUser?.location?.name
+  location.source = 'linkedin_location'
+
+  #get the coordinates
+  if location.readableLocation and location.country
+    cleanLocation = liHelpers.cleanLocationNameForGeocoding location.readableLocation
+    googleGeocoding.getGeocode cleanLocation, location.country, (err, geocode) ->
+      return callback err if err
+
+      location.lat = geocode.lat
+      location.lng = geocode.lng
+      callback null, location
+  else
+    callback null, location
+
+exports.cleanLocationNameForGeocoding = (locationName) ->
+  return unless locationName
+
+  #hard code SF...
+  if locationName == 'San Francisco Bay Area'
+    locationName = 'San Francisco'
+
+  locationName = locationName.replace(new RegExp('Area$'), '')
+  locationName = locationName.replace(new RegExp('^Greater'), '')
+  locationName.trim()
