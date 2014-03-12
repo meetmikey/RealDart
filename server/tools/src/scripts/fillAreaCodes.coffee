@@ -15,10 +15,7 @@ initActions = [
   commonConstants.initAction.CONNECT_MONGO
 ]
 
-inverseStateMap = {}
-
-for key of commonConstants.US_STATE_CODES
-  inverseStateMap[commonConstants.US_STATE_CODES[key]] = key
+inverseStateMap = commonConstants.US_STATE_CODES_INV
 
 postInit = () ->
   run (error) ->
