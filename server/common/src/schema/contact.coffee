@@ -6,6 +6,16 @@ PhoneNumber = new Schema
   type : {type : String}
   { _id : false }
 
+Location = new Schema
+  lat : Number
+  lng : Number
+  city : String
+  state : String
+  country : {type : String, default : 'United States'}
+  readableLocation : String
+  source : {type : String, enum : ['area_code', 'zip', 'address', 'facebook_current_location', 'linkedin_location']}
+  {_id : false}
+
 Contact = new Schema
   userId: {type: Schema.ObjectId} # userId of the person whose contact this is
   googleUserId: {type: String} # Optional: if it's a google contact, let's also save the googleUserId
@@ -26,12 +36,11 @@ Contact = new Schema
   imageS3Filenames: {type: [String]}
   isMyContactForGoogle : {type : Boolean}
   phoneNumbers : {type : [PhoneNumber]}
+  locations : {type : [Location]}
   sources: {type: [String]}
-
   # For SourceContacts, this is the single Contact that this source contributed to.
   # For Contacts, this is one or more SourceContacts that contributed to it.
   mappedContacts: {type: [Schema.ObjectId]}
-
   timestamp: {type: Date, default: Date.now}
 
 

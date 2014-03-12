@@ -200,3 +200,23 @@ exports.extendToken = (accessToken, cb) ->
         cb winston.makeError err
       else
         cb null, facebookRes
+
+exports.getCurrentLocationFromFBUser = (fbUser) ->
+  return undefined if not fbUser
+  stateMap = constants.US_STATE_CODES_INV
+
+  location = {}
+  location.lat = fbUser.current_location?.latitude
+  location.lng = fbUser.current_location?.longitude
+  location.city = fbUser.current_location?.city
+  
+  state = fbUser.current_location?.state
+
+  if state of stateMap
+    location.state = stateMap[fbUser.current_location?.state]
+  else
+    location.state = state
+
+  location.country = fbUser.current_location?.country
+  location.source = 'facebook_current_location'
+  location

@@ -266,6 +266,7 @@ exports.buildContactData = (userId, contactSource, inputData) ->
     userId: userId
     imageSourceURLs: []
     sources: [contactSource]
+    locations : []
 
   if contactSource is constants.contactSource.GOOGLE
     contactData.googleContactId = inputData._id
@@ -289,6 +290,8 @@ exports.buildContactData = (userId, contactSource, inputData) ->
     fbImageURL = fbHelpers.getImageURL inputData._id
     if fbImageURL
       contactData.imageSourceURLs.push fbImageURL
+    if inputData.current_location
+      contactData.locations.push fbHelpers.getCurrentLocationFromFBUser(inputData)
 
   else if contactSource is constants.contactSource.LINKED_IN
     contactData.liUserId = inputData._id
@@ -312,7 +315,6 @@ exports.buildContactData = (userId, contactSource, inputData) ->
   contactHelpers.setLowerCaseFields contactData
   utils.removeEmptyFields contactData, true, true
   contactData
-
 
 exports.setLowerCaseFields = (contact) ->
   unless contact then return

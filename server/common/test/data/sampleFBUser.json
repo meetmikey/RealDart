@@ -1,0 +1,72 @@
+{
+  "birthday_date" : "12/17/1985",
+  "birthday" : "December 17, 1985",
+  "current_location" : {
+    "city" : "New York",
+    "state" : "New York",
+    "country" : "United States",
+    "zip" : "",
+    "latitude" : 40.7167,
+    "longitude" : -74,
+    "id" : 108424279189115,
+    "name" : "New York, New York"
+  },
+  "education" : [
+    {
+      "school" : {
+        "id" : 112006222158255,
+        "name" : "York High"
+      },
+      "year" : {
+        "id" : 113125125403208,
+        "name" : "2004"
+      },
+      "type" : "High School"
+    },
+    {
+      "school" : {
+        "id" : 105930651606,
+        "name" : "Harvard University"
+      },
+      "year" : {
+        "id" : 141778012509913,
+        "name" : "2008"
+      },
+      "concentration" : [
+        {
+          "id" : 108180979203954,
+          "name" : "Economics"
+        }
+      ],
+      "type" : "College"
+    }
+  ],
+  "favorite_athletes" : [
+    {
+      "id" : 79102700030,
+      "name" : "Rajon Rondo"
+    }
+  ],
+  "first_name" : "Aneesh",
+  "hometown_location" : {
+    "city" : "Yorktown",
+    "state" : "Virginia",
+    "country" : "United States",
+    "zip" : "",
+    "latitude" : 37.2344,
+    "longitude" : -76.5098,
+    "id" : 107715999258088,
+    "name" : "Yorktown, Virginia"
+  },
+  "last_name" : "Venkat",
+  "name" : "Aneesh Venkat",
+  "pic" : "https://fbcdn-profile-a.akamaihd.net/hprofile-ak-prn2/t5/1085890_10213_1068799762_s.jpg",
+  "profile_update_time" : 1384188818,
+  "profile_url" : "https://www.facebook.com/avenkat85",
+  "relationship_status" : "Married",
+  "sex" : "male",
+  "significant_other_id" : 16398,
+  "tv" : "NBA on ESPN, The O.C., Man vs. Wild, Las Vegas, Friday Night Lights, Man vs. Wild, The O.C., Weather Center, 24, Extras, Rome, How I Met Your Mother, Entourage, The Office, The Wire",
+  "wall_count" : 1023,
+  "_id" : 10213
+}
