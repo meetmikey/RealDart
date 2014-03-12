@@ -23,7 +23,8 @@
   - Message retention period: 14 days
   - Maximum message size: 256KB (the default)
   - Delivery delay: 0 seconds (the default)
-  - Receive message wait time: 20 seconds
+  - Receive message wait time: 0 seconds  (the new sqsUtils does not use long polling anymore)
+  - set the redrive policy to use "$AWS_PREFIX + Graveyard", with Maximum Receives of 20.
 - Add an s3 bucket named $AWS_PREFIX + '-realdart' (e.g. 'justin-realdart')
   - Then create a folder for each of the folders listed in *serverCommon/conf.aws.s3.folder*
 

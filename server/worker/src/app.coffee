@@ -1,7 +1,5 @@
 commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
 
-async = require 'async'
-
 appInitUtils = require commonAppDir + '/lib/appInitUtils'
 winston = require(commonAppDir + '/lib/winstonWrapper').winston
 sqsUtils = require commonAppDir + '/lib/sqsUtils'
@@ -27,7 +25,7 @@ exports.run = (callback) ->
 
 exports.startPolling = () ->
 
-  maxWorkers = constants.MAX_WORKERS_PER_QUEUE
+  maxWorkers = null
   if process.argv and process.argv.length > 2
     maxWorkers = process.argv[2]
 

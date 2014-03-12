@@ -6,10 +6,7 @@ module.exports =
   EVENT_TYPE:
     BIRTHDAY: 'birthday'
   PASSWORD_RESET_CODE_LENGTH: 20
-  CHECK_WORKERS_INTERVAL: 1000 * 20 #20 seconds
-  DEFAULT_WORKER_TIMEOUT: 1000 * 60 * 20 #20 minutes
-  SQS_RETRIES: 5
-  QUEUE_MAX_MESSAGE_RECEIVE_COUNT: 25
+  
   DEFAULT_RANDOM_ID_LENGTH: 10
   MAX_STREAM_TO_BUFFER: 31457280
   DEFAULT_NUM_REDIRECTS_TO_FOLLOW: 4
@@ -20,15 +17,22 @@ module.exports =
   DEFAULT_WEB_GET_ATTEMPTS: 3
   HEADER_DOWNLOAD_BATCH_SIZE: 1000
   ADD_EMAIL_TOUCHES_EMAIL_BATCH_SIZE: 1000
+  IMPORT_CONTACT_IMAGES_ASYNC_LIMIT: 10
 
   S3_DEFAULT_LINK_EXPIRE_MINUTES: 30
 
-  #Milliseconds to wait with one miss.  Will do exponential back-off if many misses.
-  #A 'miss' is either an error or 'no message'
-  QUEUE_WAIT_TIME_BASE: 10
+  sqs:
+    #Milliseconds to wait with one miss.  Will do exponential back-off if many misses.
+    #A 'miss' is either an error, an empty message, or if all available workers are currently active.
+    WAIT_TIME_BASE_MS: 5
+    MAX_WAIT_TIME_MS: 1000 * 2 # Never wait more than 2 seconds
+    NUM_AWS_RETRIES: 5
+    CHECK_WORKERS_INTERVAL: 1000 * 2 #20 seconds
+    DEFAULT_WORKER_TIMEOUT: 1000 * 60 * 20 #20 minutes
+    DEFAULT_MAX_WORKERS_PER_QUEUE: 5
+    MAX_RECEIVE_MESSAGES: 10 # This is a AWS limit on the number of messages that can be received in one call.
+    MESSAGE_ALL_WORKERS_DONE: 'All workers done.'
 
-  #Never wait more than 20 seconds
-  QUEUE_MAX_WAIT_TIME: 20*1000
 
   RADIX_DECIMAL: 10
 
@@ -50,9 +54,6 @@ module.exports =
     LINKED_IN: 'linkedIn'
     GOOGLE: 'google'
     EMAIL_HEADER: 'emailHeader'
-    
-  message:
-    SQS_ALL_WORKERS_DONE: 'All workers done.'
 
   initAction:
     CONNECT_MONGO: 'connectMongo'
