@@ -646,8 +646,11 @@ exports.mergeAllContacts = (userId, callback) ->
   # Same lock for mergeContacts, importContactImages, and addEmailTouches
   lockKeyPrefix = constants.lock.keyPrefix.contacts
   lockKey = lockKeyPrefix + userId
+  lockHolderInfo =
+    description: 'mergeContacts job'
+    userId: userId
 
-  lockUtils.acquireLock lockKey, (error, success) ->
+  lockUtils.acquireLock lockKey, lockHolderInfo, (error, success) ->
     if error then callback error; return
     unless success then callback winston.makeError 'failed to get contacts lock'; return
   
@@ -683,8 +686,11 @@ exports.importContactImages = (userId, callback) ->
   # Same lock for mergeContacts, importContactImages, and addEmailTouches
   lockKeyPrefix = constants.lock.keyPrefix.contacts
   lockKey = lockKeyPrefix + userId
+  lockHolderInfo =
+    description: 'importContactImages job'
+    userId: userId
 
-  lockUtils.acquireLock lockKey, (error, success) ->
+  lockUtils.acquireLock lockKey, lockHolderInfo, (error, success) ->
     if error then callback error; return
     unless success then callback winston.makeError 'failed to get contacts lock'; return
 

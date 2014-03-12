@@ -43,8 +43,12 @@ exports.addEmailTouches = (userId, googleUserId, emailAccountState, callback) ->
 
   lockKeyPrefix = commonConstants.lock.keyPrefix.contacts
   lockKey = lockKeyPrefix + userId
+  lockHolderInfo =
+    description: 'addEmailTouches job'
+    userId: userId
+    googleUserId: googleUserId
 
-  lockUtils.acquireLock lockKey, (error, success) ->
+  lockUtils.acquireLock lockKey, lockHolderInfo, (error, success) ->
     if error then callback error; return
     unless success then callback winston.makeError 'failed to get contacts lock'; return
 

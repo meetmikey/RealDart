@@ -12,9 +12,11 @@ initActions = [
 ]
 
 key = 'testLock'
+lockHolderInfo =
+  description: 'acquireAndReleaseLock test'
 
 run = (callback) ->
-  lockUtils.acquireLock key, (error, key) ->
+  lockUtils.acquireLock key, lockHolderInfo, (error, key) ->
     if error then callback error; return
 
     if key

@@ -10,13 +10,13 @@ lockUtils = this
 lockCount = {}
 
 
-exports.acquireLock = (key, callback) ->
+exports.acquireLock = (key, lockHolderInfo, callback) ->
 
   numFails = 0
   startTime = Date.now()
 
   doAndCheckAcquireLockAttempt = () ->
-    lockUtils.acquireLockAttempt key, (error, success) ->
+    lockUtils._acquireLockAttempt key, lockHolderInfo, (error, success) ->
       if error then callback error; return
 
       # Got the lock, and we're done.
@@ -34,14 +34,18 @@ exports.acquireLock = (key, callback) ->
   setTimeout doAndCheckAcquireLockAttempt, 0
 
 
-exports.acquireLockAttempt = (key, callback) ->
+exports._acquireLockAttempt = (key, lockHolderInfo, callback) ->
 
   select =
     key: key
 
+  lockHolderInfo ||= {}
+  lockHolderInfoString = JSON.stringify lockHolderInfo
+
   update =
     $set:
       key: key
+      lockHolderInfo: lockHolderInfoString
       createdAt: Date.now()
 
   options =
@@ -54,8 +58,15 @@ exports.acquireLockAttempt = (key, callback) ->
     # Nope, the lock's taken.  callback without the key to signal this.
     if existingLock
       callback()
+      lockHolderInfo = {}
+      try
+        lockHolderInfo = JSON.parse existingLock.lockHolderInfo
+      catch exception
+        winston.doError 'exception parsing lockHolderInfo',
+          lockHolderInfo: existingLock.lockHolderInfo
       winston.doInfo 'lock taken',
         key: key
+        lockHolderInfo: lockHolderInfo
       return
 
     # OK, we made the lock.  callback with the key to signal that we got it.
