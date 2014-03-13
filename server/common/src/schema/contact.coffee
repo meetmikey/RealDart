@@ -9,11 +9,14 @@ PhoneNumber = new Schema
 Location = new Schema
   lat : Number
   lng : Number
+  streetAddress : String
   city : String
   state : String
   country : {type : String, default : 'United States'}
+  zip : {type : String}
   readableLocation : String
-  source : {type : String, enum : ['area_code', 'zip', 'address', 'facebook_current_location', 'linkedin_location']}
+  locationType : {type : String, enum : ['ROOFTOP', 'RANGE_INTERPOLATED', 'GEOMETRIC_CENTER', 'APPROXIMATE']}
+  source : {type : String, enum : ['google_phone', 'google_address', 'facebook_current_location', 'linkedin_location']}
   {_id : false}
 
 Contact = new Schema

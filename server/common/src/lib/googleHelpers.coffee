@@ -10,6 +10,7 @@ webUtils = require './webUtils'
 sqsUtils = require './sqsUtils'
 utils = require './utils'
 contactHelpers = require './contactHelpers'
+geocoding = require './geocoding'
 
 conf = require '../conf'
 constants = require '../constants'
@@ -355,3 +356,44 @@ exports.getNewAccessTokenFromRefreshToken = (refreshToken, callback) ->
 
     accessTokenExpiresAt = Date.now() + ( 1000 * results.expires_in )
     callback null, accessToken, refreshToken, accessTokenExpiresAt
+
+exports.getLocationFromGoogleUserAddress = (address, callback) ->
+  unless address then callback winston.makeMissingParamError 'address'; return
+  location = {}
+
+  addressToQuery = googleHelpers.getAddressForQuery address
+  return callback winston.makeError 'not enough info to get geocode' unless addressToQuery
+
+  geocoding.getGeocodeFromGoogle addressToQuery, 'US', (err, geocode) ->
+    return callback err if err
+
+    location.lat = geocode.lat
+    location.lng = geocode.lng
+    location.locationType = geocode.locationType
+    location.city = address.city if address.city
+    location.streetAddress = address.street if address.street
+    location.state = address.region if address.region
+    location.zip = address.postcode if address.postcode
+    location.source = 'google_address'
+
+    callback null, location
+
+exports.getAddressForQuery = (address) ->
+  if address.formattedAddress
+    return address.formattedAddress
+  else if address.street and address.city and address.region
+    return address.street + ', ' + address.city + ", " + address.region
+  else if address.postcode
+    return address.postcode
+  else if address.city and address.region
+    return address.city + ", " + address.region
+  else if address.city
+    return address.city
+  else if address.region
+    return address.region
+  else
+    return undefined
+
+exports.getLocationFromGoogleUserPhone = (phone, callback) ->
+
+

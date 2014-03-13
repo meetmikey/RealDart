@@ -2,6 +2,8 @@ commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
 googleHelpers = require commonAppDir + '/lib/googleHelpers'
 fs = require 'fs'
 
+jasmine.getEnv().defaultTimeoutInterval = 10000;
+
 describe "getContactsJSONFromAPIData", ()->
   it "test generic case", () ->
     expectedJSON = [
@@ -34,3 +36,75 @@ describe "getGroupsJSONFromAPIData", ()->
     result = JSON.stringify(googleHelpers.getGroupsJSONFromAPIData(sampleJSON?.feed?.entry))
     expectedResult = JSON.stringify(expectedJSON)
     expect(result).toBe(expectedResult)
+
+describe "getAddressForQuery", () ->
+  address =
+    formattedAddress : '41 E 8th Street \nChicago , Il 60605'
+    city : 'Chicago'
+    street : '41 E 8th Street'
+    region : 'Il'
+    postcode : '60605'
+
+  it "full", () ->
+    expect(googleHelpers.getAddressForQuery address).toBe(address.formattedAddress)
+
+  it "zip", () ->
+    subAddress=
+      postcode : address.postcode
+
+    expect(googleHelpers.getAddressForQuery subAddress).toBe(address.postcode)
+
+  it "city", () ->
+    subAddress=
+      city : address.city
+
+    expect(googleHelpers.getAddressForQuery subAddress).toBe(address.city)
+
+  it "city+state", () ->
+    subAddress=
+      city : address.city
+      region : address.region
+
+    expect(googleHelpers.getAddressForQuery subAddress).toBe(address.city + ', ' + address.region)
+
+  it "state", () ->
+  it "city+state", () ->
+    subAddress=
+      region : address.region
+
+    expect(googleHelpers.getAddressForQuery subAddress).toBe(address.region)
+
+  it "not enough info", () ->
+    subAddress=
+      street : '41 E 8th St'
+
+    expect(googleHelpers.getAddressForQuery subAddress).toBe(undefined)
+
+describe "getLocationFromGoogleUserAddress", () ->
+  it "test generic case", (done) ->
+    address =
+      formattedAddress : '41 E 8th Street \nChicago , Il 60605'
+      city : 'Chicago'
+      street : '41 E 8th Street'
+      region : 'Il'
+      postcode : '60605'
+
+    expectedResult = {
+      "lat":41.87170500000001,
+      "lng":-87.62642199999999,
+      "locationType":"ROOFTOP",
+      "city":"Chicago",
+      "streetAddress":"41 E 8th Street",
+      "state":"Il",
+      "zip":"60605",
+      "source":"google_address"
+    }
+
+    googleHelpers.getLocationFromGoogleUserAddress address, (err, location) =>
+      expect(JSON.stringify(location)).toBe(JSON.stringify(expectedResult))
+      done()
+
+###
+describe "getLocationFromGoogleUserPhone", () ->
+  it "test generic case", ()->
+###

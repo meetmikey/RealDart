@@ -7,7 +7,7 @@ contactHelpers = require './contactHelpers'
 webUtils = require './webUtils'
 sqsUtils = require './sqsUtils'
 urlUtils = require './urlUtils'
-googleGeocoding = require './googleGeocoding'
+geocoding = require './geocoding'
 
 conf = require '../conf'
 constants = require '../constants'
@@ -130,7 +130,8 @@ exports.getCurrentLocationFromLIUser = (liUser, callback) ->
   #get the coordinates
   if location.readableLocation and location.country
     cleanLocation = liHelpers.cleanLocationNameForGeocoding location.readableLocation
-    googleGeocoding.getGeocode cleanLocation, location.country, (err, geocode) ->
+    geocoding.getGeocodeFromGoogle cleanLocation, location.country, (err, geocode) ->
+      console.log 'got geocode'
       return callback err if err
 
       location.lat = geocode.lat

@@ -7,18 +7,18 @@ utils = require('./utils')
 
 BASE_URL = 'https://maps.googleapis.com/maps/api/geocode/json'
 
-googleGeocoding = this
+geocoding = this
 
-exports.getGeocode = (address, country, callback) ->
+exports.getGeocodeFromGoogle = (address, country, callback) ->
   unless address then callback winston.makeMissingParamError 'address'; return
   unless country then callback winston.makeMissingParamError 'country'; return
 
-  googleGeocoding.doAPIGet address, country, (err, data) ->
+  geocoding.doGoogleAPIGet address, country, (err, data) ->
     return callback err if err
-    geocode = googleGeocoding.getCoordinatesFromResponse(data)
+    geocode = geocoding.getCoordinatesFromGoogleResponse(data)
     callback(null, geocode)
 
-exports.doAPIGet = (address, country, callback) ->
+exports.doGoogleAPIGet = (address, country, callback) ->
   unless address then callback winston.makeMissingParamError 'address'; return
   unless country then callback winston.makeMissingParamError 'country'; return
 
@@ -45,7 +45,7 @@ exports.doAPIGet = (address, country, callback) ->
   , url, true
 
 
-exports.getCoordinatesFromResponse = (responseJSON) ->
+exports.getCoordinatesFromGoogleResponse = (responseJSON) ->
   return unless responseJSON
   results = responseJSON.results
 
@@ -55,6 +55,13 @@ exports.getCoordinatesFromResponse = (responseJSON) ->
     geocode = topResult?.geometry?.location
 
     if geocode
-      geocode['location_type'] = topResult?.geometry?.location_type
+      geocode['locationType'] = topResult?.geometry?.location_type
 
     geocode
+
+
+#database lookup since we already have cached the area code geocodes
+exports.getGeocodeFromPhoneNumber = (phoneNumber, callback) ->
+
+#database lookup since we already have cached the zip code geocodes
+exports.getGeocodeFromZipCode = (zipCode, callback) ->
