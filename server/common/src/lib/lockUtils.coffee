@@ -42,31 +42,19 @@ exports._acquireLockAttempt = (key, lockHolderInfo, callback) ->
   lockHolderInfo ||= {}
   lockHolderInfoString = JSON.stringify lockHolderInfo
 
-  update =
-    $set:
-      key: key
-      lockHolderInfo: lockHolderInfoString
-      createdAt: Date.now()
+  lock = new LockModel
+    key: key
+    lockHolderInfo: lockHolderInfoString
+    createdAt: Date.now()
 
-  options =
-    upsert: true
-    new: false
-
-  LockModel.findOneAndUpdate select, update, options, (mongoError, existingLock) ->
-    if mongoError then callback winston.makeMongoError mongoError; return
-
-    # Nope, the lock's taken.  callback without the key to signal this.
-    if existingLock
-      callback()
-      lockHolderInfo = {}
-      try
-        lockHolderInfo = JSON.parse existingLock.lockHolderInfo
-      catch exception
-        winston.doError 'exception parsing lockHolderInfo',
-          lockHolderInfo: existingLock.lockHolderInfo
-      winston.doInfo 'lock taken',
-        key: key
-        lockHolderInfo: lockHolderInfo
+  lock.save (mongoError) ->
+    if mongoError
+      if mongoError.code is constants.MONGO_ERROR_CODE_DUPLICATE
+        # This lock is already taken!  callback without the key to signal this.
+        lockUtils.printLockInfo key
+        callback()
+      else
+        callback winston.makeMongoError mongoError
       return
 
     # OK, we made the lock.  callback with the key to signal that we got it.
@@ -77,12 +65,39 @@ exports._acquireLockAttempt = (key, lockHolderInfo, callback) ->
     callback null, true
 
 
+exports.printLockInfo = (key) ->
+  unless key then winston.doMissingParamError 'key'; return
+
+  select =
+    key: key
+
+  LockModel.findOne select, (mongoError, lock) ->
+    if mongoError then winston.doMongoError mongoError; return
+
+    unless lock
+      winston.doWarn 'printLockInfo: no lock',
+        key: key
+      return
+
+    lockHolderInfo = {}
+    try
+      lockHolderInfo = JSON.parse lock.lockHolderInfo
+    catch exception
+      winston.doError 'exception parsing lockHolderInfo',
+        lockHolderInfo: lock.lockHolderInfo
+    winston.doInfo 'lock taken',
+      key: key
+      lockHolderInfo: lockHolderInfo
+
+
 exports.releaseLock = (key, callback) ->
+
   select =
     key: key
 
   LockModel.findOneAndRemove select, (mongoError, removedLock) ->
     if mongoError then callback winston.makeMongoError mongoError; return
+
     if removedLock
       unless lockCount[key] and lockCount[key] > 0
         winston.doWarn 'released a lock, but invalid lock count',
@@ -90,6 +105,8 @@ exports.releaseLock = (key, callback) ->
           lockCountForKey: lockCount[key]
       else
         lockCount[key]--
+    else
+      winston.doInfo 'releaseLock returned, did nothing'
 
     callback()
 

@@ -18,7 +18,7 @@ exports.importContactImage = (imageSourceURL, contact, callback) ->
     if error then callback error; return
     unless response then callback winston.makeError 'no response'; return
 
-    s3Filename = imageUtils.getS3FilenameForNewContactImage contact
+    s3Filename = imageUtils.getS3FilenameForNewContactImage()
     s3Path = imageUtils.getContactImageS3Path s3Filename
     s3FileHeaders = {}
     if responseHeaders?['content-type'] then s3FileHeaders['content-type'] = responseHeaders['content-type']
@@ -48,13 +48,10 @@ exports.importContactImage = (imageSourceURL, contact, callback) ->
   , imageSourceURL, false
 
 
-exports.getS3FilenameForNewContactImage = (contact) ->
-  unless contact then winston.doMissingParamError 'contact'; return ''
-
-  # kind of dumb, but use randomString to avoid race conditions
-  randomString = utils.getRandomId 8
-
-  s3Filename = 'img_' + contact._id + '_' + randomString
+exports.getS3FilenameForNewContactImage = () ->
+  # kind of dumb, but use randomString to avoid collisions
+  uniqueId = utils.getUniqueId()
+  s3Filename = 'img_' + uniqueId
   s3Filename
 
 

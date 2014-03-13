@@ -182,6 +182,10 @@ exports.doDataImportJob = (job, callback) ->
         if error then callback winston.makeMongoError(error); return
 
         googleHelpers.getContacts userId, googleUser, (error) ->
+
+          winston.doInfo 'getContacts finished',
+            error: error
+
           if error then callback error; return
 
           mailDownloadJob =
@@ -207,6 +211,7 @@ exports.getContactGroups = (userId, googleUser, callback) ->
 
     callback null, googleHelpers.getGroupsJSONFromAPIData apiResponseData?.feed?.entry
 
+
 exports.getContacts = (userId, googleUser, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
   unless googleUser then callback winston.makeMissingParamError 'googleUser'; return
@@ -218,7 +223,6 @@ exports.getContacts = (userId, googleUser, callback) ->
   async.whilst () ->
     not isDone
   , (whilstCallback) ->
-
     queryParams =
       'start-index': startIndex
       'max-results': conf.auth.google.maxContactResultsPerQuery
@@ -230,18 +234,23 @@ exports.getContacts = (userId, googleUser, callback) ->
       contactsData = googleHelpers.getContactsJSONFromAPIData rawContactsFromResponse
 
       async.each contactsData, (contactData, eachCallback) ->
-        
+
+        # TODO: do this as an update?
         googleContact = new GoogleContactModel contactData
         googleContact.userId = userId
         googleContact.googleUserId = googleUser._id
 
         googleHelpers.addIsMyContact(googleContact, googleUser)
 
-        googleContact.save (mongoError) ->
-          if mongoError and mongoError.code isnt constants.MONGO_ERROR_CODE_DUPLICATE
-            eachCallback winston.makeMongoError mongoError
+        googleContact.save (mongoError, googleContactSaved) ->
+          if mongoError 
+            if mongoError.code is constants.MONGO_ERROR_CODE_DUPLICATE
+              eachCallback()
+            else
+              eachCallback winston.makeMongoError mongoError
             return
 
+          googleContact = googleContactSaved
           contactHelpers.addSourceContact userId, constants.contactSource.GOOGLE, googleContact, eachCallback
 
       , (error) ->

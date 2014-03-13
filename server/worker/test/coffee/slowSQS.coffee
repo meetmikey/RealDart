@@ -13,17 +13,22 @@ initActions = [
   commonConstants.initAction.HANDLE_SQS_WORKERS
 ]
 
-maxWorkers = 3
+maxWorkers = 50
+
+testSQSJob =
+  'hi!'
 
 run = (callback) ->
-  #sqsUtils.pollQueue commonConf.queue.dataImport, doTestJob, maxWorkers
+  sqsUtils.pollQueue commonConf.queue.dataImport, doNothing, maxWorkers
   sqsUtils.pollQueue commonConf.queue.test, doTestJob, maxWorkers
 
 
 doTestJob = (job, callback) ->
   winston.doInfo 'got job',
     job: job
-  callback()
+  sqsUtils.addJobToQueue commonConf.queue.test, testSQSJob, callback
 
+doNothing = (job, callback) ->
+  callback()
 
 appInitUtils.initApp 'doMailHeaderDownloadJob', initActions, run

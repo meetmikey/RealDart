@@ -16,6 +16,8 @@ exports._initAWS = () ->
 
 
 exports.sendEmail = (recipients, sender, text, html, subject, callback) ->
+
+  # NOTE: untested!
   charSet = conf.aws.ses.charSet
   emailParams =
     Destination:

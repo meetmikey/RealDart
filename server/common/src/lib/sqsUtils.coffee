@@ -138,21 +138,29 @@ exports._getMessageFromQueueNoRetry = ( queueName, callback ) ->
     AttributeNames: ['ApproximateReceiveCount']
     MaxNumberOfMessages: 1
 
-  sqsUtils._sqs.receiveMessage receiveMessageParams, ( sqsError, sqsMessage ) ->
-    if sqsError
-      callback winston.makeError 'sqs error from ReceiveMessage',
-        queueName: queueName
-        sqsError: sqsError.toString()
-      return
+  setTimeout () ->
+    sqsUtils._sqs.receiveMessage receiveMessageParams, ( sqsError, sqsMessage ) ->
+      if sqsError
+        callback winston.makeError 'sqs error from ReceiveMessage',
+          queueName: queueName
+          sqsError: sqsError.toString()
+        return
 
-    # check approximate receive count - if over a certain threshold delete the message
-    if sqsUtils._isTooManyDequeues sqsMessage
-      sqsUtils._handleTooManyDequeues queueName, sqsMessage, callback
-      return
+      # check approximate receive count - if over a certain threshold delete the message
+      if sqsUtils._isTooManyDequeues sqsMessage
+        sqsUtils._handleTooManyDequeues queueName, sqsMessage, callback
+        return
 
-    messageBodyJSON = sqsUtils._getMessageBodyJSON sqsMessage
-    callback null, messageBodyJSON, (handleMessageError, callback) ->
-      sqsUtils._handleMessageDeletion queueName, sqsMessage, handleMessageError, callback
+      messageBodyJSON = sqsUtils._getMessageBodyJSON sqsMessage
+      callback null, messageBodyJSON, (handleMessageError, callback) ->
+        sqsUtils._handleMessageDeletion queueName, sqsMessage, handleMessageError, callback
+  , sqsUtils._getReceiveMessageTimeout queueName
+
+
+
+exports._getReceiveMessageTimeout = (queueName) ->
+  # TODO: back off here...
+  return 0
 
 
 exports._getMessageBodyJSON = (sqsMessage) ->
@@ -259,6 +267,10 @@ exports._addMessageToQueueNoRetry = ( queueName, messageBodyJSON, callback ) ->
     MessageBody: JSON.stringify messageBodyJSON
     QueueUrl: sqsUtils._getQueueURL queueName
 
+  winston.doInfo '_addMessageToQueueNoRetry, about to add message to queue',
+    queueName: queueName
+    messageBodyJSON: messageBodyJSON
+
   sqsUtils._sqs.sendMessage sendMessageParams, ( sqsError, result ) ->
 
     winston.doInfo 'added message to queue',
@@ -353,6 +365,7 @@ exports._workQueue = ( workerId, queueName, maxWorkers, handleMessage, previousC
       return
 
     if not messageBodyJSON
+      winston.doInfo 'empty message', {queueName: queueName}
       sqsUtils._reworkQueue workerId, queueName, maxWorkers, handleMessage, true, previousConsecutiveMisses
       return
 

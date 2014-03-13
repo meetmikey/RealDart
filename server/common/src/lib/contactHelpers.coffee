@@ -25,6 +25,9 @@ exports.addSourceContact = (userId, contactSource, sourceContactInputData, callb
   unless contactSource then callback winston.makeMissingParamError 'contactSource'; return
   unless sourceContactInputData then callback winston.makeMissingParamError 'sourceContactInputData'; return
 
+
+  winston.doInfo 'contactHelpers.addSourceContact'
+
   sourceContactData = contactHelpers.buildContactData userId, contactSource, sourceContactInputData
 
   select =
@@ -50,6 +53,8 @@ exports.addSourceContact = (userId, contactSource, sourceContactInputData, callb
 
   SourceContactModel.findOneAndUpdate select, update, options, (mongoError) ->
     if mongoError then callback winston.makeMongoError mongoError; return
+
+    winston.doInfo 'contactHelpers.addSourceContact, findOneAndUpdate done'
 
     callback()
 
@@ -671,7 +676,6 @@ exports.mergeAllContacts = (userId, callback) ->
       , (error) ->
         lockUtils.releaseLock lockKey, (error) ->
           if error then winston.handleError error
-
         if error then callback error; return
 
         importContactImagesJob =
@@ -705,22 +709,22 @@ exports.importContactImages = (userId, callback) ->
         return
 
       contacts ||= []
-      async.each contacts, (contact, eachCallback1) ->
-        
-        contact.imageSourceURLs ||= []
-        async.each contact.imageSourceURLs, (imageSourceURL, eachCallback2) ->
+      limit = constants.IMPORT_CONTACT_IMAGES_ASYNC_LIMIT
+      async.eachLimit contacts, limit, (contact, eachLimitCallback) ->
 
+        contact.imageSourceURLs ||= []
+        async.each contact.imageSourceURLs, (imageSourceURL, eachCallback) ->
           imageUtils.importContactImage imageSourceURL, contact, (error) ->
             if error
-              eachCallback2 winston.makeError 'importContactImage failed',
+              eachCallback winston.makeError 'importContactImage failed',
                 contactId: contact._id
                 imageSourceURL: imageSourceURL
                 importError: error
                 contactImageURLs: contact.sourceImageURLs
             else
-              eachCallback2()
+              eachCallback()
 
-        , eachCallback1
+        , eachLimitCallback
 
       , (error) ->
         lockUtils.releaseLock lockKey, (error) ->
