@@ -1,6 +1,8 @@
 #!/bin/sh
 
-echo "gruntAll: starting..."
+echoPrefix="gruntAll:"
+
+echo "$echoPrefix starting..."
 
 cd $REAL_DART_HOME
 
@@ -26,4 +28,4 @@ cd server/worker
 grunt &
 cd -
 
-echo "gruntAll: done."
+echo "$echoPrefix done."
