@@ -53,9 +53,7 @@ exports.getContactsJSONFromAPIData = (contactsAPIData) ->
     googleHelpers.addAddresses(newContact, contactData)
     googleHelpers.addBirthday(newContact, contactData)
     googleHelpers.addWebsites(newContact, contactData)
-   
-    #TODO: remove this check...
-    #email is critical here, so only allow contacts with primaryEmail
+
     if (newContact.primaryEmail and emailUtils.isValidEmail newContact.primaryEmail) or newContact.phoneNumbers?.length
       contacts.push newContact
 
@@ -95,18 +93,16 @@ exports.addWebsites = (contact, apiData) ->
 exports.addAddresses = (contact, apiData) ->
   return unless contact and apiData
 
-  addressess = apiData['gd$structuredPostalAddress']
-  if addressess and addressess.length > 0
-    contact.addressess = []
-    for address in addressess
+  addresses = apiData['gd$structuredPostalAddress']
+  if addresses and addresses.length > 0
+    contact.addresses = []
+    for address in addresses
       newAddress = {}
-      newAddress['formattedAddress'] = address?['gd$formattedAddress']?['$t']
-      newAddress['city'] = address?['gd$formattedAddress']?['$t']
-      newAddress['street'] = address?['gd$street']?['$t']
-      newAddress['region'] = address?['gd$region']?['$t']
+      newAddress['formattedAddress'] = address?['gd$formattedAddress']?['$t']?.replace(/\n/g, ' ')
+      newAddress['street'] = address?['gd$street']?['$t']?.replace(/\n/g, ' ')
+      newAddress['city'] = address?['gd$city']?['$t']
       newAddress['postcode'] = address?['gd$postcode']?['$t']
-      contact.addressess.push(newAddress)
-
+      contact.addresses.push(newAddress)
 
 exports.addBirthday = (contact, apiData) ->
   return unless contact and apiData
@@ -149,8 +145,10 @@ exports.addPhoneNumbers = (contact, apiData) ->
       relSplit = number?.rel?.split("#")
       type = relSplit[1] if relSplit.length > 0
       unless digits then continue
-      contact.phoneNumbers.push {'number' : digits, 'type' : type}
+      contact.phoneNumbers.push {'number' : googleHelpers.cleanPhoneNumber(digits), 'type' : type}
 
+exports.cleanPhoneNumber = (phoneNumber) ->
+  phoneNumber.replace(/[-()]/g, '')
 
 exports.addIsMyContact = (googleContact, googleUser) ->
   return unless googleContact and googleUser
@@ -161,7 +159,6 @@ exports.addIsMyContact = (googleContact, googleUser) ->
     match = _.find(googleContact.groupIds, (groupId) -> myContactsGroupId == groupId)
     if match
       googleContact.isMyContact = true
-
 
 exports.doDataImportJob = (job, callback) ->
   unless job then callback winston.makeMissingParamError 'job'; return
@@ -230,20 +227,24 @@ exports.getContacts = (userId, googleUser, callback) ->
       rawContactsFromResponse = apiResonseData?.feed?.entry
       contactsData = googleHelpers.getContactsJSONFromAPIData rawContactsFromResponse
 
-      async.each contactsData, (contactData, eachCallback) ->
-        
+      async.eachSeries contactsData, (contactData, eachCallback) ->
         googleContact = new GoogleContactModel contactData
         googleContact.userId = userId
         googleContact.googleUserId = googleUser._id
 
         googleHelpers.addIsMyContact(googleContact, googleUser)
+    
+        googleHelpers.addLocations googleContact, (err) ->
+          if err then winston.handleError err
 
-        googleContact.save (mongoError) ->
-          if mongoError and mongoError.code isnt constants.MONGO_ERROR_CODE_DUPLICATE
-            eachCallback winston.makeMongoError mongoError
-            return
-
-          contactHelpers.addSourceContact userId, constants.contactSource.GOOGLE, googleContact, eachCallback
+          # save the contact regardless if there was an error
+          googleContact.save (mongoError) ->
+            if mongoError and mongoError.code isnt constants.MONGO_ERROR_CODE_DUPLICATE
+              eachCallback winston.makeMongoError mongoError
+              return
+            eachCallback()
+            #TODO: need to make save to addSourceContact fault tolerant to restarts
+            contactHelpers.addSourceContact userId, constants.contactSource.GOOGLE, googleContact, eachCallback
 
       , (error) ->
         if rawContactsFromResponse and rawContactsFromResponse.length
@@ -255,6 +256,40 @@ exports.getContacts = (userId, googleUser, callback) ->
 
   , callback
 
+
+exports.addLocations = (contact, callback) ->
+  return winston.makeMissingParamError 'contact' unless contact
+
+  #get geocodes in parallel
+  async.parallel [
+    (cb) ->
+      if contact.phoneNumbers?.length
+        async.each contact.phoneNumbers, (phoneNumber, eachCb) ->
+          googleHelpers.getLocationFromGoogleUserPhone phoneNumber.number, (err, data) ->
+            if err
+              eachCb(err)
+            else
+              phoneNumber.location = [data]
+              eachCb()
+        , (err) ->
+          cb(err)
+      else
+        cb()
+    (cb) ->
+      if contact.addresses?.length
+        async.each contact.addresses, (address, eachCb) ->
+          googleHelpers.getLocationFromGoogleUserAddress address, (err, data) ->
+            if err
+              eachCb(err)
+            else
+              address.location = [data]
+              eachCb()
+        , (err) ->
+          cb(err)
+      else
+        cb()
+  ], (err) ->
+    callback(err)
 
 exports.doAPIGet = (googleUser, path, extraData, callback) ->
   unless googleUser then callback winston.doMissingParamError 'googleUser'; return
@@ -367,14 +402,13 @@ exports.getLocationFromGoogleUserAddress = (address, callback) ->
   geocoding.getGeocodeFromGoogle addressToQuery, 'US', (err, geocode) ->
     return callback err if err
 
-    location.lat = geocode.lat
-    location.lng = geocode.lng
-    location.locationType = geocode.locationType
-    location.city = address.city if address.city
-    location.streetAddress = address.street if address.street
-    location.state = address.region if address.region
-    location.zip = address.postcode if address.postcode
-    location.source = 'google_address'
+    if geocode
+      location.lat = geocode.lat
+      location.lng = geocode.lng
+      location.locationType = geocode.locationType
+      location.source = 'google_address'
+    else
+      winston.doWarn 'no geocode for address', addressToQuery
 
     callback null, location
 
@@ -396,4 +430,20 @@ exports.getAddressForQuery = (address) ->
 
 exports.getLocationFromGoogleUserPhone = (phone, callback) ->
 
+  unless phone then callback winston.makeMissingParamError 'phone'; return
+  location = {}
 
+  geocoding.getGeocodeFromPhoneNumber phone, (err, geocode) ->
+    return callback err if err
+
+    location.lat = geocode.lat
+    location.lng = geocode.lng
+    location.locationType = geocode.locationType
+
+    #copy - phone number won't have city, state, etc associated with it by default
+    location.city = geocode.city
+    location.state = geocode.state
+    location.readableAddress = geocode.readableAddress
+    location.source = 'google_phone'
+
+    callback null, location

@@ -53,7 +53,6 @@ exports.addSourceContact = (userId, contactSource, sourceContactInputData, callb
 
     callback()
 
-
 exports.mergeContactsFromSourceContact = (userId, sourceContact, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
   unless sourceContact then callback winston.makeMissingParamError 'sourceContact'; return
@@ -261,6 +260,9 @@ exports.matchExistingContacts = (userId, contact, callback) ->
 
 
 exports.buildContactData = (userId, contactSource, inputData) ->
+  # this means the inputData is a mongoose object
+  if inputData?.constructor?.name == 'model'
+    inputData = inputData.toObject()
 
   contactData =
     userId: userId

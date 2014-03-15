@@ -4,6 +4,7 @@ winston = require('./winstonWrapper').winston
 urlUtils = require('./urlUtils')
 webUtils = require('./webUtils')
 utils = require('./utils')
+AreaCodeModel = require('../schema/areaCode').AreaCodeModel
 
 BASE_URL = 'https://maps.googleapis.com/maps/api/geocode/json'
 
@@ -19,6 +20,7 @@ exports.getGeocodeFromGoogle = (address, country, callback) ->
     callback(null, geocode)
 
 exports.doGoogleAPIGet = (address, country, callback) ->
+
   unless address then callback winston.makeMissingParamError 'address'; return
   unless country then callback winston.makeMissingParamError 'country'; return
 
@@ -59,9 +61,32 @@ exports.getCoordinatesFromGoogleResponse = (responseJSON) ->
 
     geocode
 
-
 #database lookup since we already have cached the area code geocodes
 exports.getGeocodeFromPhoneNumber = (phoneNumber, callback) ->
+  areaCode = geocoding.getAreaCodeFromPhoneNumber(phoneNumber)
+  if areaCode
+    AreaCodeModel.findById areaCode, (err, areaCodeFromDB) ->
+      if err
+        callback(winston.makeMongoError(err))
+      else if !areaCodeFromDB
+        callback(winston.makeError 'area code not found in DB', {areaCode : areaCode})
+      else
+        location = {}
+        location.lat =  areaCodeFromDB.lat
+        location.lng = areaCodeFromDB.lng
+        location.locationType = 'APPROXIMATE'
+        location.city = areaCodeFromDB.majorCities[0]
+        location.state = areaCodeFromDB.state
+        location.readableAddress = areaCodeFromDB.majorCities[0] + ", " + areaCodeFromDB.state
+        callback null, location
+  else
+    callback winston.makeError 'area code could not be parsed from phone number'
 
-#database lookup since we already have cached the zip code geocodes
-exports.getGeocodeFromZipCode = (zipCode, callback) ->
+#returns undefined if phoneNumber cannot be parsed
+exports.getAreaCodeFromPhoneNumber = (phoneNumber) ->
+  if phoneNumber?.length == 7
+    winston.doWarn 'getAreaCodeFromPhoneNumber: no area code present'
+  else if phoneNumber?.length == 10
+    phoneNumber.substring(0,3)
+  else if phoneNumber?.length == 11 && phoneNumber.substring(0,1) == '1'
+    phoneNumber.substring(1,4)
