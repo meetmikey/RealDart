@@ -10,20 +10,27 @@ initActions = [
   constants.initAction.CONNECT_MONGO
 ]
 
+describe "cleanPhoneNumber", () ->
+  it "test", () ->
+    expectedResult = '5163122246'
+    result = googleHelpers.cleanPhoneNumber('(516) 312-2246')
+    expect(result).toBe(expectedResult)
+
 describe "getContactsJSONFromAPIData", ()->
   it "test generic case", () ->
     expectedJSON = [
-        {"title":"Sahil Mehta","contactId":"2","groupIds" : ["6"],"firstName":"Sahil","lastName":"Mehta","emails":["svmehta@gmail.com","svm2004@columbia.edu","sahilspam@gmail.com"],"primaryEmail":"svmehta@gmail.com","phoneNumbers":[{"number":"5163017290","type":"mobile"}],"addresses":[{"formattedAddress":"41 E 8th Street \nChicago , Il 60605","city":"41 E 8th Street \nChicago , Il 60605","street":"41 E 8th Street","region":"Il","postcode":"60605"}],"birthday":"1984-02-03","websites":[{"href":"http://www.google.com/profiles/116117910582161066588","rel":"profile"}]},
-        {"title":"svmknicks33@gmail.com","contactId":"3","firstName":"svmknicks33@gmail.com","emails":["svmknicks33@gmail.com"],"primaryEmail":"svmknicks33@gmail.com"},
-        {"title":"Vivek Kuncham","contactId":"4","groupIds" : ["6"],"firstName":"Vivek","lastName":"Kuncham","emails":["vivek.kuncham@gmail.com"],"primaryEmail":"vivek.kuncham@gmail.com","phoneNumbers":[{"number":"5162868876","type":"mobile"}],"websites":[{"href":"http://www.google.com/profiles/100863583587918785217","rel":"profile"}]},
-        {"title":"Brock, William (Exchange)","contactId":"5","firstName":"William","lastName":"Brock","emails":["wbrock@bear.com"],"primaryEmail":"wbrock@bear.com"},
-        {"contactId":"a","emails":["college@fas.harvard.edu"],"primaryEmail":"college@fas.harvard.edu"},
-        {"contactId":"d","emails":["Alomar1732@yahoo.com"],"primaryEmail":"Alomar1732@yahoo.com"},
-        {"contactId":"e","emails":["idledesi@gmail.com"],"primaryEmail":"idledesi@gmail.com"},
-        {"contactId":"f","emails":["vk201@optonline.net"],"primaryEmail":"vk201@optonline.net"},
-        {"contactId":"10","emails":["admission@stanford.edu"],"primaryEmail":"admission@stanford.edu"},
-        {"contactId":"11","emails":["heaphery@stanford.edu"],"primaryEmail":"heaphery@stanford.edu"}
+      {"title":"Sahil Mehta","contactId":"2","groupIds":["6"],"firstName":"Sahil","lastName":"Mehta","emails":["svmehta@gmail.com","svm2004@columbia.edu","sahilspam@gmail.com"],"primaryEmail":"svmehta@gmail.com","phoneNumbers":[{"number":"5163017290","type":"mobile"}],"addresses":[{"formattedAddress":"41 E 8th Street  Chicago , Il 60605","street":"41 E 8th Street","city":"Chicago","postcode":"60605"}],"birthday":"1984-02-03","websites":[{"href":"http://www.google.com/profiles/116117910582161066588","rel":"profile"}]},
+      {"title":"svmknicks33@gmail.com","contactId":"3","firstName":"svmknicks33@gmail.com","emails":["svmknicks33@gmail.com"],"primaryEmail":"svmknicks33@gmail.com"},
+      {"title":"Vivek Kuncham","contactId":"4","groupIds":["6"],"firstName":"Vivek","lastName":"Kuncham","emails":["vivek.kuncham@gmail.com"],"primaryEmail":"vivek.kuncham@gmail.com","phoneNumbers":[{"number":"5162868876","type":"mobile"}],"websites":[{"href":"http://www.google.com/profiles/100863583587918785217","rel":"profile"}]},
+      {"title":"Brock, William (Exchange)","contactId":"5","firstName":"William","lastName":"Brock","emails":["wbrock@bear.com"],"primaryEmail":"wbrock@bear.com"},
+      {"contactId":"a","emails":["college@fas.harvard.edu"],"primaryEmail":"college@fas.harvard.edu"},
+      {"contactId":"d","emails":["Alomar1732@yahoo.com"],"primaryEmail":"Alomar1732@yahoo.com"},
+      {"contactId":"e","emails":["idledesi@gmail.com"],"primaryEmail":"idledesi@gmail.com"},
+      {"contactId":"f","emails":["vk201@optonline.net"],"primaryEmail":"vk201@optonline.net"},
+      {"contactId":"10","emails":["admission@stanford.edu"],"primaryEmail":"admission@stanford.edu"},
+      {"contactId":"11","emails":["heaphery@stanford.edu"],"primaryEmail":"heaphery@stanford.edu"}
     ]
+
     sampleJSON = JSON.parse(fs.readFileSync('../data/sampleGoogleContactsRes.json'))
     result = JSON.stringify(googleHelpers.getContactsJSONFromAPIData(sampleJSON?.feed?.entry))
     expectedResult = JSON.stringify(expectedJSON)
