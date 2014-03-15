@@ -279,6 +279,20 @@ exports.buildContactData = (userId, contactSource, inputData) ->
     contactData.middleName = inputData.middleName
     contactData.lastName = inputData.lastName
     contactData.phoneNumbers = inputData.phoneNumbers
+    contactData.addresses = inputData.addresses
+
+    if inputData.phoneNumbers
+      inputData.phoneNumbers.forEach (phoneNumber)->
+        if phoneNumber.location?.length
+          loc = phoneNumber.location[0]
+          contactData.locations.push loc
+
+    if inputData.addresses
+      inputData.addresses.forEach (address)->
+        if address.location?.length
+          loc = address.location[0]
+          contactData.locations.push loc
+
     contactData.isMyContactForGoogle = inputData.isMyContact
 
   else if contactSource is constants.contactSource.FACEBOOK

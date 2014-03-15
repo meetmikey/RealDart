@@ -148,7 +148,7 @@ exports.addPhoneNumbers = (contact, apiData) ->
       contact.phoneNumbers.push {'number' : googleHelpers.cleanPhoneNumber(digits), 'type' : type}
 
 exports.cleanPhoneNumber = (phoneNumber) ->
-  phoneNumber.replace(/[-()]/g, '')
+  phoneNumber.replace(/[-()\s]/g, '')
 
 exports.addIsMyContact = (googleContact, googleUser) ->
   return unless googleContact and googleUser
