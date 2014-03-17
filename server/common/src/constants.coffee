@@ -23,15 +23,15 @@ module.exports =
 
   sqs:
     #Milliseconds to wait with one miss.  Will do exponential back-off if many misses.
-    #A 'miss' is either an error or 'no message'
-    WAIT_TIME_BASE_MS: 10
-    MAX_WAIT_TIME_MS: 1000 * 5 # Never wait more than 5 seconds
-    MAX_MESSAGE_RECEIVE_COUNT: 25
-    NUM_RETRIES: 5
-    CHECK_WORKERS_INTERVAL: 1000 * 20 #20 seconds
+    #A 'miss' is either an error, an empty message, or if all available workers are currently active.
+    WAIT_TIME_BASE_MS: 5
+    MAX_WAIT_TIME_MS: 1000 * 2 # Never wait more than 2 seconds
+    NUM_AWS_RETRIES: 5
+    CHECK_WORKERS_INTERVAL: 1000 * 2 #20 seconds
     DEFAULT_WORKER_TIMEOUT: 1000 * 60 * 20 #20 minutes
-    DEFAULT_MAX_WORKERS_PER_QUEUE: 1
+    DEFAULT_MAX_WORKERS_PER_QUEUE: 5
     MAX_RECEIVE_MESSAGES: 10 # This is a AWS limit on the number of messages that can be received in one call.
+    MESSAGE_ALL_WORKERS_DONE: 'All workers done.'
 
 
   RADIX_DECIMAL: 10
@@ -54,9 +54,6 @@ module.exports =
     LINKED_IN: 'linkedIn'
     GOOGLE: 'google'
     EMAIL_HEADER: 'emailHeader'
-    
-  message:
-    SQS_ALL_WORKERS_DONE: 'All workers done.'
 
   initAction:
     CONNECT_MONGO: 'connectMongo'

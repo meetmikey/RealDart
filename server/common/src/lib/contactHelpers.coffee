@@ -25,9 +25,6 @@ exports.addSourceContact = (userId, contactSource, sourceContactInputData, callb
   unless contactSource then callback winston.makeMissingParamError 'contactSource'; return
   unless sourceContactInputData then callback winston.makeMissingParamError 'sourceContactInputData'; return
 
-
-  winston.doInfo 'contactHelpers.addSourceContact'
-
   sourceContactData = contactHelpers.buildContactData userId, contactSource, sourceContactInputData
 
   select =
@@ -53,8 +50,6 @@ exports.addSourceContact = (userId, contactSource, sourceContactInputData, callb
 
   SourceContactModel.findOneAndUpdate select, update, options, (mongoError) ->
     if mongoError then callback winston.makeMongoError mongoError; return
-
-    winston.doInfo 'contactHelpers.addSourceContact, findOneAndUpdate done'
 
     callback()
 

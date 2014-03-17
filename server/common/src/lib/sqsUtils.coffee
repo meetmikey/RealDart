@@ -1,6 +1,5 @@
 async = require 'async'
 
-QueueFailModel = require('../schema/queueFail').QueueFailModel
 winston = require('./winstonWrapper').winston
 sesUtils = require './sesUtils'
 AWS = require('./awsSDKWrapper').AWS
@@ -46,15 +45,6 @@ exports.pollQueue = ( queueName, handleMessage, maxWorkersInput, workerTimeout )
 # Public special control functions
 # --------------------------------------
 
-
-exports.stopSignal = () ->
-  sqsUtils._stopSignalReceived = true
-  conf.turnDebugModeOn()
-  winston.doInfo 'SQS: Received stop signal'
-  if sqsUtils._getNumTotalWorkers() is 0
-    winston.doInfo constants.message.SQS_ALL_WORKERS_DONE
-
-
 #This is called by appInitUtils.
 # So for any app that will do worker jobs, just include the HANDLE_SQS_WORKERS initAction
 exports.initWorkers = () ->
@@ -74,7 +64,7 @@ exports.initWorkers = () ->
   sqsUtils._startCheckWorkers()
 
   process.on 'SIGUSR2', () ->
-    sqsUtils.stopSignal()
+    sqsUtils._stopSignal()
 
 
 
@@ -84,6 +74,18 @@ exports.initWorkers = () ->
 # ALL PRIVATE BELOW HERE
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
+
+
+exports._stopSignal = () ->
+  sqsUtils._stopSignalReceived = true
+  conf.turnDebugModeOn()
+  winston.doInfo 'SQS: Received stop signal'
+  sqsUtils._checkStoppedAndDone()
+
+
+exports._checkStoppedAndDone = () ->
+  if sqsUtils._stopSignalReceived and sqsUtils._getNumTotalWorkers() is 0
+    winston.doInfo constants.sqs.MESSAGE_ALL_WORKERS_DONE
 
 
 
@@ -105,39 +107,6 @@ exports._initAWS = () ->
 #  --------------------------------------
 
 
-exports._getQueueURL = (queueName) ->
-  unless queueName
-    winston.doMissingParamError 'queueName'
-    return ''
-  url = 'https://' + conf.aws.sqs.host + '/' + conf.aws.accountId + '/' + conf.aws.sqs.queueNamePrefix + utils.capitalize queueName
-  url
-
-
-exports._pollQueue = ( queueName, handleMessage ) ->
-  if not queueName then winston.doMissingParamError('queueName'); return
-  if not handleMessage then winston.doMissingParamError('handleMessage'); return
-
-  sqsUtils.workQueue queueName, handleMessage
-
-
-exports.workQueue = (queueName, handleMessage) ->
-  if not queueName then winston.doMissingParamError('queueName'); return
-  if not handleMessage then winston.doMissingParamError('handleMessage'); return
-  
-  if sqsUtils._stopSignalReceived
-    return
-
-  sqsUtils._getMessagesFromQueue queueName, (error, sqsMessages) ->
-    if error then winston.handleError error
-
-    waitTime = sqsUtils._getQueueWaitTime queueName
-    setTimeout () ->
-      sqsUtils.workQueue queueName, handleMessage
-    , waitTime
-
-    sqsUtils._handleMessages queueName, sqsMessages, handleMessage
-
-
 exports._startCheckWorkers = () ->
   sqsUtils._checkWorkersInterval = setInterval () ->
 
@@ -151,61 +120,70 @@ exports._startCheckWorkers = () ->
   , constants.sqs.CHECK_WORKERS_INTERVAL
 
 
+exports._getQueueURL = (queueName) ->
+  unless queueName
+    winston.doMissingParamError 'queueName'
+    return ''
+  url = 'https://' + conf.aws.sqs.host + '/' + conf.aws.accountId + '/' + conf.aws.sqs.queueNamePrefix + utils.capitalize queueName
+  url
+
+
+exports._pollQueue = ( queueName, handleMessage ) ->
+  if not queueName then winston.doMissingParamError('queueName'); return
+  if not handleMessage then winston.doMissingParamError('handleMessage'); return
+
+  sqsUtils._workQueue queueName, handleMessage
+
+
+exports._workQueue = (queueName, handleMessage) ->
+  if not queueName then winston.doMissingParamError('queueName'); return
+  if not handleMessage then winston.doMissingParamError('handleMessage'); return
+  
+  if sqsUtils._stopSignalReceived
+    return
+
+  sqsUtils._getMessagesFromQueue queueName, (error, sqsMessages) ->
+    if error then winston.handleError error
+
+    # Important to set the next timeout here, after we've received the messages.
+    #  So we know whether it was a 'hit' or a 'miss.'
+    waitTime = sqsUtils._getQueueWaitTime queueName
+    setTimeout () ->
+      sqsUtils._workQueue queueName, handleMessage
+    , waitTime
+
+    sqsUtils._handleMessages queueName, sqsMessages, handleMessage
+
+
 exports._handleMessages = (queueName, sqsMessages, handleMessage) ->
   unless queueName then winston.doMissingParamError 'queueName'; return
 
   sqsMessages ||= []
   async.each sqsMessages, (sqsMessage, eachCallback) ->
 
-    # check approximate receive count - if over a certain threshold delete the message
-    if sqsUtils._isTooManyDequeues sqsMessage
-      sqsUtils._handleTooManyDequeues queueName, sqsMessage
-      eachCallback()
-      return
+    workerId = sqsUtils._addWorker queueName, sqsMessage
 
     messageBodyJSON = sqsUtils._getMessageBodyJSON sqsMessage
-
     winston.doInfo 'got message from queue',
       queueName: queueName
       messageBodyJSON: messageBodyJSON
 
-    workerId = sqsUtils._addWorker queueName, messageBodyJSON
-
     handleMessage messageBodyJSON, (handleMessageError) ->
-      sqsUtils._deleteWorker queueName, workerId
 
       sqsUtils._handleMessageDeletion queueName, sqsMessage, handleMessageError, (deletionError) ->
         if deletionError
           winston.handleError deletionError
 
+        sqsUtils._deleteWorker queueName, workerId
+
         eachCallback()
 
-  , () ->    
+  , () ->
     #winston.doInfo 'done handling messages'
-
-# Returns the workerId
-exports._addWorker = (queueName, messageBodyJSON) ->
-  unless queueName then winston.doMissingParamError 'queueName'; return
-  unless messageBodyJSON then winston.doMissingParamError 'messageBodyJSON'; return
-
-  queueInfo = sqsUtils._getQueueInfo queueName
-  workerId = utils.getUniqueId()
-  queueInfo.workerInfos[workerId] =
-    messageBodyJSON: messageBodyJSON
-    jobStartTime: Date.now()
-  workerId
-
-
-exports._deleteWorker = (queueName, workerId) ->
-  unless queueName then winston.doMissingParamError 'queueName'; return
-  unless workerId then winston.doMissingParamError 'workerId'; return
-
-  queueInfo = sqsUtils._getQueueInfo queueName
-  delete queueInfo.workerInfos[workerId]
 
 
 exports._getMessagesFromQueue = ( queueName, callback ) ->
-  utils.runWithRetries sqsUtils._getMessagesFromQueueNoRetry, constants.sqs.NUM_RETRIES, callback, queueName
+  utils.runWithRetries sqsUtils._getMessagesFromQueueNoRetry, constants.sqs.NUM_AWS_RETRIES, callback, queueName
 
 
 exports._getMessagesFromQueueNoRetry = ( queueName, callback ) ->
@@ -288,26 +266,6 @@ exports._handleMessageDeletion = (queueName, sqsMessage, handleMessageError, cal
   sqsUtils._deleteMessageFromQueue queueName, sqsMessage, callback
 
 
-exports._handleTooManyDequeues = (queueName, sqsMessage) ->
-  if not queueName then winston.doMissingParamError('queueName'); return
-  if not sqsMessage then winston.doMissingParamError('sqsMessage'); return
-  
-  messageBodyJSON = sqsUtils._getMessageBodyJSON sqsMessage
-
-  queueFail = new QueueFailModel
-    queueName: queueName
-    messageBody: JSON.stringify messageBodyJSON
-
-  winston.doError 'too many dequeues',
-    sqsMessage: sqsMessage
-
-  queueFail.save (mongoError) ->
-    if mongoError then winston.doMongoError mongoError; callback(); return
-
-    sqsUtils._deleteMessageFromQueue queueName, sqsMessage, (error) ->
-      if error then winston.handleError error
-
-
 exports._shouldDeleteFromQueue = (error) ->
   unless error then return true
 
@@ -324,25 +282,21 @@ exports._shouldDeleteFromQueue = (error) ->
   return false
 
 
-exports._isTooManyDequeues = (sqsMessage) ->
+exports._getReceiveCount = (sqsMessage) ->
+  unless sqsMessage then winston.doMissingParamError 'sqsMessage'; return 0
 
-  receiveCountString = sqsMessage?.Attributes?.ApproximateReceiveCount
-  if receiveCountString is null then return false
-
+  receiveCountString = sqsMessage?.Attributes?.ApproximateReceiveCount  
   try
     receiveCount = parseInt receiveCountString, constants.RADIX_DECIMAL
   catch exception
     winston.doError 'exception parsing receiveCount int',
       receiveCountString: receiveCountString
-    return false
-
-  if receiveCount > constants.sqs.MAX_MESSAGE_RECEIVE_COUNT
-    return true
-  return false
+    return 0
+  receiveCount
 
 
 exports._addMessageToQueue = ( queueName, messageBodyJSON, callback ) ->
-  utils.runWithRetries sqsUtils._addMessageToQueueNoRetry, constants.sqs.NUM_RETRIES, callback, queueName, messageBodyJSON
+  utils.runWithRetries sqsUtils._addMessageToQueueNoRetry, constants.sqs.NUM_AWS_RETRIES, callback, queueName, messageBodyJSON
 
 
 exports._addMessageToQueueNoRetry = ( queueName, messageBodyJSON, callback ) ->
@@ -370,7 +324,7 @@ exports._addMessageToQueueNoRetry = ( queueName, messageBodyJSON, callback ) ->
 
 
 exports._deleteMessageFromQueue = ( queueName, sqsMessage, callback ) ->
-  utils.runWithRetries sqsUtils._deleteMessageFromQueueNoRetry, constants.sqs.NUM_RETRIES, callback, queueName, sqsMessage
+  utils.runWithRetries sqsUtils._deleteMessageFromQueueNoRetry, constants.sqs.NUM_AWS_RETRIES, callback, queueName, sqsMessage
 
 
 exports._deleteMessageFromQueueNoRetry = ( queueName, sqsMessage, callback ) ->
@@ -436,6 +390,11 @@ exports._getQueueWaitTime = ( queueName ) ->
   wait
 
 
+
+# Private worker functions
+# -----------------------------------
+
+
 exports._checkWorkers = () ->
 
   checkWorkersInfo = {}
@@ -454,6 +413,7 @@ exports._checkWorkers = () ->
           workerId: workerId
           elapsedTime: elapsedTime
           workerTimeout: queueInfo.workerTimeout
+          receiveCount: workerInfo.receiveCount
           messageBodyJSON: workerInfo.messageBodyJSON
 
         winston.doError 'worker timed out! deleting worker.', errorData
@@ -466,20 +426,6 @@ exports._checkWorkers = () ->
 
   winston.doInfo 'checkWorkers...(active/max)',
     checkWorkersInfo
-
-
-exports.OLD_deleteWorker = ( queueName, workerId ) ->
-  if not queueName then winston.doMissingParamError('queueName'); return
-  if not workerId then winston.doMissingParamError('workerId'); return
-
-  queueInfo = sqsUtils._getQueueInfo queueName
-  delete queueInfo.workerInfo[workerId]
-
-  if ( sqsUtils._stopSignalReceived or queueInfo.stopWorkForQueueReceived ) and ( sqsUtils._getNumTotalWorkers() is 0 )
-    if queueInfo.checkWorkersInterval
-      clearInterval queueInfo.checkWorkersInterval
-      delete queueInfo.checkWorkersIntervals = null
-    winston.doInfo constants.message.SQS_ALL_WORKERS_DONE
 
 
 exports._getNumActiveWorkers = (queueName) ->
@@ -496,5 +442,34 @@ exports._getNumTotalWorkers = () ->
   totalWorkers
 
 
-# Init
+# Returns the workerId
+exports._addWorker = (queueName, sqsMessage) ->
+  unless queueName then winston.doMissingParamError 'queueName'; return
+  unless sqsMessage then winston.doMissingParamError 'sqsMessage'; return
+
+  messageBodyJSON = sqsUtils._getMessageBodyJSON sqsMessage
+  receiveCount = sqsUtils._getReceiveCount sqsMessage
+
+  queueInfo = sqsUtils._getQueueInfo queueName
+  workerId = utils.getUniqueId()
+  queueInfo.workerInfos[workerId] =
+    messageBodyJSON: messageBodyJSON
+    receiveCount: receiveCount
+    jobStartTime: Date.now()
+  workerId
+
+
+exports._deleteWorker = (queueName, workerId) ->
+  unless queueName then winston.doMissingParamError 'queueName'; return
+  unless workerId then winston.doMissingParamError 'workerId'; return
+
+  queueInfo = sqsUtils._getQueueInfo queueName
+  delete queueInfo.workerInfos[workerId]
+
+  sqsUtils._checkStoppedAndDone()
+
+
+
+# Run _init
+# --------------
 sqsUtils._init()

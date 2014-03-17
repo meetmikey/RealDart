@@ -19,11 +19,13 @@ numTest2Workers = 0
 testSQSJob =
   'hi!'
 
+workerTimeout = 1000 * 2 # 2 seconds
+
 run = (callback) ->
   if numTestWorkers
-    sqsUtils.pollQueue commonConf.queue.test, doNothingSlow, numTestWorkers
+    sqsUtils.pollQueue commonConf.queue.test, doNothingNoCallback, numTestWorkers, workerTimeout
   if numTest2Workers
-    sqsUtils.pollQueue commonConf.queue.test2, doNothing, numTest2Workers
+    sqsUtils.pollQueue commonConf.queue.test2, doNothing, numTest2Workers, workerTimeout
 
 printJob = (job) ->
   winston.doInfo 'got job',
@@ -38,6 +40,9 @@ doNothingSlow = (job, callback) ->
   setTimeout () ->
     callback()
   , 5000
+
+doNothingNoCallback = (job, callback) ->
+  printJob job
 
 addAnotherTestJob = (job, callback) ->
   printJob job
