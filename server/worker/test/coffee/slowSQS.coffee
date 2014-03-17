@@ -13,7 +13,7 @@ initActions = [
   commonConstants.initAction.HANDLE_SQS_WORKERS
 ]
 
-numTestWorkers = 50
+numTestWorkers = 3
 numTest2Workers = 0
 
 testSQSJob =
@@ -21,7 +21,7 @@ testSQSJob =
 
 run = (callback) ->
   if numTestWorkers
-    sqsUtils.pollQueue commonConf.queue.test, doNothing, numTestWorkers
+    sqsUtils.pollQueue commonConf.queue.test, doNothingSlow, numTestWorkers
   if numTest2Workers
     sqsUtils.pollQueue commonConf.queue.test2, doNothing, numTest2Workers
 
@@ -32,6 +32,12 @@ printJob = (job) ->
 doNothing = (job, callback) ->
   printJob job
   callback()
+
+doNothingSlow = (job, callback) ->
+  printJob job
+  setTimeout () ->
+    callback()
+  , 5000
 
 addAnotherTestJob = (job, callback) ->
   printJob job
