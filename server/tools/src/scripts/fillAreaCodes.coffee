@@ -5,7 +5,7 @@ csv = require 'csv'
 async = require 'async'
 winston = require(commonAppDir + '/lib/winstonWrapper').winston
 mongooseConnect = require commonAppDir + '/lib/mongooseConnect'
-googleGeocoding = require commonAppDir + '/lib/googleGeocoding'
+geocoding = require commonAppDir + '/lib/geocoding'
 appInitUtils = require commonAppDir + '/lib/appInitUtils'
 AreaCodeModel = require(commonAppDir + '/schema/areaCode').AreaCodeModel
 commonConstants = require commonAppDir + '/constants'
@@ -53,7 +53,8 @@ run = (callback) ->
 
           if newAreaCode.majorCities && newAreaCode.majorCities.length
             #TODO: get better geocode from whtiepages??
-            googleGeocoding.getGeocode newAreaCode.majorCities[0], newAreaCode.state, (err, geocode) ->
+            address = newAreaCode.majorCities[0] + ', ' + newAreaCode.state
+            geocoding.getGeocodeFromGoogle address, 'us', (err, geocode) ->
               return eachCb(err) if err
 
               newAreaCode.lat = geocode.lat

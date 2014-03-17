@@ -7,6 +7,7 @@ contactHelpers = require './contactHelpers'
 webUtils = require './webUtils'
 sqsUtils = require './sqsUtils'
 urlUtils = require './urlUtils'
+geocoding = require './geocoding'
 
 conf = require '../conf'
 constants = require '../constants'
@@ -76,12 +77,18 @@ exports.getConnections = (userId, liUser, callback) ->
         eachCallback()
         return
 
-      connectionLIUser.save (mongoError) ->
-        if mongoError and mongoError.code isnt constants.MONGO_ERROR_CODE_DUPLICATE
-          eachCallback winston.makeMongoError mongoError
-          return
+      liHelpers.getCurrentLocationFromLIUser connectionLIUser, (err, location) ->
+        if err
+          winston.handleError err
+        else
+          connectionLIUser.location = location
 
-        contactHelpers.addSourceContact userId, constants.contactSource.LINKED_IN, connectionLIUser, eachCallback
+        connectionLIUser.save (mongoError) ->
+          if mongoError and mongoError.code isnt constants.MONGO_ERROR_CODE_DUPLICATE
+            eachCallback winston.makeMongoError mongoError
+            return
+
+          contactHelpers.addSourceContact userId, constants.contactSource.LINKED_IN, connectionLIUser, eachCallback
 
     , callback
 
@@ -112,3 +119,34 @@ exports.doAPIGet = (liUser, path, callback) ->
         exceptionMessage: exception.message
 
     callback null, dataJSON
+
+exports.getCurrentLocationFromLIUser = (liUser, callback) ->
+  return callback winston.makeMissingParamError 'liUser' if not liUser
+  location = {}
+  location.country = liUser?.location?.country?.code
+  location.readableLocation = liUser?.location?.name
+  location.source = 'linkedin_location'
+
+  #get the coordinates
+  if location.readableLocation and location.country
+    cleanLocation = liHelpers.cleanLocationNameForGeocoding location.readableLocation
+    geocoding.getGeocodeFromGoogle cleanLocation, location.country, (err, geocode) ->
+      console.log 'got geocode'
+      return callback err if err
+
+      location.lat = geocode.lat
+      location.lng = geocode.lng
+      callback null, location
+  else
+    callback null, location
+
+exports.cleanLocationNameForGeocoding = (locationName) ->
+  return unless locationName
+
+  #hard code SF...
+  if locationName == 'San Francisco Bay Area'
+    locationName = 'San Francisco'
+
+  locationName = locationName.replace(new RegExp('Area$'), '')
+  locationName = locationName.replace(new RegExp('^Greater'), '')
+  locationName.trim()
