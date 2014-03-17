@@ -1,5 +1,6 @@
 mongoose = require 'mongoose'
 Schema = mongoose.Schema
+Location = require('./location').LocationSchema
 
 utils = require '../lib/utils'
 
@@ -9,6 +10,7 @@ GoogleContactAddress = new Schema
   street : {type : String}
   region : {type : String}
   postcode : {type : String}
+  location : {type : [Location], default : []} # mongoose limitation, subdocs must be arrays
 
 GoogleContactWebsite = new Schema
   href : {type : String}
@@ -17,6 +19,13 @@ GoogleContactWebsite = new Schema
 GoogleContactPhoneNumber = new Schema
   number : {type : String}
   type : {type : String}
+  location : {type : [Location], default : []} # mongoose limitation, subdocs must be arrays
+
+GoogleContactPhoneNumber.path('location').validate (v) ->
+  v.length < 2
+
+GoogleContactAddress.path('location').validate (v) ->
+  v.length < 2
 
 GoogleContact = new Schema
   contactId : {type : String}

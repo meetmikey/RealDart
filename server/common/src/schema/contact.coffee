@@ -1,20 +1,11 @@
 mongoose = require 'mongoose'
 Schema = mongoose.Schema
+Location = require('./location').LocationSchema
 
 PhoneNumber = new Schema
   number : {type : String}
   type : {type : String}
   { _id : false }
-
-Location = new Schema
-  lat : Number
-  lng : Number
-  city : String
-  state : String
-  country : {type : String, default : 'United States'}
-  readableLocation : String
-  source : {type : String, enum : ['area_code', 'zip', 'address', 'facebook_current_location', 'linkedin_location']}
-  {_id : false}
 
 Contact = new Schema
   userId: {type: Schema.ObjectId} # userId of the person whose contact this is

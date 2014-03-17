@@ -53,7 +53,6 @@ exports.addSourceContact = (userId, contactSource, sourceContactInputData, callb
 
     callback()
 
-
 exports.mergeContactsFromSourceContact = (userId, sourceContact, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
   unless sourceContact then callback winston.makeMissingParamError 'sourceContact'; return
@@ -261,6 +260,9 @@ exports.matchExistingContacts = (userId, contact, callback) ->
 
 
 exports.buildContactData = (userId, contactSource, inputData) ->
+  # this means the inputData is a mongoose object
+  if inputData?.constructor?.name == 'model'
+    inputData = inputData.toObject()
 
   contactData =
     userId: userId
@@ -277,6 +279,20 @@ exports.buildContactData = (userId, contactSource, inputData) ->
     contactData.middleName = inputData.middleName
     contactData.lastName = inputData.lastName
     contactData.phoneNumbers = inputData.phoneNumbers
+    contactData.addresses = inputData.addresses
+
+    if inputData.phoneNumbers
+      inputData.phoneNumbers.forEach (phoneNumber)->
+        if phoneNumber.location?.length
+          loc = phoneNumber.location[0]
+          contactData.locations.push loc
+
+    if inputData.addresses
+      inputData.addresses.forEach (address)->
+        if address.location?.length
+          loc = address.location[0]
+          contactData.locations.push loc
+
     contactData.isMyContactForGoogle = inputData.isMyContact
 
   else if contactSource is constants.contactSource.FACEBOOK
@@ -302,6 +318,8 @@ exports.buildContactData = (userId, contactSource, inputData) ->
     contactData.lastName = inputData.lastName
     if inputData.pictureUrl
       contactData.imageSourceURLs.push inputData.pictureUrl
+    if inputData.location
+      contactData.locations.push inputData.location
 
   else if contactSource is constants.contactSource.EMAIL_HEADER
     if inputData.email
