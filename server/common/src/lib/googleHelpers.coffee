@@ -142,7 +142,7 @@ exports.addPhoneNumbers = (contact, apiData) ->
     contact.phoneNumbers = []
     for number in phoneNumbers
       digits = number?['$t']
-      relSplit = number?.rel?.split("#")
+      relSplit = number?.rel?.split("#") || []
       type = relSplit[1] if relSplit.length > 0
       unless digits then continue
       contact.phoneNumbers.push {'number' : googleHelpers.cleanPhoneNumber(digits), 'type' : type}

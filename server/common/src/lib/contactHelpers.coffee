@@ -413,7 +413,6 @@ exports.addSourceContactsFromEmail = (userId, emailJSON, callback) ->
 exports.addEmailHeaderSourceContact = (userId, googleUserId, emailAddress, fullName, callback) ->
   unless userId then callback winston.makeMissingParamError 'userId'; return
   unless googleUserId then callback winston.makeMissingParamError 'googleUserId'; return
-  unless emailAddress then callback winston.makeMissingParamError 'emailAddress'; return
 
   unless emailAddress and emailUtils.isValidEmail emailAddress
     winston.doWarn 'invalid emailAddress', {emailAddress: emailAddress}
