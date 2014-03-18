@@ -110,6 +110,7 @@ exports.getFriendsFromFQLResponse = (fqlResponse) ->
       friends = responseItem.fql_result_set
       friends.forEach (friend) ->
         friend._id = friend.uid
+        friend.timestamp = Date.now()
         delete friend['uid']
 
   friends

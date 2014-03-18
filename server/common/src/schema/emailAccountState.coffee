@@ -13,6 +13,7 @@ EmailAccountState = new Schema
   originalUIDNext: {type: Number}
   currentUIDNext: {type: Number}
   highestEmailIdForAddingTouches: {type: Schema.ObjectId}
+  timestamp: {type: Date, default: Date.now}
 
 
 EmailAccountState.index {userId: 1, googleUserId: 1}, {sparse: 1}

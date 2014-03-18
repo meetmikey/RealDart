@@ -336,6 +336,7 @@ exports.buildContactData = (userId, contactSource, inputData) ->
     contactData.middleName = inputData.middleName
     contactData.lastName = inputData.lastName
 
+  contactData.timestamp = Date.now()
   contactHelpers.setLowerCaseFields contactData
   utils.removeEmptyFields contactData, true, true
   contactData

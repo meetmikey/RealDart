@@ -60,6 +60,8 @@ FBUser = new Schema
   updated_time: {type: String}
   friends: {type: [Number], index: true}
 
+  timestamp: {type: Date, default: Date.now}
+
 FBUser.virtual('accessToken').set (input) ->
   encryptedInfo = utils.encryptSymmetric input
   this.accessTokenEncrypted = encryptedInfo.encrypted

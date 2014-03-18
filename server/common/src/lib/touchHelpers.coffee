@@ -73,6 +73,7 @@ exports.addEmailTouch = (userId, email, contact, callback) ->
       emailId: email._id
       emailSubject: emailUtils.getCleanSubject email.subject
       date: email.date
+      timestamp: Date.now()
 
   options =
     upsert: true
