@@ -1,6 +1,6 @@
 commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
 fs = require 'fs'
-
+mongooseConnect = require commonAppDir + '/lib/mongooseConnect'
 liHelpers = require commonAppDir + '/lib/liHelpers'
 mongooseConnect.initSync()
 
