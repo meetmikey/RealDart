@@ -35,6 +35,28 @@ exports.init = ( callback ) =>
         callback()
 
 
+exports.initSync = () =>
+
+  mongoConf = {}
+
+  if environment is 'production'
+    mongoConf = conf.mongo.prod
+  else
+    mongoConf = conf.mongo.local
+
+  connectionInfo = mongooseConnect.getConnectionInfoFromConf mongoConf
+
+  if not connectionInfo or not connectionInfo.mongoPath
+    winston.doError 'no mongo path'
+  else
+    winston.doInfo 'mongooseConnect: mongoPath',
+      path: connectionInfo.logSafeMongoPath
+      useSSL: connectionInfo.useSSL
+
+    mongoose.connect connectionInfo.mongoPath, connectionInfo.options, (mongoErr) ->
+      if mongoErr
+        winston.doMongoError mongoErr
+
 exports.getConnectionInfoFromConf = ( mongoConf ) =>
 
   fullMongoPath = ''

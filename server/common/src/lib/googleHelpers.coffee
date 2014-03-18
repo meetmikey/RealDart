@@ -103,12 +103,18 @@ exports.addAddresses = (contact, apiData) ->
     contact.addresses = []
     for address in addresses
       newAddress = {}
-      newAddress['formattedAddress'] = address?['gd$formattedAddress']?['$t']?.replace(/\n/g, ' ')
-      newAddress['street'] = address?['gd$street']?['$t']?.replace(/\n/g, ' ')
+      newAddress['formattedAddress'] = 
+        googleHelpers.cleanExtraSpacesAndNewLines address?['gd$formattedAddress']?['$t']
+
+      newAddress['street'] = 
+        googleHelpers.cleanExtraSpacesAndNewLines address?['gd$street']?['$t']
+
       newAddress['city'] = address?['gd$city']?['$t']
       newAddress['postcode'] = address?['gd$postcode']?['$t']
       contact.addresses.push(newAddress)
 
+exports.cleanExtraSpacesAndNewLines = (str) ->
+  str?.replace(/\n/g, ' ')?.replace(/\s{2,}/g, ' ')?.trim()
 
 exports.addBirthday = (contact, apiData) ->
   return unless contact and apiData

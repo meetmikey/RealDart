@@ -15,3 +15,11 @@ Location = new Schema
   {_id : false}
 
 exports.LocationSchema = Location
+
+
+GeocodeCache = new Schema
+  _id : {}
+  response : {}
+
+mongoose.model 'GeocodeCache', GeocodeCache
+exports.GeocodeCacheModel = mongoose.model 'GeocodeCache'
