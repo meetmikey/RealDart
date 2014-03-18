@@ -5,6 +5,7 @@ urlUtils = require('./urlUtils')
 webUtils = require('./webUtils')
 utils = require('./utils')
 AreaCodeModel = require('../schema/areaCode').AreaCodeModel
+GeocodeCacheModel = require('../schema/location').GeocodeCacheModel
 
 BASE_URL = 'https://maps.googleapis.com/maps/api/geocode/json'
 
@@ -18,6 +19,16 @@ exports.getGeocodeFromGoogle = (address, country, callback) ->
     return callback err if err
     geocode = geocoding.getCoordinatesFromGoogleResponse(data)
     callback(null, geocode)
+
+exports.cacheGeocodeResult = (address, country, geocodeResponse, callback) ->
+  console.log geocodeResponse
+  _id = JSON.stringify({address: address, country : country})
+  response = JSON.stringify(geocodeResponse?.results)
+
+  cacheModel = new GeocodeCacheModel {_id : _id, response : response}
+
+  cacheModel.save (err) ->
+    if err then callback winston.makeMongoError(err); return
 
 exports.doGoogleAPIGet = (address, country, callback) ->
 
@@ -39,11 +50,18 @@ exports.doGoogleAPIGet = (address, country, callback) ->
     dataJSON = {}
     try
       dataJSON = JSON.parse buffer.toString()
-    catch exception
-      winston.doError 'response parse error',
-        exceptionMessage: exception.message
 
-    callback null, dataJSON
+      if dataJSON.status == 'OK'
+        geocoding.cacheGeocodeResult address, country, dataJSON, (err) ->
+          if err then winston.handleError err
+
+          # as long as we have data, callback
+          callback null, dataJSON
+      else 
+        callback winston.makeError 'google geocoding response not OK', {responseData : dataJSON}
+
+    catch exception
+      callback winston.makeError 'response parse error', exceptionMessage: exception.message
   , url, true
 
 
