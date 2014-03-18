@@ -10,8 +10,10 @@ Touch = new Schema
   date: {type: Date}
   timestamp: {type: Date, default: Date.now}
 
-# Unique so we don't duplicate touches for emails
-Touch.index {userId: 1, contactId: 1}
+# Seems a little unnecessarily specific, but this is what our findOneAndModify wants
+#  Mongo was throwing tons of log messages into /var/log/mongodb/mongodb.log without it.
+#  See http://stackoverflow.com/questions/4758377/mongodb-geting-client-cursoryield-cant-unlock-b-c-of-recursive-lock-warnin
+Touch.index {userId: 1, contactId: 1, emailId: 1, type: 1}, {sparse: true}
 
 mongoose.model 'Touch', Touch
 exports.TouchModel = mongoose.model 'Touch'
