@@ -39,7 +39,7 @@ addSourceContactManually = (userId, contactSource, sourceContactData, callback) 
   sourceContact = new SourceContactModel
     userId: userId
     sources: [contactSource]
-    imageSourceURLs: []
+    images: []
 
   sourceContact.liUserId = sourceContactData._id
   if sourceContactData.emailAddress
@@ -52,7 +52,7 @@ addSourceContactManually = (userId, contactSource, sourceContactData, callback) 
   sourceContact2 =
     userId: sourceContact.userId
     sources: sourceContact.sources
-    imageSourceURLs: sourceContact.imageSourceURLs
+    images: sourceContact.images
     liUserId: sourceContact.liUserId
     primaryEmail: sourceContact.primaryEmail
     emails: sourceContact.emails

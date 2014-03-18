@@ -168,13 +168,19 @@ exports.deleteContact = (contact, callback) ->
   unless contact then callback winston.makeMissingParamError 'contact'; return
 
   # Delete images from s3
-  contact.imageS3Filenames ||= []
-  async.each contact.imageS3Filenames, (imageS3Filename, eachCallback) ->
-    imageUtils.deleteContactImage imageS3Filename, (error) ->
+  contact.images ||= []
+  async.each contact.images, (image, eachCallback) ->
+
+    unless image?.s3Filename
+      # Not in s3, just move on.
+      eachCallback()
+      return
+
+    imageUtils.deleteContactImage image.s3Filename, (error) ->
       if error
         eachCallback winston.makeError 'deleteContactImage failed',
           contactId: contact._id
-          imageS3Filename: imageS3Filename
+          imageS3Filename: image.s3Filename
           deleteError: error
       else
         eachCallback()
@@ -266,7 +272,7 @@ exports.buildContactData = (userId, contactSource, inputData) ->
 
   contactData =
     userId: userId
-    imageSourceURLs: []
+    images: []
     sources: [contactSource]
     locations : []
 
@@ -303,7 +309,8 @@ exports.buildContactData = (userId, contactSource, inputData) ->
     contactData.lastName = inputData.last_name
     fbImageURL = fbHelpers.getImageURL inputData._id
     if fbImageURL
-      contactData.imageSourceURLs.push fbImageURL
+      contactData.images.push
+        sourceURL: fbImageURL
     if inputData.current_location
       contactData.locations.push fbHelpers.getCurrentLocationFromFBUser(inputData)
 
@@ -315,7 +322,8 @@ exports.buildContactData = (userId, contactSource, inputData) ->
     contactData.firstName = inputData.firstName
     contactData.lastName = inputData.lastName
     if inputData.pictureUrl
-      contactData.imageSourceURLs.push inputData.pictureUrl
+      contactData.images.push
+        sourceURL: inputData.pictureUrl
     if inputData.location
       contactData.locations.push inputData.location
 
@@ -369,10 +377,9 @@ exports.mergeContacts = (existingContact, newContact) ->
 
   arrayMergeFields = [
     'emails'
-    'imageSourceURLs'
-    'imageS3Filenames'
     'sources'
     'phoneNumbers'
+    'images' # special!  see below
   ]
 
   for arrayMergeField in arrayMergeFields
@@ -383,9 +390,20 @@ exports.mergeContacts = (existingContact, newContact) ->
       continue
 
     for value in newContact[arrayMergeField]
-      existingContactArrayMergeFieldIndex = existingContact[arrayMergeField].indexOf value
-      if existingContactArrayMergeFieldIndex is -1
-        existingContact[arrayMergeField].push value
+      if arrayMergeField is 'images'
+        # images are special
+        found = false
+        for existingContactValue in existingContact[arrayMergeField]
+          if existingContactValue.sourceURL is value.sourceURL
+            found = true
+            break
+        unless found
+          existingContact[arrayMergeField].push value
+
+      else
+        existingContactArrayMergeFieldIndex = existingContact[arrayMergeField].indexOf value
+        if existingContactArrayMergeFieldIndex is -1
+          existingContact[arrayMergeField].push value
 
   contactHelpers.setLowerCaseFields existingContact
   existingContact
@@ -593,7 +611,6 @@ exports.sanitizeContact = (contact) ->
     'firstNameLower'
     'middleNameLower'
     'lastNameLower'
-    'imageS3Filenames'
   ]
 
   for field in fieldsToRemove
@@ -646,10 +663,12 @@ exports.getAllContactsWithTouchCounts = (userId, callback) ->
 exports.signImageURLs = (contact) ->
   unless contact then wiston.doMissingParamError 'contact'; return
 
-  contact.imageS3Filenames ||= []
+  contact.images ||= []
   contact.imageURLs ||= []
-  for imageS3Filename in contact.imageS3Filenames
-    s3Path = imageUtils.getContactImageS3Path imageS3Filename
+  for image in contact.images
+    unless image?.s3Filename
+      continue
+    s3Path = imageUtils.getContactImageS3Path image.s3Filename
     imageURL = s3Utils.signedURL s3Path
     contact.imageURLs.push imageURL
 
@@ -721,16 +740,22 @@ exports.importContactImages = (userId, callback) ->
       limit = constants.IMPORT_CONTACT_IMAGES_ASYNC_LIMIT
       async.eachLimit contacts, limit, (contact, eachLimitCallback) ->
 
-        contact.imageSourceURLs ||= []
+        contact.images ||= []
         # Has to be series to avoid version errors in mongo
-        async.eachSeries contact.imageSourceURLs, (imageSourceURL, eachSeriesCallback) ->
-          imageUtils.importContactImage imageSourceURL, contact, (error) ->
+        async.eachSeries contact.images, (image, eachSeriesCallback) ->
+          
+          unless image.sourceURL and not image.s3Filename
+            # already imported, just move on.
+            eachSeriesCallback()
+            return
+
+          imageUtils.importContactImage image.sourceURL, contact, (error) ->
             if error
               eachSeriesCallback winston.makeError 'importContactImage failed',
                 contactId: contact._id
-                imageSourceURL: imageSourceURL
+                imageSourceURL: image.sourceURL
                 importError: error
-                contactImageURLs: contact.sourceImageURLs
+                contactImages: contact.images
             else
               eachSeriesCallback()
 

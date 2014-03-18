@@ -7,6 +7,10 @@ PhoneNumber = new Schema
   type : {type : String}
   { _id : false }
 
+ImageInfo = new Schema
+  sourceURL: {type: String}
+  s3Filename: {type: String}
+
 Contact = new Schema
   userId: {type: Schema.ObjectId} # userId of the person whose contact this is
   googleUserId: {type: String} # Optional: if it's a google contact, let's also save the googleUserId
@@ -23,8 +27,7 @@ Contact = new Schema
   middleNameLower: {type: String}
   lastName: {type: String}
   lastNameLower: {type: String}
-  imageSourceURLs: {type: [String]}
-  imageS3Filenames: {type: [String]}
+  images: {type: [ImageInfo]}
   phoneNumbers : {type : [PhoneNumber]}
   locations : {type : [Location]}
   sources: {type: [String]}
@@ -40,6 +43,7 @@ Contact = new Schema
 
 Contact.index {userId: 1, emails: 1}, {sparse: 1}
 Contact.index {userId: 1, lastNameLower: 1}, {sparse: 1}
+Contact.index {userId: 1, sources: 1, googleContactId: 1, fbUserId: 1, liUserId: 1, primaryEmail: 1}, {sparse: 1}
 
 mongoose.model 'Contact', Contact
 exports.ContactModel = mongoose.model 'Contact'

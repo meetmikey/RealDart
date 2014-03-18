@@ -45,7 +45,7 @@ exports.getContactsJSONFromAPIData = (contactsAPIData) ->
     if title
       newContact.title = title
 
-    googleHelpers.addContactId(newContact, contactData)
+    googleHelpers.addGoogleContactId(newContact, contactData)
     googleHelpers.addContactGroupIds(newContact, contactData)
     googleHelpers.addName(newContact, contactData)
     googleHelpers.addEmails(newContact, contactData)
@@ -59,6 +59,7 @@ exports.getContactsJSONFromAPIData = (contactsAPIData) ->
 
   contacts
 
+
 exports.getGroupsJSONFromAPIData = (groupsAPIData) ->
   unless groupsAPIData then return {}
 
@@ -70,9 +71,11 @@ exports.getGroupsJSONFromAPIData = (groupsAPIData) ->
     groups.push {systemGroupId : systemGroupId, title : title, _id : _id}
   groups
 
-exports.addContactId = (contact, apiData) ->
+
+exports.addGoogleContactId = (contact, apiData) ->
   return unless contact and apiData
-  contact.contactId = apiData['id']?['$t']?.split("/base/")[1]
+  contact.googleContactId = apiData['id']?['$t']?.split("/base/")[1]
+
 
 exports.addContactGroupIds = (contact, apiData) ->
   return unless contact and apiData
@@ -83,12 +86,14 @@ exports.addContactGroupIds = (contact, apiData) ->
       newGroupId = group['href']?.split("/base/")[1]
       contact.groupIds.push(newGroupId)
 
+
 exports.addWebsites = (contact, apiData) ->
   return unless contact and apiData
 
   websites = apiData['gContact$website']
   if websites && websites.length > 0
     contact.websites = websites
+
 
 exports.addAddresses = (contact, apiData) ->
   return unless contact and apiData
@@ -104,12 +109,14 @@ exports.addAddresses = (contact, apiData) ->
       newAddress['postcode'] = address?['gd$postcode']?['$t']
       contact.addresses.push(newAddress)
 
+
 exports.addBirthday = (contact, apiData) ->
   return unless contact and apiData
 
   birthday = apiData['gContact$birthday']
   if birthday
     contact.birthday = birthday.when
+
 
 exports.addName = (contact, apiData) ->
   return unless contact and apiData
@@ -118,6 +125,7 @@ exports.addName = (contact, apiData) ->
   contact.firstName = contactName?['gd$givenName']?['$t']
   contact.middleName = contactName?['gd$additionalName']?['$t']
   contact.lastName = contactName?['gd$familyName']?['$t']
+
 
 exports.addEmails = (contact, apiData) ->
   return unless contact and apiData
@@ -147,8 +155,10 @@ exports.addPhoneNumbers = (contact, apiData) ->
       unless digits then continue
       contact.phoneNumbers.push {'number' : googleHelpers.cleanPhoneNumber(digits), 'type' : type}
 
+
 exports.cleanPhoneNumber = (phoneNumber) ->
   phoneNumber.replace(/[-()\s]/g, '')
+
 
 exports.addIsMyContact = (googleContact, googleUser) ->
   return unless googleContact and googleUser
@@ -159,6 +169,7 @@ exports.addIsMyContact = (googleContact, googleUser) ->
     match = _.find(googleContact.groupIds, (groupId) -> myContactsGroupId == groupId)
     if match
       googleContact.isMyContact = true
+
 
 exports.doDataImportJob = (job, callback) ->
   unless job then callback winston.makeMissingParamError 'job'; return
@@ -227,26 +238,30 @@ exports.getContacts = (userId, googleUser, callback) ->
       rawContactsFromResponse = apiResonseData?.feed?.entry
       contactsData = googleHelpers.getContactsJSONFromAPIData rawContactsFromResponse
 
-      # TODO: do this as an update?
-      async.eachSeries contactsData, (contactData, eachCallback) ->
+      async.each contactsData, (contactData, eachCallback) ->
 
-        googleContact = new GoogleContactModel contactData
-        googleContact.userId = userId
-        googleContact.googleUserId = googleUser._id
-
-        googleHelpers.addIsMyContact googleContact, googleUser
-        googleHelpers.addLocations googleContact, (err) ->
+        googleHelpers.addIsMyContact contactData, googleUser
+        googleHelpers.addLocations contactData, (err) ->
           if err then winston.handleError err
 
-          # save the contact regardless if there was an error
-          googleContact.save (mongoError, googleContactSaved) ->
-            if mongoError and mongoError.code isnt constants.MONGO_ERROR_CODE_DUPLICATE
-              eachCallback winston.makeMongoError mongoError
-              return
+          utils.removeEmptyFields contactData, true, true
+          contactData.timestamp = Date.now()
 
-            #TODO: need to make save to addSourceContact fault tolerant to restarts
-            googleContact = googleContactSaved
-            contactHelpers.addSourceContact userId, constants.contactSource.GOOGLE, googleContact, eachCallback
+          select =
+            userId: userId
+            googleUserId: googleUser._id
+            googleContactId: contactData.googleContactId
+
+          update =
+            $set: contactData
+
+          options =
+            upsert: true
+
+          GoogleContactModel.findOneAndUpdate select, update, options, (mongoError, googleContactSaved) ->
+            if mongoError then eachCallback winston.makeMongoError mongoError; return
+
+            contactHelpers.addSourceContact userId, constants.contactSource.GOOGLE, googleContactSaved, eachCallback
 
       , (error) ->
         if rawContactsFromResponse and rawContactsFromResponse.length

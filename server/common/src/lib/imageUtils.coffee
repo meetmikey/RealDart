@@ -27,18 +27,10 @@ exports.importContactImage = (imageSourceURL, contact, callback) ->
     s3Utils.putStream response, s3Path, s3FileHeaders, (error) ->
       if error then callback error; return
 
-      contact.imageS3Filenames ||= []
-      contact.imageS3Filenames.push s3Filename
-
-      # Remove this image from the array of images to be imported
-      # And filter out any bad imageSourceURLs while we're at it.  I was seeing some null ones creep in.
-      tempImageSourceURLs = []
-
-      contact.imageSourceURLs ||= []
-      for tempImageSourceURL in contact.imageSourceURLs
-        if tempImageSourceURL and tempImageSourceURL isnt imageSourceURL
-          tempImageSourceURLs.push tempImageSourceURL
-      contact.imageSourceURLs = tempImageSourceURLs
+      contact.images ||= []
+      for image in contact.images
+        if image.sourceURL is imageSourceURL
+          image.s3Filename = s3Filename
 
       contact.save (mongoError) ->
         if mongoError then callback winston.makeMongoError mongoError; return
