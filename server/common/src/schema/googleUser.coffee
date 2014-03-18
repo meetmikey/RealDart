@@ -28,6 +28,8 @@ GoogleUser = new Schema
   hd: {type: String}
   contactGroups  : {type : [GoogleContactGroup]}
 
+  timestamp: {type: Date, default: Date.now}
+
 GoogleUser.index {email: 1}, {unique : true}
 
 

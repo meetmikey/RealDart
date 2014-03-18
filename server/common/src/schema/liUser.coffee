@@ -34,6 +34,8 @@ LIUser = new Schema
   threeCurrentPositions: Schema.Types.Mixed
   threePastPositions: Schema.Types.Mixed
 
+  timestamp: {type: Date, default: Date.now}
+
 
 LIUser.virtual('accessToken').set (input) ->
   encryptedInfo = utils.encryptSymmetric input

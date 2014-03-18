@@ -45,6 +45,7 @@ exports.saveUserAndQueueImport = (userId, accessToken, refreshToken, profile, ca
   unless profile.id then callback winston.makeMissingParamError 'profile.id'; return
 
   liUserJSON = liHelpers.getUserJSONFromProfile profile
+  liUserJSON.timestamp = Date.now()
 
   accessTokenEncryptedInfo = utils.encryptSymmetric accessToken
   liUserJSON.accessTokenEncrypted = accessTokenEncryptedInfo.encrypted

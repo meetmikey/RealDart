@@ -80,6 +80,7 @@ exports.saveUserAndQueueImport = (userId, accessToken, refreshToken, profile, ca
   unless profile.id then callback winston.makeMissingParamError 'profile.id'; return
 
   fbUserJSON = fbHelpers.getUserJSONFromProfile profile
+  fbUserJSON.timestamp = Date.now()
 
   accessTokenEncryptedInfo = utils.encryptSymmetric accessToken
   fbUserJSON.accessTokenEncrypted = accessTokenEncryptedInfo.encrypted

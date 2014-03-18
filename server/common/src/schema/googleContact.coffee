@@ -28,7 +28,7 @@ GoogleContactAddress.path('location').validate (v) ->
   v.length < 2
 
 GoogleContact = new Schema
-  contactId : {type : String}
+  googleContactId : {type : String}
   groupIds : {type : String}
   isMyContact : {type : Boolean}
   userId: Schema.ObjectId
@@ -43,9 +43,11 @@ GoogleContact = new Schema
   birthday : {type : String}
   websites : {type : [GoogleContactWebsite]}
   addresses : {type : [GoogleContactAddress]}
+  timestamp: {type: Date, default: Date.now}
+
 
 GoogleContact.index {userId: 1, emails: 1}, {sparse: true}
-GoogleContact.index {userId: 1, contactId: 1}, {unique: true}
+GoogleContact.index {userId: 1, googleContactId: 1}, {unique: true}
 
 mongoose.model 'GoogleContact', GoogleContact
 exports.GoogleContactModel = mongoose.model 'GoogleContact'

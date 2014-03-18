@@ -1,6 +1,6 @@
-knox = require 'knox'
 fs = require 'fs'
 zlib = require 'zlib'
+knox = require 'knox'
 
 utils = require './utils'
 urlUtils = require './urlUtils'
@@ -11,7 +11,6 @@ constants = require '../constants'
 conf = require '../conf'
 
 s3Utils = this
-
 
 knoxClient = null
 exports.getClient = () ->
@@ -60,18 +59,16 @@ exports.getUploadHeadersFromResponse = (response) ->
   headers
 
 
-exports.putStream = (stream, s3Path, headers, useGzip, callback) ->
+exports.putStream = (stream, s3Path, headers, callback) ->
   unless stream then callback winston.makeMissingParamError 'stream'; return
   unless s3Path then callback winston.makeMissingParamError 's3Path'; return
-  if useGzip then callback winston.makeError 's3Utils.putStream: useGzip not yet supported'; return
 
   ###
   winston.doInfo 's3Utils.putStream...',
     s3Path: s3Path
     headers: headers
-    useGzip: useGzip
   ###
-  
+
   hasCalledBack = false
   s3Utils.getClient().putStream stream, s3Path, headers, (s3Err, response) ->
     if hasCalledBack

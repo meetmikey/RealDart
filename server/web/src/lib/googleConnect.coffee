@@ -42,6 +42,7 @@ exports.saveUserAndQueueImport = (userId, accessToken, refreshToken, params, pro
   unless profile then callback winston.makeMissingParamError 'profile'; return
 
   googleUserJSON = googleHelpers.getUserJSONFromProfile profile
+  googleUserJSON.timestamp = Date.now()
 
   accessTokenEncryptedInfo = utils.encryptSymmetric accessToken
   googleUserJSON.accessTokenEncrypted = accessTokenEncryptedInfo.encrypted

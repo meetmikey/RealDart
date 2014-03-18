@@ -20,10 +20,11 @@ testSQSJob =
   'hi!'
 
 workerTimeout = 1000 * 2 # 2 seconds
+workerTimeout = null
 
 run = (callback) ->
   if numTestWorkers
-    sqsUtils.pollQueue commonConf.queue.test, doNothingNoCallback, numTestWorkers, workerTimeout
+    sqsUtils.pollQueue commonConf.queue.test, doNothing, numTestWorkers, workerTimeout
   if numTest2Workers
     sqsUtils.pollQueue commonConf.queue.test2, doNothing, numTest2Workers, workerTimeout
 
