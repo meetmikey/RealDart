@@ -727,43 +727,74 @@ exports.importContactImages = (userId, callback) ->
     if error then callback error; return
     unless success then callback winston.makeError 'failed to get contacts lock'; return
 
-    select =
-      userId: userId
+    isDone = false
+    highestContactId = null
 
-    ContactModel.find select, (mongoError, contacts) ->
-      if mongoError
-        lockUtils.releaseLock lockKey, (error) ->
-          if error then winston.handleError error
-        callback winston.makeMongoError mongoError
-        return
+    async.whilst () ->
+      not isDone
 
-      contacts ||= []
-      limit = constants.IMPORT_CONTACT_IMAGES_ASYNC_LIMIT
-      async.eachLimit contacts, limit, (contact, eachLimitCallback) ->
+    , (whilstCallback) ->
+      contactHelpers.doImportContactImagesBatch userId, highestContactId, (error, isDoneFromBatch, newHighestContactId) ->
+        if error then whilstCallback error; return
 
-        contact.images ||= []
-        # Has to be series to avoid version errors in mongo
-        async.eachSeries contact.images, (image, eachSeriesCallback) ->
-          
-          unless image.sourceURL and not image.s3Filename
-            # already imported, just move on.
+        isDone = isDoneFromBatch
+        highestContactId = newHighestContactId
+        whilstCallback()
+
+    , (error) ->
+      lockUtils.releaseLock lockKey, (error) ->
+        if error then winston.handleError error
+
+      callback error
+
+
+exports.doImportContactImagesBatch = (userId, highestContactId, callback) ->
+  unless userId then callback winston.makeMissingParamError 'userId'; return
+
+  select =
+    userId: userId
+
+  sort =
+    _id: 1
+
+  if highestContactId
+    select._id =
+      $gt: highestContactId
+
+  contactBatchLimit = constants.IMPORT_CONTACT_IMAGES_CONTACT_BATCH_SIZE
+  ContactModel.find( select ).sort( sort ).limit( contactBatchLimit ).exec (mongoError, contacts) ->
+    if mongoError then callback winston.makeMongoError mongoError; return
+
+    contacts ||= []
+    isDone = false
+    if contacts.length is 0
+      isDone = true
+
+    newHighestContactId = highestContactId
+
+    contactImportLimit = constants.IMPORT_CONTACT_IMAGES_ASYNC_LIMIT
+    async.eachLimit contacts, contactImportLimit, (contact, eachLimitCallback) ->
+
+      if ( not newHighestContactId ) or contact._id > newHighestContactId
+        newHighestContactId = contact._id
+
+      contact.images ||= []
+      # Has to be series to avoid version errors in mongo
+      async.eachSeries contact.images, (image, eachSeriesCallback) ->
+
+        # already imported, just move on.
+        unless image.sourceURL and not image.s3Filename then eachSeriesCallback(); return
+
+        imageUtils.importContactImage image.sourceURL, contact, (error) ->
+          if error
+            eachSeriesCallback winston.makeError 'importContactImage failed',
+              contactId: contact._id
+              imageSourceURL: image.sourceURL
+              importError: error
+          else
             eachSeriesCallback()
-            return
 
-          imageUtils.importContactImage image.sourceURL, contact, (error) ->
-            if error
-              eachSeriesCallback winston.makeError 'importContactImage failed',
-                contactId: contact._id
-                imageSourceURL: image.sourceURL
-                importError: error
-                contactImages: contact.images
-            else
-              eachSeriesCallback()
+      , eachLimitCallback
 
-        , eachLimitCallback
-
-      , (error) ->
-        lockUtils.releaseLock lockKey, (error) ->
-          if error then winston.handleError error
-
-        callback error
+    , (error) ->
+      callback error, isDone, newHighestContactId

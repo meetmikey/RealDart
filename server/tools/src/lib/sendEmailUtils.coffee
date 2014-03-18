@@ -31,9 +31,6 @@ exports.sendEventDigestEmail = ( eventDigest, user, callback ) ->
       sender: sender
       text: text
       subject: subject
-
-    #TEMP
-    #callback winston.makeError 'temp error!'
     
     sesUtils.sendEmail recipients, sender, text, html, subject, callback
 
