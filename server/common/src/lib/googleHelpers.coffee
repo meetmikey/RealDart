@@ -425,7 +425,8 @@ exports.getLocationFromGoogleUserAddress = (address, callback) ->
       location.locationType = geocode.locationType
       location.source = 'google_address'
     else
-      winston.doWarn 'no geocode for address', addressToQuery
+      winston.doWarn 'no geocode for address',
+        addressToQuery: addressToQuery
 
     callback null, location
 
