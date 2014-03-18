@@ -18,8 +18,8 @@ exports.LocationSchema = Location
 
 
 GeocodeCache = new Schema
-  _id : {type : String}
-  response : {type : String}
+  _id : {}
+  response : {}
 
 mongoose.model 'GeocodeCache', GeocodeCache
 exports.GeocodeCacheModel = mongoose.model 'GeocodeCache'

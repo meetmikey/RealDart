@@ -2,6 +2,7 @@ commonAppDir = process.env.REAL_DART_HOME + '/server/common/app'
 fs = require 'fs'
 
 liHelpers = require commonAppDir + '/lib/liHelpers'
+mongooseConnect.initSync()
 
 describe "getCurrentLocationFromLIUser", () ->
   it "test generic case", (done) ->

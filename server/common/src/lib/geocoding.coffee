@@ -21,9 +21,12 @@ exports.getGeocodeFromGoogle = (address, country, callback) ->
     callback(null, geocode)
 
 exports.cacheGeocodeResult = (address, country, geocodeResponse, callback) ->
-  console.log geocodeResponse
-  _id = JSON.stringify({address: address, country : country})
-  response = JSON.stringify(geocodeResponse?.results)
+  unless address then callback winston.makeMissingParamError 'address'; return
+  unless country then callback winston.makeMissingParamError 'country'; return
+  unless geocodeResponse then callback winston.makeMissingParamError 'geocodeResponse'; return
+
+  _id = {address: address, country : country}
+  response = geocodeResponse?.results
 
   cacheModel = new GeocodeCacheModel {_id : _id, response : response}
 
@@ -36,7 +39,7 @@ exports.doGoogleAPIGet = (address, country, callback) ->
   unless country then callback winston.makeMissingParamError 'country'; return
 
   data =
-    address : address
+    address : encodeURIComponent(address)
     components : 'country:' + country
     key : conf.google_apis.key
     sensor : false

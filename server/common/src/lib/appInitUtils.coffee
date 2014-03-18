@@ -48,7 +48,6 @@ exports.initApp = ( appName, actions, callback ) =>
     callback appInitUtils._shutdownApp
 
 
-
 # PRIVATE
 ###########################
 
