@@ -293,8 +293,6 @@ exports.buildContactData = (userId, contactSource, inputData) ->
           loc = address.location[0]
           contactData.locations.push loc
 
-    contactData.isMyContactForGoogle = inputData.isMyContact
-
   else if contactSource is constants.contactSource.FACEBOOK
     contactData.fbUserId = inputData._id
     if inputData.email
@@ -363,7 +361,6 @@ exports.mergeContacts = (existingContact, newContact) ->
     'firstName'
     'middleName'
     'lastName'
-    'isMyContactForGoogle'
   ]
 
   for mergeField in mergeFields

@@ -25,7 +25,6 @@ Contact = new Schema
   lastNameLower: {type: String}
   imageSourceURLs: {type: [String]}
   imageS3Filenames: {type: [String]}
-  isMyContactForGoogle : {type : Boolean}
   phoneNumbers : {type : [PhoneNumber]}
   locations : {type : [Location]}
   sources: {type: [String]}
@@ -33,7 +32,6 @@ Contact = new Schema
   # For Contacts, this is one or more SourceContacts that contributed to it.
   mappedContacts: {type: [Schema.ObjectId]}
   timestamp: {type: Date, default: Date.now}
-
 
   # DUMMIES
   #############

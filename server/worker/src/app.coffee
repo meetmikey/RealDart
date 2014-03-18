@@ -37,7 +37,3 @@ exports.startPolling = () ->
   sqsUtils.pollQueue commonConf.queue.mailHeaderDownload, mailDownloadHelpers.doMailHeaderDownloadJob, maxWorkers
 
 appInitUtils.initApp 'workerApp', initActions, serverWorkerApp.run
-
-process.on 'uncaughtException', (e) ->
-  console.log e.stack
-  console.log e.message
