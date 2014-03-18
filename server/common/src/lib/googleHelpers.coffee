@@ -180,10 +180,6 @@ exports.doDataImportJob = (job, callback) ->
         if error then callback winston.makeMongoError(error); return
 
         googleHelpers.getContacts userId, googleUser, (error) ->
-
-          winston.doInfo 'getContacts finished',
-            error: error
-
           if error then callback error; return
 
           mailDownloadJob =
@@ -247,7 +243,7 @@ exports.getContacts = (userId, googleUser, callback) ->
             if mongoError and mongoError.code isnt constants.MONGO_ERROR_CODE_DUPLICATE
               eachCallback winston.makeMongoError mongoError
               return
-            eachCallback()
+
             #TODO: need to make save to addSourceContact fault tolerant to restarts
             googleContact = googleContactSaved
             contactHelpers.addSourceContact userId, constants.contactSource.GOOGLE, googleContact, eachCallback

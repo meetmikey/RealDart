@@ -19,7 +19,7 @@
 
 ### AWS
 - Add SQS queues for each of the queues listed in *serverCommon/conf.queue*.  They should be named your $AWS_PREFIX + the camelCase queue name (e.g. 'justinDataImport').  Give each queue the following configuration:
-  - Default visibility timeout: 10 minutes
+  - Default visibility timeout: 5 minutes
   - Message retention period: 14 days
   - Maximum message size: 256KB (the default)
   - Delivery delay: 0 seconds (the default)

@@ -208,7 +208,7 @@ exports._getMessagesFromQueueNoRetry = ( queueName, callback ) ->
     MaxNumberOfMessages: numAvailableWorkers
 
   sqsUtils._sqs.receiveMessage receiveMessageParams, ( sqsError, sqsResponse ) ->
-    if sqsError and sqsError?.statusCode isnt 200
+    if sqsError and utils.isNonEmptyObject( sqsError ) and sqsError?.statusCode isnt 200
       winstonError = winston.makeError 'sqs error from ReceiveMessage',
         queueName: queueName
         sqsError: sqsError.toString()
@@ -315,7 +315,7 @@ exports._addMessageToQueueNoRetry = ( queueName, messageBodyJSON, callback ) ->
       
     if callback
       winstonError = null
-      if sqsError
+      if sqsError and utils.isNonEmptyObject( sqsError ) and sqsError?.statusCode isnt 200
         sqsErrorMessage = sqsError.toString()
         winstonError = winston.makeError 'sqs send message error',
           sqsError: sqsErrorMessage
@@ -346,7 +346,7 @@ exports._deleteMessageFromQueueNoRetry = ( queueName, sqsMessage, callback ) ->
     ReceiptHandle: receiptHandle
 
   sqsUtils._sqs.deleteMessage deleteMessageParams, (sqsError) ->
-    if sqsError
+    if sqsError and utils.isNonEmptyObject( sqsError ) and sqsError?.statusCode isnt 200
       winston.doError 'got error from DeleteMessage',
         sqsError: sqsError
         queueName: queueName

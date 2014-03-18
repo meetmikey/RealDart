@@ -109,6 +109,11 @@ exports.webGetAttempt = ( url, asBuffer, remainingRedirectsToFollow, originalURL
 
 exports.handleWebGetResponse = ( response, asBuffer, remainingRedirectsToFollow, url, originalURL, request, callback ) ->
 
+  # because of this...
+  #  http://stackoverflow.com/questions/16965582/node-js-http-get-hangs-after-5-requests-to-remote-site
+  response.on 'data', () ->
+    # do nothing?  really?
+
   unless response
     callback winston.makeError 'missing response',
       url: url

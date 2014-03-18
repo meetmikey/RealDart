@@ -131,7 +131,6 @@ exports.getCurrentLocationFromLIUser = (liUser, callback) ->
   if location.readableLocation and location.country
     cleanLocation = liHelpers.cleanLocationNameForGeocoding location.readableLocation
     geocoding.getGeocodeFromGoogle cleanLocation, location.country, (err, geocode) ->
-      console.log 'got geocode'
       return callback err if err
 
       location.lat = geocode.lat

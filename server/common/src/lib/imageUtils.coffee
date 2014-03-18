@@ -14,7 +14,7 @@ exports.importContactImage = (imageSourceURL, contact, callback) ->
   unless contact then callback winston.makeMissingParamError 'contact'; return
 
   utils.runWithRetries webUtils.webGet, constants.DEFAULT_WEB_GET_ATTEMPTS
-  , (error, response, url, responseHeaders) ->
+  , (error, response, resolvedURL, responseHeaders) ->
     if error then callback error; return
     unless response then callback winston.makeError 'no response'; return
 
@@ -24,7 +24,7 @@ exports.importContactImage = (imageSourceURL, contact, callback) ->
     if responseHeaders?['content-type'] then s3FileHeaders['content-type'] = responseHeaders['content-type']
     if responseHeaders?['content-length'] then s3FileHeaders['content-length'] = responseHeaders['content-length']
 
-    s3Utils.putStream response, s3Path, s3FileHeaders, false, (error) ->
+    s3Utils.putStream response, s3Path, s3FileHeaders, (error) ->
       if error then callback error; return
 
       contact.imageS3Filenames ||= []

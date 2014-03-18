@@ -726,16 +726,17 @@ exports.importContactImages = (userId, callback) ->
       async.eachLimit contacts, limit, (contact, eachLimitCallback) ->
 
         contact.imageSourceURLs ||= []
-        async.each contact.imageSourceURLs, (imageSourceURL, eachCallback) ->
+        # Has to be series to avoid version errors in mongo
+        async.eachSeries contact.imageSourceURLs, (imageSourceURL, eachSeriesCallback) ->
           imageUtils.importContactImage imageSourceURL, contact, (error) ->
             if error
-              eachCallback winston.makeError 'importContactImage failed',
+              eachSeriesCallback winston.makeError 'importContactImage failed',
                 contactId: contact._id
                 imageSourceURL: imageSourceURL
                 importError: error
                 contactImageURLs: contact.sourceImageURLs
             else
-              eachCallback()
+              eachSeriesCallback()
 
         , eachLimitCallback
 
