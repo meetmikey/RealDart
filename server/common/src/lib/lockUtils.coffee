@@ -105,8 +105,8 @@ exports.releaseLock = (key, callback) ->
           lockCountForKey: lockCount[key]
       else
         lockCount[key]--
-    else
-      winston.doInfo 'releaseLock returned, did nothing'
+    #else
+    #  winston.doInfo 'releaseLock returned, did nothing'
 
     callback()
 

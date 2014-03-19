@@ -54,6 +54,7 @@ exports.addEmailTouches = (userId, googleUserId, emailAccountState, callback) ->
 
     highestEmailId = emailAccountState.highestEmailIdForAddingTouches
     isDone = false
+
     async.whilst () ->
       not isDone
 
@@ -75,6 +76,7 @@ exports.addEmailTouches = (userId, googleUserId, emailAccountState, callback) ->
       addTouchesHelpers.updateEmailAccountStateHighestEmailId emailAccountState, highestEmailId, (error) ->
         lockUtils.releaseLock lockKey, (error) ->
           if error then winston.handleError error
+
         callback error
 
 
@@ -113,15 +115,17 @@ exports.addEmailTouchesBatch = (userId, googleUserId, highestEmailId, callback) 
   EmailModel.find( select ).sort( sort ).limit( limit ).exec (mongoError, emails) ->
     if mongoError then callback winston.makeMongoError mongoError; return
 
+
     newHighestEmailId = highestEmailId
     emails ||= []
+
     isDone = true
     if emails.length >= limit
       isDone = false
 
     async.each emails, (email, eachCallback) ->
 
-      if email._id > newHighestEmailId
+      if ( not newHighestEmailId ) || email._id > newHighestEmailId
         newHighestEmailId = email._id
 
       touchHelpers.addTouchesForEmail userId, email, eachCallback
