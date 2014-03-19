@@ -37,35 +37,44 @@ exports.doGoogleAPIGet = (address, country, callback) ->
   unless address then callback winston.makeMissingParamError 'address'; return
   unless country then callback winston.makeMissingParamError 'country'; return
 
-  data =
-    address : encodeURIComponent(address)
-    components : 'country:' + country
-    key : conf.google_apis.key
-    sensor : false
+  #check the cache first
+  _id = {address: address, country : country}
+  GeocodeCacheModel.findById _id, (err, cachedResults) ->
+    return callback winston.makeMongoError err if err
 
-  queryString = urlUtils.getQueryStringFromData data
-  url = BASE_URL + queryString
+    if cachedResults
+      response =
+        results : cachedResults?.response
+      callback null, response
+    else
+      data =
+        address : encodeURIComponent(address)
+        components : 'country:' + country
+        key : conf.google_apis.key
+        sensor : false
 
-  utils.runWithRetries webUtils.webGet, constants.DEFAULT_API_CALL_ATTEMPTS
-  , (error, buffer) ->
-    if error then callback error; return
-    dataJSON = {}
-    try
-      dataJSON = JSON.parse buffer.toString()
+      queryString = urlUtils.getQueryStringFromData data
+      url = BASE_URL + queryString
 
-      if dataJSON.status == 'OK'
-        geocoding.cacheGeocodeResult address, country, dataJSON, (err) ->
-          if err then winston.handleError err
+      utils.runWithRetries webUtils.webGet, constants.DEFAULT_API_CALL_ATTEMPTS
+      , (error, buffer) ->
+        if error then callback error; return
+        dataJSON = {}
+        try
+          dataJSON = JSON.parse buffer.toString()
 
-          # as long as we have data, callback
-          callback null, dataJSON
-      else 
-        callback winston.makeError 'google geocoding response not OK', {responseData : dataJSON}
+          if dataJSON.status == 'OK'
+            geocoding.cacheGeocodeResult address, country, dataJSON, (err) ->
+              if err then winston.handleError err
 
-    catch exception
-      callback winston.makeError 'response parse error', exceptionMessage: exception.message
-  , url, true
+              # as long as we have data, callback
+              callback null, dataJSON
+          else 
+            callback winston.makeError 'google geocoding response not OK', {responseData : dataJSON}
 
+        catch exception
+          callback winston.makeError 'response parse error', exceptionMessage: exception.message
+      , url, true
 
 exports.getCoordinatesFromGoogleResponse = (responseJSON) ->
   return unless responseJSON
