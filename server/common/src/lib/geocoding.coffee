@@ -28,10 +28,9 @@ exports.cacheGeocodeResult = (address, country, geocodeResponse, callback) ->
   _id = {address: address, country : country}
   response = geocodeResponse?.results
 
-  cacheModel = new GeocodeCacheModel {_id : _id, response : response}
-
-  cacheModel.save (err) ->
-    if err then callback winston.makeMongoError(err); return
+  GeocodeCacheModel.update {_id : _id}, {$set : {response: response}}, {upsert : true}, (err, num) ->
+    return callback winston.makeMongoError(err) if err
+    callback()
 
 exports.doGoogleAPIGet = (address, country, callback) ->
 
@@ -90,7 +89,8 @@ exports.getGeocodeFromPhoneNumber = (phoneNumber, callback) ->
       if err
         callback(winston.makeMongoError(err))
       else if !areaCodeFromDB
-        callback(winston.makeError 'area code not found in DB', {areaCode : areaCode})
+        #winston.doWarn 'area code not found in DB', {areaCode : areaCode}
+        callback()
       else
         location = {}
         location.lat =  areaCodeFromDB.lat
@@ -101,7 +101,7 @@ exports.getGeocodeFromPhoneNumber = (phoneNumber, callback) ->
         location.readableAddress = areaCodeFromDB.majorCities[0] + ", " + areaCodeFromDB.state
         callback null, location
   else
-    callback winston.makeError 'area code could not be parsed from phone number'
+    callback winston.makeError 'area code could not be parsed from phone number', {phoneNumber : phoneNumber}
 
 #returns undefined if phoneNumber cannot be parsed
 exports.getAreaCodeFromPhoneNumber = (phoneNumber) ->

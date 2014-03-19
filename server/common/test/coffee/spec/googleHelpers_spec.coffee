@@ -5,13 +5,7 @@ appInitUtils = require commonAppDir + '/lib/appInitUtils'
 constants = require commonAppDir + '/constants'
 mongooseConnect = require commonAppDir + '/lib/mongooseConnect'
 
-jasmine.getEnv().defaultTimeoutInterval = 5000;
-
 mongooseConnect.initSync()
-
-initActions = [
-  constants.initAction.CONNECT_MONGO
-]
 
 describe "cleanPhoneNumber", () ->
   it "test", () ->
@@ -149,8 +143,7 @@ describe "getLocationFromGoogleUserPhone", () ->
 
   it "test invalid area code", (done)->
     googleHelpers.getLocationFromGoogleUserPhone '1234597893', (err, data) ->
-      expect(err).toBeTruthy()
-      expect(err.log).toBe('area code not found in DB')
+      expect(data).toBe(undefined)
       done()
 
 describe "addLocations", () ->

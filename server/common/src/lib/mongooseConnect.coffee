@@ -36,7 +36,6 @@ exports.init = ( callback ) =>
 
 
 exports.initSync = () =>
-
   mongoConf = {}
 
   if environment is 'production'

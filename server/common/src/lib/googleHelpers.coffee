@@ -459,6 +459,7 @@ exports.getLocationFromGoogleUserPhone = (phone, callback) ->
 
   geocoding.getGeocodeFromPhoneNumber phone, (err, geocode) ->
     return callback err if err
+    return callback() if not geocode
 
     location.lat = geocode.lat
     location.lng = geocode.lng
