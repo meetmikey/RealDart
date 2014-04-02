@@ -1105,7 +1105,8 @@
       return {
         contact: this.contact.decorate(),
         fbUser: JSON.stringify(this.fbUser),
-        liUser: JSON.stringify(this.liUser)
+        liUser: JSON.stringify(this.liUser),
+        jsonContact: JSON.stringify(this.contact)
       };
     };
 

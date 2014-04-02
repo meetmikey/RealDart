@@ -23,3 +23,4 @@ class RD.View.Contact extends RD.View.Base
     contact: @contact.decorate()
     fbUser: JSON.stringify @fbUser
     liUser: JSON.stringify @liUser
+    jsonContact : JSON.stringify @contact

@@ -125,7 +125,11 @@ function program12(depth0,data) {
     + "\n\n";
   stack2 = helpers['if'].call(depth0, ((stack1 = (depth0 && depth0.contact)),stack1 == null || stack1 === false ? stack1 : stack1.emails), {hash:{},inverse:self.noop,fn:self.program(7, program7, data),data:data});
   if(stack2 || stack2 === 0) { buffer += stack2; }
-  buffer += "\n\n\n";
+  buffer += "\n\n\n<h4><b>JSON</b></h4>\n<pre>\n  ";
+  if (stack2 = helpers.jsonContact) { stack2 = stack2.call(depth0, {hash:{},data:data}); }
+  else { stack2 = (depth0 && depth0.jsonContact); stack2 = typeof stack2 === functionType ? stack2.call(depth0, {hash:{},data:data}) : stack2; }
+  buffer += escapeExpression(stack2)
+    + "\n</pre>\n\n";
   stack2 = helpers['if'].call(depth0, (depth0 && depth0.fbUser), {hash:{},inverse:self.noop,fn:self.program(10, program10, data),data:data});
   if(stack2 || stack2 === 0) { buffer += stack2; }
   buffer += "\n\n\n";

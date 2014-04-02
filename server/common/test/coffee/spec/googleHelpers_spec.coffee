@@ -8,10 +8,24 @@ mongooseConnect = require commonAppDir + '/lib/mongooseConnect'
 mongooseConnect.initSync()
 
 describe "cleanPhoneNumber", () ->
-  it "test", () ->
+  it "should remove spaces, dashes, parens", () ->
     expectedResult = '5163122246'
     result = googleHelpers.cleanPhoneNumber('(516) 312-2246')
     expect(result).toBe(expectedResult)
+
+  it "should remove plus signs", () ->
+
+
+###
+Justin Durack With the new log messages...
+area code could not be parsed from phone number phoneNumber=+16506817363,
+area code could not be parsed from phone number phoneNumber=525552686553
+area code could not be parsed from phone number phoneNumber=5112138300ext.8457
+area code could not be parsed from phone number phoneNumber=917.821.4853
+area code could not be parsed from phone number phoneNumber=Skype:donhoang
+area code could not be parsed from phone number phoneNumber=+1.650.391.6582
+area code could not be parsed from phone number phoneNumber=+12566277605
+###
 
 describe "getContactsJSONFromAPIData", ()->
   it "test generic case", () ->
