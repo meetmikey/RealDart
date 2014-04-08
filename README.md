@@ -9,6 +9,9 @@
 - mongo
 - grunt
 
+### Conf
+- Copy conf_template.coffee to conf.coffee. Fill in with appropriate API keys and secrets for each service
+
 ### Building
 - Open a terminal and go to each of the following directores, and run *npm install*, then *grunt*.  Just leave grunt running to continuosly build changes.
   - client
